@@ -21,7 +21,7 @@ Build order: Intermediate → Beginner → Advanced.
 |-----------|--------------|-------------|-----|
 | `engine/` | Teammate 1   | Claude Code | Python: SPICE (spiceypy) + LOLA horizon masks → JSON in `data/` |
 | `web/`    | Teammate 2   | Codex       | Web app shell, 3 modes, site picker, date slider, deploy |
-| `design/` | Kavitha      | Claude      | Sun-path sky chart, visual style, pitch, demo video |
+| `design/` | Teammate 3   | Claude      | Sun-path sky chart, visual style, pitch, demo video |
 | `data/`   | written by engine only | | Precomputed JSON, format fixed by DATA_CONTRACT.md |
 
 ## Rules for agents
