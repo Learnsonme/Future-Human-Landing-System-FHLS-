@@ -25,6 +25,8 @@ Build order: Intermediate → Beginner → Advanced.
 | `data/`   | written by engine only | | Precomputed JSON, format fixed by DATA_CONTRACT.md |
 
 ## Rules for agents
+- **Claim before you work:** in TASKS.md change `[ ]` to `[~]` and add `(claimed by T1, 14:05)`, then commit and push that change **immediately**, before writing any code. If a task is already `[~]`, do not touch it: pick another one or ask in LOG.md.
+- **Need something from another folder?** Do not edit it. Write a request in LOG.md starting with `@T1`, `@T2` or `@T3`.
 - **Pull before you start, push when you finish.** Small commits with clear messages.
 - **Never change `DATA_CONTRACT.md` alone.** Propose the change in LOG.md and wait for the team.
 - Tick your task in `TASKS.md` and add one line to `LOG.md` after every task.
