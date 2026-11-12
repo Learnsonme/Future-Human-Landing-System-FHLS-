@@ -20,7 +20,9 @@ Format: `- [ ] ID · owner · task`
 - [ ] W3 · T2 · Date slider + hourly strip (power/comms colour bands)
 - [ ] W4 · T2 · Site comparison cards
 - [ ] W5 · T2 · Advanced tables + CSV export
-- [ ] W6 · T2 · Deploy (GitHub Pages)
+- [ ] W6 · T2 · Deploy (GitHub Pages): placeholder page live on day 1
+- [ ] W7 · T2 · Landing page: spinning 3D Moon (three.js) + Start button
+- [ ] W8 · T2 · Transition: rotate to south pole → zoom → site pins → site view
 
 ## Design & pitch (Teammate 3 + Claude)
 - [ ] D1 · T3 · Sun-path sky chart component (sun track, Earth loop, horizon mask)
@@ -28,3 +30,4 @@ Format: `- [ ] ID · owner · task`
 - [ ] D3 · T3 · Beginner-mode wording and icons
 - [ ] D4 · T3 · 30-second demo video + slides
 - [ ] D5 · T3 · Project page text + AI-use disclosure
+- [ ] D6 · T3 · Landing page look: Moon texture, starfield, pin style, transition timing (spec for W7/W8)

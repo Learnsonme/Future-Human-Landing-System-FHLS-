@@ -16,7 +16,16 @@ One engine, one dataset, **three modes**:
 
 Build order: Intermediate → Beginner → Advanced.
 
+## Landing page (first thing judges see)
+- A **3D Moon slowly spinning** in the centre of a dark starfield, with the FHLS logo/title and a "Start" button.
+- On click (or scroll), the Moon **rotates to the south pole and the camera zooms in**. Candidate sites appear as glowing pins.
+- Clicking a pin **transitions** (fade/zoom) into that site's view: horizon panorama + timeline + mode switcher.
+- Tech: three.js sphere with NASA's public-domain CGI Moon Kit texture (https://svs.gsfc.nasa.gov/4720). Keep it light so it loads fast.
+- Respect `prefers-reduced-motion`: show a still Moon if the user has reduced motion on.
+
 ## Team & ownership (each person only edits their own folder)
+**Your personal brief is in `roles/`: T1 → `roles/T1_engine.md`, T2 → `roles/T2_web.md`, T3 → `roles/T3_design.md`. Read yours after this file.**
+
 | Folder    | Owner        | AI          | Job |
 |-----------|--------------|-------------|-----|
 | `engine/` | Teammate 1   | Claude Code | Python: SPICE (spiceypy) + LOLA horizon masks → JSON in `data/` |

@@ -1,0 +1,7 @@
+engine/kernels/
+engine/dem/
+*.bsp
+*.tif
+.DS_Store
+__pycache__/
+.venv/
