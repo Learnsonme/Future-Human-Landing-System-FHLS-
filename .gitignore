@@ -1,7 +1,10 @@
 engine/kernels/
 engine/dem/
+engine/out/
 *.bsp
+*.bpc
 *.tif
+*.img
 .DS_Store
 __pycache__/
 .venv/

@@ -1,7 +1,7 @@
 Preparation for the day:
   1. Clone the git repo on your device with a folder setup
   2. Setup your respective agents
-  3. Tell your AI: “Read AGENTS.md, then roles/T1_engine.md (or T2_web / T3_design), then TASKS.md and LOG.md. Claim your first task.”
+  3. Tell your AI: “Read AGENTS.md, then roles/T1_viewer.md (or T2_web / T3_engine_design), then TASKS.md and LOG.md. Claim your first task.”
 
 All the links to the respective stuff required:
   1. Team page: https://www.spaceappschallenge.org/2026/find-a-team/future-human-landing-system-fhls/
