@@ -13,7 +13,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] E6 · T3 · `data/sites.json` with NASA's Artemis candidate landing regions (announced for Artemis III; first landing now Artemis IV, 2028)
 - [x] C1 · T3 · `core/fhls-core.js`: az/el, grid lookup, blocked?, power/comms, summaries
 - [ ] E7 · T3 · Validate vs PGDA illumination maps; write accuracy notes
-- [ ] E8 · T3 · `global_coarse` horizon grid (whole Moon, low precision)
+- [~] E8 · T3 · `global_coarse` horizon grid (whole Moon, low precision) (claimed by T3, 10:40)
 - [x] E9 · T3 · `south_fine` grids over Artemis candidate regions
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
