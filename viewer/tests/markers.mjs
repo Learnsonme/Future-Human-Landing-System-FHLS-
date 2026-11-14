@@ -12,7 +12,11 @@ try {
  await page.waitForTimeout(100);pins=await page.evaluate(()=>window.embeddedViewer.getDiagnostics().markers);assert.equal(pins[1].visible,false);
  const box=await page.locator('.fhls-marker[data-id=one]').boundingBox();assert.equal(box.width,12);assert.equal(box.height,12);
  await page.evaluate(async()=>{const v=window.embeddedViewer;v.addMarker('one',-89.45,-137.3,3);await v.flyTo(-89.45,-137.3);});
- await page.waitForTimeout(100);pins=await page.evaluate(()=>window.embeddedViewer.getDiagnostics().markers);assert.equal(pins[0].label,'3');assert.equal(pins[0].visible,true);
+ await page.waitForFunction(()=>embeddedViewer.getStatus().phase==='ready'&&!embeddedViewer.getDiagnostics().fading);
+ await page.waitForFunction(()=>embeddedViewer.getDiagnostics().markers[0]?.visible);
+ pins=await page.evaluate(()=>window.embeddedViewer.getDiagnostics().markers);
+ if(!pins[0].visible){console.log('terrain pin diagnostics',await page.evaluate(()=>({d:embeddedViewer.getDiagnostics(),s:embeddedViewer.getStatus()})));await page.screenshot({path:'/private/tmp/fhls-viewer-tests/marker-terrain.png'});}
+ assert.equal(pins[0].label,'3');assert.equal(pins[0].visible,true);
  assert.equal(await page.locator('canvas').count(),1);
  assert.equal(await page.evaluate(()=>window.embeddedViewer.removeMarker('back')),true);
  assert.equal(await page.evaluate(()=>window.embeddedViewer.removeMarker('missing')),false);

@@ -98,8 +98,13 @@ export class Terrain {
   }
   /** Finest loaded tile at lat/lon: Artemis 40 m → polar 120 m / global 474 m → cap overview. */
   tileAt(lat, lon) {
-    const byLod = [...this.records].sort((a, b) => (b.meta.lod || 0) - (a.meta.lod || 0));
-    const hit = byLod.find(t => this.covers(t, lat, lon));
+    // Globe refresh and marker occlusion sample this many times per frame.
+    // Sort once per selection, rather than allocating for every sample.
+    if (this.sortedFor !== this.records) {
+      this.sortedFor = this.records;
+      this.sortedRecords = [...this.records].sort((a, b) => (b.meta.lod || 0) - (a.meta.lod || 0));
+    }
+    const hit = this.sortedRecords.find(t => this.covers(t, lat, lon));
     if (hit) return hit;
     if (lat <= -CAP_LAT && this.overview && this.covers(this.overview, lat, lon)) return this.overview;
     if (lat >= CAP_LAT && this.north?.overview && this.covers(this.north.overview, lat, lon)) return this.north.overview;
@@ -155,9 +160,12 @@ export class Terrain {
         metas.push(...this.regionIndex.tiles.filter(t => t.region === region.id).sort((a, b) => dist(a) - dist(b)).slice(0, 4));
       }
     }
-    if (!kind) { this.records = []; this.kind = null; return false; }
-    const tiles = await Promise.all(metas.map(meta => this.load(meta)));
+    if (!kind) { this.records = []; this.kind = null; this.loadFailures = []; return false; }
+    const results = await Promise.allSettled(metas.map(meta => this.load(meta)));
     if (generation !== this.generation) return false;
+    this.loadFailures = results.flatMap((r,i) => r.status === 'rejected' ? [metas[i].id] : []);
+    const tiles = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+    if (!tiles.length && metas.length) throw new Error('Nearby tiles could not be loaded');
     this.records = tiles; this.kind = kind;
     const keep = new Set([this.overview.meta.id, this.north?.overview.meta.id, ...metas.map(t => t.id)]);
     for (const key of this.cache.keys()) if (!keep.has(key)) this.cache.delete(key);
@@ -313,5 +321,5 @@ export class Terrain {
       mesh.userData.detail = true; group.add(mesh);
     }
   }
-  dispose() { this.generation++; this.records = []; this.cache.clear(); }
+  dispose() { this.generation++; this.records = []; this.sortedFor = null; this.sortedRecords = []; this.cache.clear(); }
 }

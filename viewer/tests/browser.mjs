@@ -39,7 +39,7 @@ try {
   } else {
   await page.getByRole('button', { name: 'Shackleton rim', exact: true }).click();
   await page.waitForFunction(() => window.fhlsDemo.getDiagnostics().selected?.lat === -89.45 && !window.fhlsDemo.getDiagnostics().flying && window.fhlsDemo.getStatus().phase === 'ready');
-  assert.equal(await page.evaluate(() => window.fhlsDemo.getStatus().terrain), 'LOLA-120m');
+  assert.equal(await page.evaluate(() => window.fhlsDemo.getStatus().terrain), 'LOLA-40m');
   await page.screenshot({ path: '/private/tmp/fhls-viewer-tests/terrain.png', fullPage: true });
   const sunBefore = (await diagnostics()).sunDirection;
   await page.evaluate(() => window.fhlsDemo.setTime('2027-01-29T12:00:00Z'));

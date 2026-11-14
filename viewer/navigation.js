@@ -1,5 +1,5 @@
 import { Vector3, Quaternion, Matrix4 } from './vendor/three.module.js';
-import { locationToRender, localFrame, moonToRender, R_KM } from './coordinates.js';
+import { locationToRender, localFrame, moonToRender } from './coordinates.js';
 
 // Match design/style.md's cubic-bezier(.4, 0, .2, 1), including inversion
 // of its time (x) coordinate rather than treating the curve parameter as time.
@@ -49,9 +49,12 @@ export function makeFlight(camera, controls, lat, lon, heightM, detailed, durati
 }
 
 export function updateFlight(flight, camera, controls, now) {
-  const t = Math.min(1, (now - flight.start) / flight.duration), e = ease(t);
+  const t = Math.max(0, Math.min(1, (now - flight.start) / flight.duration)), e = ease(t);
   const distance = flight.fromPosition.length() * (1 - e) + flight.position.length() * e;
-  camera.position.copy(arcDirection(flight.fromPosition, flight.position, e)).multiplyScalar(Math.max(R_KM + 14, distance));
+  // Interpolate the actual endpoint radii. A fixed 14 km floor used to pop a
+  // close-up camera outwards at takeoff and jump on arrival at a sky viewpoint.
+  // The viewer enforces clearance against the actual local relief each frame.
+  camera.position.copy(arcDirection(flight.fromPosition, flight.position, e)).multiplyScalar(distance);
   camera.quaternion.slerpQuaternions(flight.fromQ, flight.toQ, e);
   controls.target.lerpVectors(flight.fromTarget, flight.target, e);
   if (t === 1) {

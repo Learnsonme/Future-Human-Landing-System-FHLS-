@@ -67,7 +67,7 @@ try{
       const retained=await saved(page);await rotate(page);
       assert.equal(await page.locator('canvas').count(),canvasCount);
       await enter(page,nextMode);
-      await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-120m');
+      await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-40m');
       assert.deepEqual(await saved(page),retained);assert.equal(await page.evaluate(()=>window.FHLS.state.mode),nextMode);
       if(cycle===0){
         await page.locator('#time-slider').evaluate(el=>{el.value='1000';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -92,7 +92,7 @@ try{
     const later=await page.evaluate(()=>({camera:window.FHLS.landingViewer.getDiagnostics().camera,sky:document.getElementById('sky').toDataURL()}));
     assert.ok(Math.hypot(...still.camera.map((v,i)=>v-later.camera[i]))<1e-7);assert.ok(still.sky===later.sky,'D2: separate website starfield must remain static');
     await enter(page,mode);
-    await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-120m');
+    await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-40m');
     const cut=await page.evaluate(async()=>{
       const v=window.FHLS.viewer,before=v.getDiagnostics().camera,samples=[];
       const timer=setInterval(()=>samples.push(v.getDiagnostics().camera),0);

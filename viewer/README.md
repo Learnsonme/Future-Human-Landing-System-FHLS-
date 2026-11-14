@@ -274,3 +274,35 @@ or occluded by sampled local relief are hidden. Occlusion is illustrative,
 not a scientific visibility result. They create no additional canvas.
 Disposal removes pins. The web owner retains pin state and re-adds pins after
 Home or a mode change creates a new viewer; the viewer does not store app state.
+
+### T1 polish: camera, terrain loading and rendering
+
+Fly-to retains the 1.8 s design easing and has no fixed-altitude jump when
+starting close to the surface. Site zoom ranges from 2 km to three lunar radii
+from the target; the overview limit fits the whole Moon to the narrower canvas
+dimension, with a minimum cap of four radii. A separate local relief
+check keeps the camera at least 500 m above sampled terrain.
+
+`flyTo()` resolves on camera arrival. Terrain streams independently: use
+`onStatus()` and wait for `phase === 'ready'` to observe loading completion.
+The viewer exposes `aria-busy` while nearby terrain loads. If some tiles fail,
+successful coarser tiles remain; any uncovered area uses overview/global relief.
+A complete failure fills the previous globe cutouts again, and a later fly-to
+retries failed tiles. Status text identifies the reduced terrain precision.
+
+Device pixel ratio is capped at 2. Hidden tabs stop the viewer's animation-frame
+requests and pause active flight/fade clocks. Static scenes skip GPU draws;
+camera input, date changes, markers and overlays invalidate the view. Reduced
+motion keeps the home Moon static and cuts fly-to instantly, including live
+preference changes. Disposal clears pending frames, poster timers and cached
+sampling references.
+
+Polish verification (serve the repository root on port 8765):
+
+- `node --test viewer/tests/numerics.test.mjs viewer/tests/terrain-v8.test.mjs`
+- `node viewer/tests/polish.mjs` — 375 px touch, zoom, idle/hidden rendering and tile failures.
+- `node viewer/tests/landing-polish.mjs` — early poster, stats strip and shooting-star text masking.
+- `node viewer/tests/integration.mjs` — real website, modes, picking, Home/state, console and HTTP errors.
+
+Browser scripts accept `FHLS_PLAYWRIGHT` pointing to an installed Playwright
+module; no test dependencies or external services are needed by the demo.

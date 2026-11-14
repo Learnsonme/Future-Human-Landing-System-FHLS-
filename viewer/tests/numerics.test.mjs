@@ -64,6 +64,19 @@ test('Flights reach exact targets without crossing the lunar sphere', () => {
     assert.ok(look.dot(controls.target.clone().sub(camera.position).normalize())>1-1e-8);
   }
 });
+test('A flight from a close terrain view has no artificial takeoff or arrival jump', () => {
+  const camera = new PerspectiveCamera(); camera.position.set(1739.4, 0, 0);
+  const controls = { target: new Vector3(1737.4, 0, 0) }; camera.lookAt(controls.target);
+  const f = makeFlight(camera, controls, 0, 0, 0, true, 1800, 0);
+  updateFlight(f, camera, controls, 0);
+  assert.ok(camera.position.distanceTo(f.fromPosition) < 1e-8);
+  // Also exercise the low endpoint used by Look at Sun/Earth.
+  f.position.set(1741.4, 0, 0); f.target.set(1741.4, 0, -30);
+  const end = new PerspectiveCamera(); end.position.copy(f.position); end.lookAt(f.target); f.toQ.copy(end.quaternion);
+  updateFlight(f, camera, controls, 1799); const before = camera.position.clone();
+  updateFlight(f, camera, controls, 1800);
+  assert.ok(camera.position.distanceTo(before) < .001, 'last millisecond must not jump kilometres');
+});
 test('UTC range validation and hourly selection', () => {
   assert.equal(parseTime('2027-01-01T00:29:00Z'),'2027-01-01T00:00:00.000Z');
   assert.equal(parseTime('2028-12-31T23:00:00Z'),'2028-12-31T23:00:00.000Z');

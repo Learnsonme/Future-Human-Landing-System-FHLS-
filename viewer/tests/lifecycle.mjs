@@ -41,7 +41,9 @@ try{
 
   const detail=await context.newPage();await detail.goto(base+'/viewer/tests/embed.html');await detail.evaluate(()=>window.embeddedViewer.ready);
   await detail.route('**/data/terrain/south/*_*.png',route=>route.abort('failed'));
+  await detail.route('**/data/terrain/detail/*.png',route=>route.abort('failed'));
   await detail.evaluate(()=>window.embeddedViewer.flyTo(-89.45,-137.3));
+  await detail.waitForFunction(()=>window.embeddedViewer.getStatus().phase==='ready');
   assert.equal(await detail.evaluate(()=>window.embeddedViewer.getStatus().terrain),'overview-only');
   assert.match(await detail.locator('.fhls-viewer-status').textContent(),/detail unavailable.*lower precision/);
   await detail.evaluate(()=>window.embeddedViewer.dispose());await detail.close();
@@ -49,6 +51,7 @@ try{
   const noTerrain=await context.newPage();await noTerrain.route('**/data/terrain/index.json',route=>route.abort('failed'));
   await noTerrain.goto(base+'/viewer/tests/embed.html');await noTerrain.evaluate(()=>window.embeddedViewer.ready);
   await noTerrain.evaluate(()=>window.embeddedViewer.flyTo(-90,0));
+  await noTerrain.waitForFunction(()=>window.embeddedViewer.getStatus().phase==='ready');
   assert.equal(await noTerrain.evaluate(()=>window.embeddedViewer.getStatus().terrain),'unavailable');
   assert.match(await noTerrain.locator('.fhls-viewer-status').textContent(),/Global relief.*lower precision/);
   await noTerrain.evaluate(()=>window.embeddedViewer.dispose());await noTerrain.close();

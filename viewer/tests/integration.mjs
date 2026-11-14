@@ -11,6 +11,7 @@ await context.route('**/*',route=>{
   external.push(url);return route.abort();
 });
 const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
 page.on('response',r=>{if(r.status()>=400)failed.push(r.url());});
 const waitScreen=screen=>page.waitForFunction(name=>document.body.dataset.screen===name && !document.getElementById('transition').classList.contains('is-running'),screen);
 const readyExplorer=async()=>{
@@ -66,7 +67,7 @@ try{
   const picked=await page.evaluate(()=>({site:window.FHLS.state.site,selected:window.FHLS.viewer.getDiagnostics().selected}));
   assert.ok(Math.abs(picked.site.lat-picked.selected.lat)<1e-8);
   await page.evaluate(()=>window.FHLS.setSite(-89.45,-137.3,'Shackleton rim'));
-  await page.waitForFunction(()=>window.FHLS.viewer.getDiagnostics().selected?.lat===-89.45 && !window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-120m');
+  await page.waitForFunction(()=>window.FHLS.viewer.getDiagnostics().selected?.lat===-89.45 && !window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-40m');
   assert.match(await page.locator('#r-title').textContent(),/Shackleton rim/);
   await page.locator('#time-slider').evaluate(el=>{el.value='0';el.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.equal(await page.evaluate(()=>window.FHLS.viewer.getStatus().time),'2027-01-01T00:00:00.000Z');
@@ -83,7 +84,7 @@ try{
     await home();
     assert.deepEqual(await snapshot(),beforeHome);
     await startMode(mode);
-    await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-120m');
+    await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying && window.FHLS.viewer.getStatus().terrain==='LOLA-40m');
     const current=await snapshot();assert.equal(current.mode,mode);
     assert.deepEqual(current.site,beforeHome.site);assert.deepEqual(current.pins,beforeHome.pins);assert.equal(current.hour,beforeHome.hour);
     assert.equal(await page.locator('canvas').count(),canvasCount);
@@ -114,20 +115,23 @@ try{
   // Home must cancel a real animated flight before the screen transition runs.
   await page.emulateMedia({reducedMotion:'no-preference'});
   await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying);
-  await page.evaluate(()=>{
+  const interrupted = await page.evaluate(async()=>{
     window.departingViewer=window.FHLS.viewer;
     window.pendingFlight=window.departingViewer.flyTo(10,40);
+    await Promise.resolve();
+    const active=window.departingViewer.getDiagnostics().flying;
+    document.getElementById('home-from-app').click();
+    return active;
   });
-  await page.waitForFunction(()=>window.departingViewer.getDiagnostics().flying);
-  await home();
+  assert.equal(interrupted,true,'activate the real Home handler while the flight is active');
+  await waitScreen('landing');await page.evaluate(()=>window.FHLS.landingViewer.ready);
   assert.equal((await page.evaluate(()=>window.pendingFlight)).cancelled,true);
   assert.equal(await page.evaluate(()=>window.departingViewer.getDiagnostics().flying),false);
   const stopped=await page.evaluate(()=>window.departingViewer.getDiagnostics().camera);
   await page.waitForTimeout(200);
   assert.deepEqual(await page.evaluate(()=>window.departingViewer.getDiagnostics().camera),stopped);
   const rotatingHome=await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera);
-  await page.waitForTimeout(250);
-  assert.ok((await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera)).some((v,i)=>Math.abs(v-rotatingHome[i])>1));
+  await page.waitForFunction(before=>window.FHLS.landingViewer.getDiagnostics().camera.some((v,i)=>Math.abs(v-before[i])>1),rotatingHome,{timeout:10000});
   await page.emulateMedia({reducedMotion:'reduce'});await startMode('intermediate');
   await page.waitForFunction(()=>!window.FHLS.viewer.getDiagnostics().flying);
   await mkdir('/private/tmp/fhls-viewer-tests',{recursive:true});

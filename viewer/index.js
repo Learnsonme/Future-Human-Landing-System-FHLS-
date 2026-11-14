@@ -25,6 +25,7 @@ export function createViewer(container, options = {}) {
   let sky = null, siteHorizon = null;   // real Sun and Earth in the 3D sky (explorer only)
   let lookingAt = null, skyNoteTimer = 0; // body the camera is facing (Look at …), if any
   let terrainReady = Promise.resolve(null), extrasReady = null, fade = null, firstFrame = false;
+  let needsRender = true, hiddenAt = null, posterTimer = 0, cameraClearanceKm = null;
   const presentation = options.presentation !== false;
   // P9: one shared overlay (heat map) draped over the south polar terrain by the terrain shaders.
   const overlay = { uOverlay: { value: null }, uOverlayRect: { value: new T.Vector4(0, 0, 1, 1) },
@@ -74,6 +75,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   const event = (node, type, fn, opts) => { node.addEventListener(type, fn, opts); listeners.push(() => node.removeEventListener(type, fn, opts)); };
   function notify(patch) {
     if (disposed) return;
+    needsRender = true;
     status = { ...status, ...patch }; message.textContent = status.message;
     status.synthetic = core ? !!core.synthetic : true;
     if(status.lighting==='fixed-development' && !status.message.startsWith('Development lighting — fixed Sun'))message.textContent = `Development lighting — fixed Sun · ${status.message}`;
@@ -88,8 +90,11 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   }
   function cancelFlight() {
     generation++; pendingPick = null;
+    if (terrain) terrain.generation++;
+    root.setAttribute('aria-busy', 'false');
     if (fade) finishFade();
     if (flight) { flight.resolve({ cancelled: true }); flight = null; if (controls) controls.enabled = true; }
+    if (status.phase === 'loading-terrain') notify({ phase: 'ready', message: 'Terrain loading cancelled · using current relief' });
   }
   // M1: the globe → terrain handover. While fading, the detail sits over a whole globe/overview
   // (polygon offset wins the depth test); once opaque, the coarse surface under it is cut away.
@@ -104,6 +109,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   function capHoles(lat) { return (lat <= -84 && !!terrain?.overview) || (lat >= 84 && !!terrain?.north?.overview); }
   function finishFade() {
     fade = null; if (!terrain || disposed) return;
+    needsRender = true;
     setFade(1);
     terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { omit: true, finestMaterial });
     globe?.refreshHeights((lat, lon) => terrain.heightAt(lat, lon), terrain.exaggeration);
@@ -116,7 +122,10 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     const damping = controls.enableDamping;
     controls.enableDamping = false; controls.update(); controls.enableDamping = damping;
   }
-  function heightAt(lat, lon) { return (terrain?.heightAt(lat, lon) ?? globe?.heightAt(lat, lon) ?? 0) * (terrain?.exaggeration || 1); }
+  function heightAt(lat, lon) {
+    const detail = terrain?.heightAt(lat, lon);
+    return detail != null ? detail * terrain.exaggeration : globe?.heightAt(lat, lon) ?? 0;
+  }
   function updateLight() {
     if (!light) return;
     const centre = selection ? new T.Vector3(...locationToRender(selection.lat, selection.lon, heightAt(selection.lat, selection.lon))) : new T.Vector3();
@@ -255,37 +264,68 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     });
     return done;
   }
+  function overviewMaxDistance() {
+    // A portrait canvas needs more distance to fit the whole disc. Keep the
+    // Moon large in the narrower dimension instead of imposing a desktop cap.
+    const halfAngle = Math.atan(Math.tan(camera.fov * Math.PI / 360) * Math.min(1, camera.aspect));
+    return Math.min(camera.far - 2 * R_KM, Math.max(4 * R_KM, 1.25 * R_KM / Math.sin(halfAngle)));
+  }
   function resize() {
     if (!renderer || disposed) return;
     const { width, height } = root.getBoundingClientRect(); if (!width || !height) return;
     renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
+    if (controls && !selection) controls.maxDistance = overviewMaxDistance();
+    needsRender = true;
   }
   const observer = new ResizeObserver(resize); observer.observe(root);
   function safety() {
     const location = renderToLocation(camera.position.toArray()), floor = R_KM + heightAt(location.lat, location.lon) / 1000 + 0.5;
     if (camera.position.length() < floor) camera.position.setLength(floor);
+    cameraClearanceKm = camera.position.length() - floor + 0.5;
   }
   function finishFlight() {
     const complete = flight; flight = null;
-    controls.enabled = true; controls.minDistance = 0.8; controls.maxDistance = 11000;
+    controls.enabled = true; controls.minDistance = 2; controls.maxDistance = 3 * R_KM;
     controls.update(); complete.resolve({ cancelled: false });
   }
   function animate(now) {
-    if (disposed) return; raf = requestAnimationFrame(animate);
+    raf = 0;
+    if (disposed || failed || document.hidden) return;
+    scheduleFrame();
     const dt = Math.min(0.05, (now - (lastFrame || now)) / 1000); lastFrame = now;
     if (document.hidden || root.clientWidth === 0 || root.clientHeight === 0 || status.phase === 'context-lost') return;
-    if (fade) { const f = (now - fade.start) / FADE_MS; if (f >= 1) finishFade(); else setFade(Math.max(0, f)); }
+    if (fade) { needsRender = true; const f = (now - fade.start) / FADE_MS; if (f >= 1) finishFade(); else setFade(Math.max(0, f)); }
     if (flight) {
+      needsRender = true;
       if (updateFlight(flight, camera, controls, now)) {
         finishFlight();
       }
     } else controls.update(dt);
+    // OrbitControls emits change while dragging, zooming, damping or rotating.
+    // An idle scene (including a reduced-motion Moon) needs no GPU redraws.
+    if (!needsRender && firstFrame) return;
+    needsRender = false;
     safety(); updateSky(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
     if (!firstFrame) {
       firstFrame = true; root.classList.add('is-live');
-      if (poster) setTimeout(() => { poster?.remove(); poster = null; }, reduced.matches ? 0 : 400);
+      if (poster) posterTimer = setTimeout(() => { poster?.remove(); poster = null; }, reduced.matches ? 0 : 300);
     }
   }
+  function scheduleFrame() {
+    if (globe && !disposed && !failed && !document.hidden && !raf) raf = requestAnimationFrame(animate);
+  }
+  event(document, 'visibilitychange', () => {
+    if (document.hidden) {
+      hiddenAt = performance.now(); cancelAnimationFrame(raf); raf = 0;
+    } else {
+      if (hiddenAt != null) {
+        const pause = performance.now() - hiddenAt;
+        if (flight) flight.start += pause;
+        if (fade) fade.start += pause;
+      }
+      hiddenAt = null; lastFrame = 0; needsRender = true; scheduleFrame();
+    }
+  });
   function releaseGraphics() {
     controls?.dispose(); terrain?.dispose();
     const geometries = new Set(), materials = new Set(), textures = new Set();
@@ -299,7 +339,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss();
   }
   function dispose() {
-    if (disposed) return; cancelFlight(); clearTimeout(skyNoteTimer); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
+    if (disposed) return; cancelFlight(); clearTimeout(skyNoteTimer); clearTimeout(posterTimer); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
     for (const remove of listeners) remove(); releaseGraphics();
     markers.dispose(); root.remove(); picks.clear(); statuses.clear();
   }
@@ -320,6 +360,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + flight.duration); finishFlight(); }
     });
     const fadeFrom = performance.now() + FADE_FROM * 1800;
+    root.setAttribute('aria-busy', 'true');
     notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
     (async () => {
       await terrainReady;
@@ -339,13 +380,20 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
           notify({ terrain: terrain.describe(location.lat, location.lon) });
         } catch (error) {
           if (disposed || token !== generation) return;
-          terrain.records=[];terrain.rebuild(terrainGroup,terrainMaterial,detailMaterial,{finestMaterial});fade=null;
+          terrain.records=[];terrain.kind=null;fade=null;setFade(1);
+          terrain.rebuild(terrainGroup,terrainMaterial,detailMaterial,{finestMaterial});
+          // Restore the whole globe before abandoning a patch: its previous
+          // site's cutout must never survive a failed tile request.
+          globe.refreshHeights((lat, lon) => terrain.heightAt(lat, lon), terrain.exaggeration);
+          globe.setHoles(lat => capHoles(lat));
           notify({ terrain: 'overview-only', message: `Detail unavailable: ${error.message}. Using overview.` });
         }
       }
       updateLight();
+      root.setAttribute('aria-busy', 'false');
       const kind = terrain?.records.length ? terrain.kind : null;
       notify({ phase: 'ready', message: status.terrain === 'overview-only' ? 'LOLA overview · detail unavailable · lower precision terrain'
+        : terrain?.loadFailures?.length ? 'Some terrain tiles unavailable · coarser relief fills gaps · lower precision terrain'
         : status.terrain === 'LOLA-40m' ? 'LOLA 40 m terrain · Artemis site · rendered shadows are illustrative'
         : kind === 'south' ? 'LOLA south polar terrain · rendered shadows are illustrative'
         : kind === 'north' ? 'LOLA north polar terrain · rendered shadows are illustrative'
@@ -360,7 +408,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     if (!camera) return;
     clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
-    controls.minDistance = R_KM + 18; controls.maxDistance = 11000; controls.update(); updateLight();
+    controls.minDistance = R_KM + 18; controls.maxDistance = overviewMaxDistance(); controls.update(); updateLight();
     notify({ phase: 'ready', message: 'Drag to rotate · scroll or pinch to zoom · click a location' });
   }
   const ready = (async () => {
@@ -375,7 +423,8 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       renderer.domElement.tabIndex = 0; root.prepend(renderer.domElement);
       scene = new T.Scene(); camera = new T.PerspectiveCamera(42, 1, 0.1, 25000); camera.position.set(4600, 1200, 2900);
       controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.enablePan = false;
-      controls.minDistance = R_KM + 18; controls.maxDistance = 11000; controls.autoRotate = !started && !reduced.matches; controls.autoRotateSpeed = 1;
+      controls.minDistance = R_KM + 18; controls.maxDistance = 4 * R_KM; controls.autoRotate = !started && !reduced.matches; controls.autoRotateSpeed = 1;
+      controls.addEventListener('change', () => { needsRender = true; });
       controls.addEventListener('start', () => { cancelFlight(); start(); lookingAt = null; });
       event(reduced, 'change', () => {
         controls.autoRotate = !started && !reduced.matches;
@@ -390,6 +439,8 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
           updateFlight(flight, camera, controls, flight.start + flight.duration);
           finishFlight();
         }
+        if (reduced.matches && fade) finishFade();
+        needsRender = true;
       });
       light = new T.DirectionalLight('#ECE9E2', 3.2); light.shadow.mapSize.set(2048, 2048);
       light.shadow.bias = -0.00001; light.shadow.normalBias = 0.035; scene.add(light, light.target);
@@ -463,10 +514,12 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       notify({ phase: 'ready', message: core
         ? 'Drag to rotate · scroll or pinch to zoom · click a location'
         : 'Development lighting — fixed Sun; ephemeris unavailable' });
-      raf = requestAnimationFrame(animate);
+      scheduleFrame();
     } catch (error) {
       if (!disposed) {
-        failed=true;abort.abort();observer.disconnect();releaseGraphics();
+        failed=true;abort.abort();observer.disconnect();cancelAnimationFrame(raf);raf=0;
+        for (const remove of listeners) remove();
+        releaseGraphics();
         startButton.hidden=true;
         notify({ phase: 'error', message: `Viewer unavailable: ${error.message}` }); throw error;
       }
@@ -476,7 +529,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   ready.catch(() => {});
   event(startButton, 'click', start);
   return { ready, start, flyTo, setTime, overview, dispose,
-    addMarker(id, lat, lon, label) { checkAlive(); markers.add(id, lat, lon, label); },
+    addMarker(id, lat, lon, label) { checkAlive(); markers.add(id, lat, lon, label); needsRender = true; },
     /**
      * P9 · drape an image or canvas over the south polar terrain (e.g. the heat map).
      * Image row 0 = max y; it covers x0_km … x0_km + width, y0_km … y0_km + height on the south polar
@@ -492,6 +545,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       texture.minFilter = T.LinearFilter; texture.magFilter = T.LinearFilter; texture.generateMipmaps = false;
       overlay.uOverlay.value = texture; overlay.uOverlayRect.value.set(x0_km, y0_km, w, h);
       overlay.uOverlayOpacity.value = Math.max(0, Math.min(1, opacity)); overlay.uOverlayOn.value = 1;
+      needsRender = true;
       if (old && old !== texture) old.dispose();
     },
     /** Swing the camera to face 'sun' or 'earth' over the selected site's skyline. */
@@ -499,9 +553,10 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     clearOverlay() {
       checkAlive(); overlay.uOverlayOn.value = 0;
       overlay.uOverlay.value?.dispose(); overlay.uOverlay.value = null;
+      needsRender = true;
     },
     removeMarker(id) { checkAlive(); return markers.remove(id); },
-    setActiveMarker(id) { checkAlive(); markers.setActive(id); },
+    setActiveMarker(id) { checkAlive(); markers.setActive(id); needsRender = true; },
     onPick(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onPick needs a function.'); picks.add(callback); return () => picks.delete(callback); },
     onStatus(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onStatus needs a function.'); statuses.add(callback); callback({ ...status }); return () => statuses.delete(callback); },
     getStatus() { return { ...status }; },
@@ -511,6 +566,10 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       shadows: light ? { enabled: light.castShadow, mapSize: light.shadow.mapSize.toArray(),
         extentKm: light.shadow.camera.right, nearKm: light.shadow.camera.near, farKm: light.shadow.camera.far } : null,
       flying: !!flight, flightDurationMs: flight?.duration || 0, renderFrames: renderer?.info.render.frame || 0,
+      fading: !!fade, pendingFrame: !!raf, dpr: renderer?.getPixelRatio(), cameraClearanceKm,
+      zoomLimits: controls ? { minKm: controls.minDistance, maxKm: controls.maxDistance } : null,
+      terrainTiles: terrain?.records.map(t => t.meta.id) || [], terrainLoadFailures: [...(terrain?.loadFailures || [])],
+      globeTriangles: (globe?.mesh.geometry.index.count || 0) / 3,
       disposed, markers: markers.diagnostics(), terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
     setVerticalExaggeration(value) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
