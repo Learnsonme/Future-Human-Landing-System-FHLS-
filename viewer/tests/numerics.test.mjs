@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { deflateSync } from 'node:zlib';
-import { Vector3 } from '../vendor/three.module.js';
+import { Vector3, PerspectiveCamera } from '../vendor/three.module.js';
 import { normalizeLongitude, locationToRender, renderToLocation, moonToRender, renderToMoon,
   locationToPolar, polarToLocation, locationToUV, parseTime, sampleGlobal } from '../coordinates.js';
 import { decodePNG16 } from '../png16.js';
 import { decodeMoonTIFF } from '../globe.js';
-import { arcDirection } from '../navigation.js';
+import { arcDirection, makeFlight, updateFlight } from '../navigation.js';
 const near = (a, b, tolerance = 1e-8) => assert.ok(Math.abs(a - b) < tolerance, `${a} ≠ ${b}`);
 const data = new URL('../../data/', import.meta.url);
 const buffer = async url => { const b = await readFile(url); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
@@ -33,6 +33,22 @@ test('Fly-to arcs stay finite, unit length and stable for antipodal targets', ()
   for (const b of [new Vector3(-1,0,0),new Vector3(1,0,0),new Vector3(0,-1,0),new Vector3(-1,1e-7,0)]) {
     for(let i=0;i<=100;i++){const v=arcDirection(new Vector3(1,0,0),b,i/100);near(v.length(),1);assert.ok(v.toArray().every(Number.isFinite));}
     assert.ok(arcDirection(new Vector3(1,0,0),b,1).distanceTo(b.normalize())<1e-6);
+  }
+});
+test('Flights reach exact targets without crossing the lunar sphere', () => {
+  const camera = new PerspectiveCamera(); camera.position.set(4600,1200,2900);
+  const controls = { target: new Vector3() };
+  for (const [lat,lon] of [[-89.45,-137.3],[-90,0],[90,0],[0,179.9],[0,-179.9],[-84,0]]) {
+    const f = makeFlight(camera,controls,lat,lon,7000,lat<=-84,1100,0);
+    for (let ms=0;ms<1100;ms+=10) {
+      assert.equal(updateFlight(f,camera,controls,ms),false);
+      assert.ok(camera.position.length() >= 1737.4+14-1e-7);
+      assert.ok(camera.quaternion.toArray().every(Number.isFinite));
+    }
+    assert.equal(updateFlight(f,camera,controls,1100),true);
+    assert.ok(controls.target.distanceTo(new Vector3(...locationToRender(lat,lon,7000)))<1e-7);
+    const look = camera.getWorldDirection(new Vector3());
+    assert.ok(look.dot(controls.target.clone().sub(camera.position).normalize())>1-1e-8);
   }
 });
 test('UTC range validation and hourly selection', () => {
