@@ -8,6 +8,7 @@ import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
 import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 (T3)
 import { createTimePlayer } from "./components/time-player.js";            // S9 (T3)
+import { createPanoramaSlider } from "./components/panorama-slider.js";    // S11 (T3)
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -36,7 +37,9 @@ let coreError = null;
 let sites = [];
 let viewer = null;
 let heatControl = null;   // S10 (T3): south-pole heat-map "Map" control over the 3D view
-let timePlayer = null;    // S9 (T3): Play / Pause in the panorama
+let timePlayer = null;    // S9 (T3): Play / Pause on the timeline
+let panoSlider = null;    // S11 (T3): the panorama's own time slider
+let panoHour = null;      // S11 (T3): the panorama's own hour (independent of state.hour)
 let landingViewer = null;
 let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.json
 let sky = null;
@@ -336,6 +339,7 @@ async function selectSite(site, { fly = true } = {}) {
   if (!core) return;
   if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
+  panoHour = state.hour;   // S11 (T3): the panorama starts at the timeline's hour for a new site
 
   for (const b of document.querySelectorAll(".site")) {
     b.classList.toggle("is-on", b.firstChild?.textContent === state.site.name);
@@ -851,8 +855,8 @@ window.addEventListener("resize", () => {
 // right around the sky once, which is the point of the picture.
 const MONTH_HOURS = 709;
 
-function trackPoints(r, azArr, elArr, span) {
-  const i = state.hour - r.start_index;
+function trackPoints(r, azArr, elArr, span, hour = state.hour) {
+  const i = hour - r.start_index;
   const from = Math.max(0, i - span);
   const to = Math.min(elArr.length, i + span);
   const points = [];
@@ -864,8 +868,8 @@ function trackPoints(r, azArr, elArr, span) {
 // 2-day trail, dim + dashed when behind terrain, and Play moves time (time-player.js).
 const TRAIL_HOURS = 48;
 
-function trailPoints(r, azArr, elArr) {
-  const i = state.hour - r.start_index, points = [];
+function trailPoints(r, azArr, elArr, hour = state.hour) {
+  const i = hour - r.start_index, points = [];
   for (let k = Math.max(0, i - TRAIL_HOURS); k <= i && k < elArr.length; k++) points.push({ az: azArr[k], el: elArr[k] });
   return points;
 }
@@ -879,7 +883,15 @@ function renderPanorama() {
   }
   section.hidden = false;
 
-  const i = state.hour - r.start_index;
+  // S11 (T3): the panorama runs on its own hour, set by its own slider
+  if (panoHour == null) panoHour = state.hour;
+  panoSlider ||= createPanoramaSlider($("panorama-canvas").parentElement.insertBefore(document.createElement("div"), $("panorama-canvas")), {
+    lastHour: LAST_HOUR, timeOf: (h) => hourToDate(h).getTime(), getTimelineHour: () => state.hour,
+    onChange: (h) => { panoHour = h; renderPanorama(); },
+  });
+  panoSlider.set(panoHour);
+  const hour = panoHour;
+  const i = hour - r.start_index;
   const inRange = i >= 0 && i < r.sun_el.length;
   const beginner = state.mode === "beginner";
   // every mode labels the two bodies; Beginner adds plain visible / blocked
@@ -889,11 +901,11 @@ function renderPanorama() {
     horizon: r.horizon,
     tracks: [
       ...(beginner ? [] : [
-        { points: trackPoints(r, r.sun_az, r.sun_el, MONTH_HOURS), tone: "muted" },
-        { points: trackPoints(r, r.earth_az, r.earth_el, MONTH_HOURS), tone: "muted" },
+        { points: trackPoints(r, r.sun_az, r.sun_el, MONTH_HOURS, hour), tone: "muted" },
+        { points: trackPoints(r, r.earth_az, r.earth_el, MONTH_HOURS, hour), tone: "muted" },
       ]),
-      { points: trailPoints(r, r.sun_az, r.sun_el), tone: "sun", fade: true },
-      { points: trailPoints(r, r.earth_az, r.earth_el), tone: "earth", fade: true },
+      { points: trailPoints(r, r.sun_az, r.sun_el, hour), tone: "sun", fade: true },
+      { points: trailPoints(r, r.earth_az, r.earth_el, hour), tone: "earth", fade: true },
     ],
     markers: inRange ? [
       { az: r.sun_az[i], el: r.sun_el[i], tone: "sun", blocked: !r.power[i], label: label("Sun", r.power[i]) },
@@ -904,7 +916,7 @@ function renderPanorama() {
 
   const p = precisionOf(r);
   $("panorama-sub").textContent = !ok ? "" : beginner
-    ? "The skyline all around this spot, with the Sun and Earth at the selected hour. Press Play on the timeline to watch them move."
+    ? "The skyline all around this spot, with the Sun and Earth at the panorama's own time. Drag its slider to move them."
     : `${p.short} · skyline from ${r.horizon.values.length} directions · fading trail = last 2 days · ` +
       `grey = ${Math.round(MONTH_HOURS / 24)} days either side · dimmed + dashed = behind terrain`;
   $("panorama-sub").classList.toggle("is-low", p.low);

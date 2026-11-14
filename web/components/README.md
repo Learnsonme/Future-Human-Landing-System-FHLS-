@@ -89,3 +89,10 @@ These options are optional and backward compatible:
 ## heatmap.js · heatmap-control.js · heatmap.css (S10, T3)
 - **heatmap.js** loads `data/heatmap/` and builds the coloured overlay canvas. Its `valueAt(lat, lon, layer, month)` returns the exact stored value.
 - **heatmap-control.js** provides `mountHeatmapControl(stage, { mode })`, with `.attach(viewer)` and `.setMode(mode)`. It gives the per-mode "Map" control over the 3D view and uses `viewer.setOverlay` (P9).
+
+## panorama-slider.js (S11, T3)
+`createPanoramaSlider(mountEl, { lastHour, timeOf, getTimelineHour, onChange })` gives the horizon panorama its **own** time slider, independent of the main timeline.
+- **What it moves:** only the panorama's Sun and Earth. The main hour, the 3D view and the results panel stay put.
+- **Starting point:** when a site is chosen, it starts at the timeline's hour.
+- **"Match timeline"** copies the timeline's hour into it, and is only shown when the two differ.
+- **Keyboard:** the arrow keys step it one hour at a time.
