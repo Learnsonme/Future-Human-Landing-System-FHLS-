@@ -59,7 +59,7 @@ def north_and_east_on_map(x, y):
     return north, east
 
 
-def horizon_at(x, y, n_azimuths=180):
+def horizon_at(x, y, n_azimuths=180, observer_height_m=OBSERVER_HEIGHT_M):
     """Horizon elevation in degrees for n_azimuths directions (0°, 2°, 4°, …) seen from (x, y) km."""
     azimuths = np.radians(np.arange(n_azimuths) * 360.0 / n_azimuths)
     north, east = north_and_east_on_map(x, y)
@@ -84,7 +84,7 @@ def horizon_at(x, y, n_azimuths=180):
     sin_central = np.sqrt(1 - cos_central ** 2)
 
     ground_height_m = float(D.sample_bilinear(*FINE_DEM, x, y))
-    r_observer = MOON_RADIUS_KM + (ground_height_m + OBSERVER_HEIGHT_M) / 1000
+    r_observer = MOON_RADIUS_KM + (ground_height_m + observer_height_m) / 1000
     r_terrain = MOON_RADIUS_KM + terrain_height_m / 1000
 
     # tan(elevation angle) of each sample; the biggest per direction is the horizon
