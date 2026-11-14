@@ -49,6 +49,8 @@ SPICE, LOLA     horizons, ephemeris,          JSON, binary,           combines t
 ### How we checked it
 We did not take our own numbers on trust. We compared FHLS with NASA's published LOLA south polar illumination map at **400 random points**: the mean difference is **0.8 percentage points**, the correlation **0.99**, and we find the same permanently shadowed ground (37 of 37 points). Details in [engine/ACCURACY.md](engine/ACCURACY.md).
 
+![Scatter plot: FHLS sunlight percentage against NASA's LOLA illumination map at 400 random south polar points; the points sit tightly on the line of perfect agreement (correlation 0.99).](docs/img/validation.png)
+
 ### What it can't tell you
 - Seeing the Sun or Earth does **not** guarantee power or a radio link, and it is **not** proof that a site is safe to land on. Slope, boulders, temperature and dust matter just as much.
 - Away from the poles the terrain is lower precision (1° to 0.25° horizon grids), and the app says so wherever it applies.
