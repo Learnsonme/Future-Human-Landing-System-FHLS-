@@ -24,6 +24,8 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows
 - [x] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md`
 
+- [~] V7 · T1 · Restore the real rotating Moon on the home screen; verify Start/mode flow (claimed by T1, 09:58)
+
 ### Web (T2 + Codex)
 - [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
 - [x] W2 · T2 · Embed viewer; on click call core and show results panel
