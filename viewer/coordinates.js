@@ -26,15 +26,24 @@ export function locationToUV(lat, lon) {
   return { u: (normalizeLongitude(lon) + 180) / 360, v: (lat + 90) / 180 };
 }
 
-export function polarToLocation(x, y) {
-  return { lat: 2 * Math.atan(Math.hypot(x, y) / (2 * R_KM)) / DEG - 90,
-    lon: Math.hypot(x, y) < 1e-9 ? 0 : Math.atan2(x, y) / DEG };
+// Polar stereographic, as in DATA_CONTRACT and data/terrain. pole 'south' (default):
+// x = ρ·sin(lon), y = ρ·cos(lon); pole 'north': x = ρ·sin(lon), y = −ρ·cos(lon).
+export function polarToLocation(x, y, pole = 'south') {
+  const colat = 2 * Math.atan(Math.hypot(x, y) / (2 * R_KM)) / DEG, flat = Math.hypot(x, y) < 1e-9;
+  if (pole === 'north') return { lat: 90 - colat, lon: flat ? 0 : Math.atan2(x, -y) / DEG };
+  return { lat: colat - 90, lon: flat ? 0 : Math.atan2(x, y) / DEG };
 }
 
-export function locationToPolar(lat, lon) {
+export function locationToPolar(lat, lon, pole = 'south') {
+  if (pole === 'north') {
+    const rho = 2 * R_KM * Math.tan((90 - lat) * DEG / 2);
+    return { x: rho * Math.sin(lon * DEG), y: -rho * Math.cos(lon * DEG) };
+  }
   const rho = 2 * R_KM * Math.tan((90 + lat) * DEG / 2);
   return { x: rho * Math.sin(lon * DEG), y: rho * Math.cos(lon * DEG) };
 }
+
+export const poleOf = meta => meta.projection === 'polar_stereographic_north' ? 'north' : 'south';
 
 export function localFrame(lat, lon) {
   if (Math.abs(lat) === 90) lon = 0;

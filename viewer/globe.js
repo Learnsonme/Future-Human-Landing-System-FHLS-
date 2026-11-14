@@ -36,8 +36,10 @@ export function decodeMoonTIFF(buffer) {
 }
 
 export function createGlobe(texture, relief, terrain) {
-  // One-degree latitude rings include the exact −84° terrain boundary.
-  const geometry = new T.SphereGeometry(R_KM, 384, 180);
+  // Exactly 1° in latitude and longitude: vertices sit on whole degrees, so the ±84° cap
+  // boundaries and the 8° whole-Moon terrain tiles (lon −180 + 8k, lat −88 + 8k) line up with
+  // globe cells and the hidden region matches the detailed patch exactly.
+  const geometry = new T.SphereGeometry(R_KM, 360, 180);
   const positions = geometry.attributes.position;
   for (let i = 0; i < positions.count; i++) {
     const v = new T.Vector3().fromBufferAttribute(positions, i), { lat, lon } = renderToLocation(v.toArray());
@@ -48,18 +50,40 @@ export function createGlobe(texture, relief, terrain) {
   const material = new T.MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 });
   const mesh = new T.Mesh(geometry, material); mesh.receiveShadow = true;
   const fullIndex = Array.from(geometry.index.array);
+  // Triangle centres (lat/lon), computed once; hiding is then a cheap per-triangle test.
+  const centres = [];
+  for (let i = 0; i < fullIndex.length; i += 3) {
+    const centre = new T.Vector3().fromBufferAttribute(positions, fullIndex[i])
+      .add(new T.Vector3().fromBufferAttribute(positions, fullIndex[i + 1])).add(new T.Vector3().fromBufferAttribute(positions, fullIndex[i + 2]));
+    centres.push(renderToLocation(centre.toArray()));
+  }
+  /** Hide the coarse globe wherever `hidden(lat, lon)` is true (detailed terrain is drawn there). */
+  function setHoles(hidden) {
+    const index = [];
+    for (let i = 0, k = 0; i < fullIndex.length; i += 3, k++) {
+      const { lat, lon } = centres[k];
+      if (!hidden || !hidden(lat, lon)) index.push(fullIndex[i], fullIndex[i + 1], fullIndex[i + 2]);
+    }
+    geometry.setIndex(index);
+  }
+  const vertexLL = [];
+  for (let i = 0; i < positions.count; i++) vertexLL.push(renderToLocation(new T.Vector3().fromBufferAttribute(positions, i).toArray()));
+  /** Re-sample vertex heights: detailed terrain where `detailHeight` knows it, else the global relief.
+   *  Globe vertices sit on whole degrees, which are exact grid points of the detail tiles, so the
+   *  globe meets the detailed patch without a step. */
+  function refreshHeights(detailHeight, exaggeration = 1) {
+    const v = new T.Vector3();
+    for (let i = 0; i < positions.count; i++) {
+      const { lat, lon } = vertexLL[i];
+      const d = detailHeight?.(lat, lon);
+      const h = d != null ? d * exaggeration : sampleGlobal(relief.values, relief.width, relief.height, lat, lon);
+      v.fromBufferAttribute(positions, i).setLength(R_KM + h / 1000); positions.setXYZ(i, v.x, v.y, v.z);
+    }
+    positions.needsUpdate = true; geometry.computeVertexNormals(); geometry.computeBoundingSphere();
+  }
   return { mesh, heightAt: (lat, lon) => sampleGlobal(relief.values, relief.width, relief.height, lat, lon),
-    setPolarDetail(enabled) {
-      const index = [];
-      for (let i = 0; i < fullIndex.length; i += 3) {
-        const a = fullIndex[i], b = fullIndex[i + 1], c = fullIndex[i + 2];
-        const centre = new T.Vector3().fromBufferAttribute(positions,a)
-          .add(new T.Vector3().fromBufferAttribute(positions,b)).add(new T.Vector3().fromBufferAttribute(positions,c));
-        const lat = renderToLocation(centre.toArray()).lat;
-        if (!enabled || lat > -84) index.push(a, b, c);
-      }
-      geometry.setIndex(index);
-    } };
+    setHoles, refreshHeights,
+    setPolarDetail(enabled) { setHoles(enabled ? lat => lat <= -84 : null); } };
 }
 
 export function createStars() {

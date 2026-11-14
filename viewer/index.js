@@ -21,7 +21,17 @@ export function createViewer(container, options = {}) {
   const message = document.createElement('div'); message.className = 'fhls-viewer-status'; message.setAttribute('role', 'status');
   const startButton = document.createElement('button'); startButton.className = 'fhls-viewer-start'; startButton.textContent = 'Start exploration';
   startButton.disabled = true; root.append(css, message, startButton); container.append(root);
-  let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, stars, core;
+  let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, detailMaterial, finestMaterial, stars, core;
+  let terrainReady = Promise.resolve(null), extrasReady = null, fade = null, firstFrame = false;
+  const presentation = options.presentation !== false;
+  // M3: show a matching still of the Moon at once; the live globe crossfades in after its first frame.
+  let poster = null;
+  if (presentation) {
+    poster = document.createElement('img'); poster.className = 'fhls-viewer-poster'; poster.alt = '';
+    poster.decoding = 'async'; poster.setAttribute('fetchpriority', 'high'); poster.src = asset('moon-poster.webp').href;
+    poster.addEventListener('error', () => poster?.remove(), { once: true });
+    root.classList.add('fhls-viewer--transparent'); root.append(poster);
+  }
   let disposed = false, failed = false, started = options.presentation === false, flight = null, raf = 0, lastFrame = 0;
   let selection = null, generation = 0, pendingPick;
   let status = { phase: 'loading', message: 'Loading lunar imagery and ephemeris…', time: utc, lighting: 'loading', terrain: 'loading', synthetic: true, exaggeration: 1 };
@@ -47,7 +57,27 @@ export function createViewer(container, options = {}) {
   }
   function cancelFlight() {
     generation++; pendingPick = null;
+    if (fade) finishFade();
     if (flight) { flight.resolve({ cancelled: true }); flight = null; if (controls) controls.enabled = true; }
+  }
+  // M1: the globe → terrain handover. While fading, the detail sits over a whole globe/overview
+  // (polygon offset wins the depth test); once opaque, the coarse surface under it is cut away.
+  const FADE_FROM = 0.35;     // fade starts at 35 % of the 1.8 s flight and lasts FADE_MS (M11: 400–600 ms)
+  const FADE_MS = 540;
+  function setFade(opacity) {
+    for (const material of [detailMaterial, finestMaterial]) {
+      material.opacity = opacity; const transparent = opacity < 1;
+      if (material.transparent !== transparent) { material.transparent = transparent; material.needsUpdate = true; }
+    }
+  }
+  function capHoles(lat) { return (lat <= -84 && !!terrain?.overview) || (lat >= 84 && !!terrain?.north?.overview); }
+  function finishFade() {
+    fade = null; if (!terrain || disposed) return;
+    setFade(1);
+    terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { omit: true, finestMaterial });
+    globe?.refreshHeights((lat, lon) => terrain.heightAt(lat, lon), terrain.exaggeration);
+    globe?.setHoles((lat, lon) => capHoles(lat) || terrain.globalCovers(lat, lon));
+    if (renderer) renderer.shadowMap.needsUpdate = true;
   }
   function clearControlInertia() {
     // OrbitControls keeps private damping deltas after a drag. Flush them before
@@ -69,7 +99,7 @@ export function createViewer(container, options = {}) {
       direction = tangent.normalize().multiplyScalar(Math.cos(Math.PI / 180)).addScaledVector(up, Math.sin(Math.PI / 180));
     }
     light.target.position.copy(centre); light.position.copy(centre).addScaledVector(direction, 1000);
-    const local = selection?.lat <= -84, extent = local ? 160 : 2100;
+    const local = !!selection && !!terrain?.records.length, extent = !local ? 2100 : terrain.kind === 'global' ? 320 : 160;
     Object.assign(light.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent, near: 0.1, far: local ? 2400 : 6000 });
     light.shadow.camera.updateProjectionMatrix(); light.castShadow = !!local; light.shadow.needsUpdate = true;
     renderer.shadowMap.needsUpdate = true;
@@ -95,17 +125,22 @@ export function createViewer(container, options = {}) {
     if (disposed) return; raf = requestAnimationFrame(animate);
     const dt = Math.min(0.05, (now - (lastFrame || now)) / 1000); lastFrame = now;
     if (document.hidden || root.clientWidth === 0 || root.clientHeight === 0 || status.phase === 'context-lost') return;
+    if (fade) { const f = (now - fade.start) / FADE_MS; if (f >= 1) finishFade(); else setFade(Math.max(0, f)); }
     if (flight) {
       if (updateFlight(flight, camera, controls, now)) {
         finishFlight();
       }
     } else controls.update(dt);
     safety(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
+    if (!firstFrame) {
+      firstFrame = true; root.classList.add('is-live');
+      if (poster) setTimeout(() => { poster?.remove(); poster = null; }, reduced.matches ? 0 : 400);
+    }
   }
   function releaseGraphics() {
     controls?.dispose(); terrain?.dispose();
     const geometries = new Set(), materials = new Set(), textures = new Set();
-    if(terrainMaterial)materials.add(terrainMaterial);
+    for (const m of [terrainMaterial, detailMaterial, finestMaterial]) if (m) materials.add(m);
     scene?.traverse(obj => { if (obj.geometry) geometries.add(obj.geometry);
       for (const mat of Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : []) materials.add(mat); });
     for (const mat of materials) for (const value of Object.values(mat)) if (value?.isTexture) textures.add(value);
@@ -124,32 +159,49 @@ export function createViewer(container, options = {}) {
     try{await ready;}catch(error){if(disposed)return {cancelled:true};throw error;}
     if (disposed || token !== generation) return { cancelled: true };
     clearControlInertia(); selection = location;
-    if (terrain) {
-      notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
-      try {
-        await terrain.select(location.lat, location.lon);
-        if (disposed || token !== generation) return { cancelled: true };
-        terrain.rebuild(terrainGroup, terrainMaterial);
-        notify({ terrain: location.lat <= -84 ? 'LOLA-120m' : 'global-lower-precision' });
-      } catch (error) {
-        if (disposed || token !== generation) return { cancelled: true };
-        terrain.records=[];terrain.rebuild(terrainGroup,terrainMaterial);
-        notify({ terrain: 'overview-only', message: `Detail unavailable: ${error.message}. Using overview.` });
-      }
-    }
-    updateLight(); controls.autoRotate = false; controls.enabled = false;
-    notify({ phase: 'ready', message: location.lat <= -84 && terrain
-      ? status.terrain==='overview-only' ? 'LOLA overview · detail unavailable · lower precision terrain'
-        : 'LOLA south polar terrain · rendered shadows are illustrative'
-      : 'Global relief · lower precision terrain' });
-    return new Promise(resolve => {
+    controls.autoRotate = false; controls.enabled = false;
+    // M1: the flight starts immediately; nearby LOLA tiles load meanwhile and fade in (FADE_MS)
+    // from 35 % of the flight, or as soon as they arrive if that is later.
+    const near = Math.abs(location.lat) >= 84 ? true : 'mid';
+    const arrival = new Promise(resolve => {
       flight = { ...makeFlight(camera, controls, location.lat, location.lon, heightAt(location.lat, location.lon),
-        location.lat <= -84 && !!terrain, 1200, performance.now()), resolve };
-      if (reduced.matches) {
-        updateFlight(flight, camera, controls, flight.start + flight.duration);
-        finishFlight();
-      }
+        near, 1800, performance.now()), resolve };
+      if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + flight.duration); finishFlight(); }
     });
+    const fadeFrom = performance.now() + FADE_FROM * 1800;
+    notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
+    (async () => {
+      await terrainReady;
+      if (disposed || token !== generation) return;
+      if (terrain) {
+        try {
+          extrasReady ||= terrain.initializeExtras();
+          await extrasReady;
+          if (disposed || token !== generation) return;
+          await terrain.select(location.lat, location.lon);
+          if (disposed || token !== generation) return;
+          // Build the new detail transparent over a whole globe/overview; finishFade() cuts the holes.
+          terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { omit: false, finestMaterial });
+          globe.setHoles(lat => capHoles(lat));
+          setFade(0); fade = { start: Math.max(performance.now(), fadeFrom) };
+          if (reduced.matches) finishFade();
+          notify({ terrain: terrain.describe(location.lat, location.lon) });
+        } catch (error) {
+          if (disposed || token !== generation) return;
+          terrain.records=[];terrain.rebuild(terrainGroup,terrainMaterial,detailMaterial,{finestMaterial});fade=null;
+          notify({ terrain: 'overview-only', message: `Detail unavailable: ${error.message}. Using overview.` });
+        }
+      }
+      updateLight();
+      const kind = terrain?.records.length ? terrain.kind : null;
+      notify({ phase: 'ready', message: status.terrain === 'overview-only' ? 'LOLA overview · detail unavailable · lower precision terrain'
+        : status.terrain === 'LOLA-40m' ? 'LOLA 40 m terrain · Artemis site · rendered shadows are illustrative'
+        : kind === 'south' ? 'LOLA south polar terrain · rendered shadows are illustrative'
+        : kind === 'north' ? 'LOLA north polar terrain · rendered shadows are illustrative'
+        : kind === 'global' ? 'LOLA 474 m terrain · lower precision horizon · rendered shadows are illustrative'
+        : 'Global relief · lower precision terrain' });
+    })().catch(error => console.error(error));
+    return arrival;
   }
   function overview() {
     checkAlive(); start(); cancelFlight(); selection = null;
@@ -161,8 +213,10 @@ export function createViewer(container, options = {}) {
   }
   const ready = (async () => {
     try {
-      renderer = new T.WebGLRenderer({ antialias: true, alpha: false });
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setClearColor('#141414');
+      // M2: the landing Moon has no box: a transparent canvas lets the page's own starfield show
+      // around it. The explorer stays opaque with its own stars (an opaque working surface).
+      renderer = new T.WebGLRenderer({ antialias: true, alpha: presentation, premultipliedAlpha: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setClearColor('#141414', presentation ? 0 : 1);
       renderer.outputColorSpace = T.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.autoUpdate = false;
       renderer.domElement.setAttribute('aria-label', 'Interactive lunar globe. Drag to rotate, scroll or pinch to zoom.');
@@ -187,9 +241,14 @@ export function createViewer(container, options = {}) {
       });
       light = new T.DirectionalLight('#ECE9E2', 3.2); light.shadow.mapSize.set(2048, 2048);
       light.shadow.bias = -0.00001; light.shadow.normalBias = 0.035; scene.add(light, light.target);
-      scene.add(new T.AmbientLight('#ECE9E2', 0.035)); stars = createStars(); scene.add(stars);
+      scene.add(new T.AmbientLight('#ECE9E2', 0.035));
+      if (!presentation) { stars = createStars(); scene.add(stars); }
       terrainGroup = new T.Group(); scene.add(terrainGroup);
       terrainMaterial = new T.MeshStandardMaterial({ color: '#9A978F', roughness: 1, metalness: 0 });
+      detailMaterial = terrainMaterial.clone();
+      Object.assign(detailMaterial, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      finestMaterial = terrainMaterial.clone();      // 40 m Artemis tiles win over the 120 m strip beneath
+      Object.assign(finestMaterial, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
       const loader = new T.TextureLoader();
       const texturePromise = loader.loadAsync(asset('moon-color-2k.jpg').href).then(texture => {
         if(disposed||failed){texture.dispose();return texture;}
@@ -203,14 +262,23 @@ export function createViewer(container, options = {}) {
         .catch(error => { if(!failed)notify({ lighting: 'fixed-development', message: `Development lighting — fixed Sun. ${error.message}` }); });
       const terrainCandidate = new Terrain(dataBase, abort.signal);
       const terrainPromise = terrainCandidate.initialize().then(value => {
-        if(disposed||failed)value.dispose();else {terrain = value;terrain.exaggeration=status.exaggeration;}
+        if(disposed||failed){value.dispose();return null;} return value;
       })
-        .catch(error => { terrainCandidate.dispose(); if(!failed)notify({ terrain: 'unavailable', message: `LOLA tiles unavailable: ${error.message}` }); });
+        .catch(error => { terrainCandidate.dispose(); if(!failed)notify({ terrain: 'unavailable', message: `LOLA tiles unavailable: ${error.message}` }); return null; });
       const [texture, relief] = await Promise.all([texturePromise,
-        fetchOK(asset('moon-displacement.tiff'), abort.signal).then(r => r.arrayBuffer()).then(decodeMoonTIFF), corePromise, terrainPromise]);
-      if (disposed) { for (const texture of looseTextures) texture.dispose(); terrain?.dispose(); return; }
-      globe = createGlobe(texture, relief, terrain); looseTextures.clear(); scene.add(globe.mesh);
-      if (terrain) { terrain.rebuild(terrainGroup, terrainMaterial); globe.setPolarDetail(true); }
+        fetchOK(asset('moon-displacement.tiff'), abort.signal).then(r => r.arrayBuffer()).then(decodeMoonTIFF), corePromise]);
+      if (disposed) { for (const texture of looseTextures) texture.dispose(); terrainPromise.then(t => t?.dispose()); return; }
+      globe = createGlobe(texture, relief, null); looseTextures.clear(); scene.add(globe.mesh);
+      // LOLA cap terrain streams in after the first frame instead of delaying it.
+      terrainReady = terrainPromise.then(value => {
+        if (!value || disposed) return null;
+        terrain = value; terrain.exaggeration = status.exaggeration;
+        globe.refreshHeights((lat, lon) => terrain.heightAt(lat, lon), terrain.exaggeration);
+        terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { finestMaterial }); globe.setHoles(lat => capHoles(lat));
+        renderer.shadowMap.needsUpdate = true;
+        if (status.terrain === 'loading') notify({ terrain: 'LOLA-overview-480m' });
+        return terrain;
+      });
       if (!started && core) {
         camera.position.copy(sunlitCameraPosition(core.sunDirection(utc), camera.position.length()));
         const rotating = controls.autoRotate;
@@ -238,7 +306,7 @@ export function createViewer(container, options = {}) {
       event(canvas, 'webglcontextlost', e => { e.preventDefault(); notify({ phase: 'context-lost', message: 'Graphics context lost. Waiting for recovery…' }); });
       event(canvas, 'webglcontextrestored', () => { notify({ phase: 'ready', message: 'Graphics restored.' }); resize(); updateLight(); });
       startButton.disabled = false; startButton.hidden = started;
-      notify({ phase: 'ready', terrain: terrain ? 'LOLA-overview-480m' : 'unavailable', message: core
+      notify({ phase: 'ready', message: core
         ? 'Drag to rotate · scroll or pinch to zoom · click a location'
         : 'Development lighting — fixed Sun; ephemeris unavailable' });
       raf = requestAnimationFrame(animate);
@@ -271,7 +339,8 @@ export function createViewer(container, options = {}) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
       if (terrain) {
         const oldCentre=selection?new T.Vector3(...locationToRender(selection.lat,selection.lon,heightAt(selection.lat,selection.lon))):null;
-        terrain.exaggeration = value; terrain.rebuild(terrainGroup, terrainMaterial);
+        terrain.exaggeration = value; if (fade) finishFade(); terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { finestMaterial });
+        globe?.refreshHeights((lat, lon) => terrain.heightAt(lat, lon), value);
         if(oldCentre){
           const shift=new T.Vector3(...locationToRender(selection.lat,selection.lon,heightAt(selection.lat,selection.lon))).sub(oldCentre);
           controls.target.add(shift);camera.position.add(shift);

@@ -13,3 +13,12 @@
 .fhls-marker[hidden]{display:none}
 .fhls-marker.is-active{color:var(--sun,#F2B33D);border-color:var(--sun,#F2B33D)}
 .fhls-viewer[data-phase='error'] .fhls-viewer-status{top:40%;bottom:auto;text-align:center;color:#ECE9E2;pointer-events:auto}
+
+/* M2: transparent landing Moon (no box; the page's stars show around it) */
+.fhls-viewer--transparent{background:transparent}
+/* M3: a still of the same view shows at once; the live globe crossfades in (≤300 ms) after its first frame */
+.fhls-viewer-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.fhls-viewer--transparent canvas{opacity:0;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+.fhls-viewer--transparent.is-live canvas{opacity:1}
+.fhls-viewer.is-live .fhls-viewer-poster{opacity:0}
+@media (prefers-reduced-motion:reduce){.fhls-viewer-poster,.fhls-viewer--transparent canvas{transition:none}}

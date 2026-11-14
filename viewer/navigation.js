@@ -39,7 +39,9 @@ export function arcDirection(from, to, t) {
 export function makeFlight(camera, controls, lat, lon, heightM, detailed, duration, now) {
   const frame = localFrame(lat, lon), up = new Vector3(...frame.up), north = new Vector3(...frame.north);
   const target = new Vector3(...locationToRender(lat, lon, heightM));
-  const position = target.clone().addScaledVector(up, detailed ? 24 : 110).addScaledVector(north, detailed ? -26 : -65);
+  // detailed: true = 40/120 m polar tiles (close), 'mid' = 474 m whole-Moon tiles, false = globe only.
+  const [rise, back] = detailed === 'mid' ? [60, -70] : detailed ? [24, -26] : [110, -65];
+  const position = target.clone().addScaledVector(up, rise).addScaledVector(north, back);
   const matrix = new Matrix4().lookAt(position, target, up);
   return { start: now, duration, fromPosition: camera.position.clone(), position,
     fromTarget: controls.target.clone(), target, fromQ: camera.quaternion.clone(),

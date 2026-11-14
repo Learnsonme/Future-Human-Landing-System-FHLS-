@@ -70,10 +70,40 @@ Only the contents appended by this viewer are removed during disposal.
 `lighting` is `ephemeris`, `synthetic`, or `fixed-development` after loading.
 `synthetic:false` identifies real ephemeris lighting; the development fallback
 and injected synthetic cores carry `synthetic:true` and visible labels.
-`terrain` is `LOLA-overview-480m`, `LOLA-120m`,
-`global-lower-precision`, `overview-only`, or `unavailable`.
+`terrain` is `LOLA-overview-480m`, `LOLA-120m` (south or north cap), `LOLA-40m`
+(Artemis site), `LOLA-474m` (anywhere else on the Moon), `global-lower-precision`,
+`overview-only`, or `unavailable`.
 `phase` includes `loading`, `loading-terrain`, `ready`, `error` and `context-lost`.
 Keep the viewer's status visible so fallback/error information reaches users.
+
+## Detailed terrain everywhere (V8, T3)
+
+The viewer loads only the tiles around a click. It picks the finest terrain available there:
+
+| Where | Tiles | Spacing | Status |
+|---|---|---|---|
+| Artemis sites (inside the 20 km boxes) | `data/terrain/index_detail.json`, lod 2 | 40 m | `LOLA-40m` |
+| South cap (≤ −84°) | `index.json`, four nearest lod 1 | 120 m | `LOLA-120m` |
+| North cap (≥ 84°) | `index_north.json`, four nearest lod 1 | 120 m | `LOLA-120m` |
+| Everywhere else | `index_global.json`, the 2 × 2 block of 8° tiles nearest the click (≈ 480 km) | 474 m | `LOLA-474m` |
+
+**How the layers fit together**
+- **The globe mesh is exactly 1° × 1°,** so its vertices are exact grid points of the 8° tiles. After a load, the globe re-samples its heights from the detailed terrain and hides its own surface under the patch. The patch therefore meets the globe without a step. Skirts (4 km) remain at the patch edge as a safety net.
+- **Neighbouring whole-Moon tiles join exactly,** including across the ±180° date line.
+- **40 m tiles have no skirts.** The 120 m surface continues under their edge strip, and they win it by polygon offset. This avoids lit vertical skirts under the grazing polar Sun.
+- **Tests:** `tests/terrain-v8.test.mjs` (Node) checks registration, outward faces, seams, cap clipping and priority for the new tile sets. `tests/v8-browser.mjs` (plain Chrome DevTools, no Playwright) flies to six places and checks the terrain type, timing, reduced motion and console errors.
+
+**Space → terrain handover (M1)**
+- **The flight starts at the click** (1–3 ms) and lasts 1.8 s. Tiles load during it.
+- **The new detail fades in over 540 ms** from 35% of the flight, or as soon as it arrives if that is later. It is drawn on top of a whole globe and overview, with a polygon offset. Once opaque, the coarse surface under it is cut away. Nothing pops.
+- **Reduced motion:** an instant cut, with no fade.
+- **Cancellation:** a cancelled or superseded flight finishes the fade at once, so no transparent terrain is left behind.
+
+**Landing Moon (M2, M3)**
+- **No box:** the presentation viewer's canvas is transparent and carries no stars of its own, so the page's starfield shows around the Moon. The explorer stays opaque with its own stars.
+- **First frame:** the presentation viewer shows `assets/moon-poster.webp` (22 KB, the same view, transparent) straight away. It crossfades to the live globe within 300 ms of the first rendered frame, or instantly under reduced motion.
+- **Terrain no longer delays the first frame:** LOLA cap terrain streams in afterwards.
+- **Regenerating the poster:** if the landing time, camera or imagery changes, run `node viewer/tools/make-poster.mjs` against the static server.
 
 ## Terrain, lighting and limits
 
@@ -185,6 +215,8 @@ B1–B6, D2/D3 and E at verified 1440×900 and 390×844 viewports. It records fr
 rates and canvas counts, and writes JSON evidence beside the screenshots.
 
 ## AI assistance
+
+V8, M1, M2 and M3 (detailed terrain everywhere, the handover, the landing blend and the poster) were written by T3 with Claude (Anthropic), after T1 handed the viewer over.
 
 T1 used OpenAI Codex to continue implementation, debug, document and test the
 viewer. NASA imagery, LOLA elevations and T3's SPICE ephemeris are source data;
