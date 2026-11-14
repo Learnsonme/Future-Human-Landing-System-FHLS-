@@ -87,6 +87,7 @@ function applyScreen(screen) {
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
   if (screen === "landing") $("start").focus({ preventScroll: true });
+  sky?.setDensity(screen === "landing" ? "landing" : state.mode);
   if (screen === "landing") mountLandingViewer();
   else { landingViewer?.dispose(); landingViewer = null; }
   if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
@@ -119,7 +120,7 @@ function setMode(mode) {
   try { localStorage.setItem("fhls.mode", mode); } catch { /* not essential */ }
   $("mode-chip").textContent = MODES[mode].label;
   document.body.dataset.mode = mode;
-  sky?.setDensity(mode);
+  if (state.screen !== "landing") sky?.setDensity(mode);
 }
 
 /* ---------- startup ---------- */
@@ -971,6 +972,7 @@ for (const type of ["pointerdown", "pointermove"]) {
 }
 
 startAtmosphere();     // before init(): the sky must not wait on the data load
+sky?.setDensity(state.screen === "landing" ? "landing" : state.mode);
 setMode(state.mode);
 init();
 

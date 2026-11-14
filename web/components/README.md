@@ -48,18 +48,21 @@ The ambient sky behind the whole app. One canvas, at most 150 stars, redrawn at
 ```js
 import { createStarfield } from "./components/starfield.js";
 const sky = createStarfield(document.getElementById("sky"));
-sky.setDensity("beginner");    // beginner | intermediate | advanced
+sky.setDensity("landing");     // landing | beginner | intermediate | advanced
 sky.destroy();                 // removes its listeners
 ```
 
-Density, twinkle rate and how often a shooting star appears change per mode;
-hue never does. Stars are drawn from `--text` and `--muted` at low alpha, with
+Density, twinkle rate, brightness and how often a shooting star appears change
+per profile; hue never does. `landing` is the fullest sky and is used on the
+home screen whatever mode is remembered, so the page does not read as empty
+beside the viewer's own starfield inside the Moon canvas. Stars are drawn from `--text` and `--muted` at low alpha, with
 about one in twelve in `--sun`.
 
 ## star-transition.js
 
-The screen change: a star brightens in the centre, twelve sparks scatter, and
-the next screen is swapped in at the brightest point.
+The screen change, as a supernova: the star collapses, detonates across the
+whole viewport with a shockwave, light spikes and an ember burst, and the next
+screen is swapped in under the flash.
 
 ```js
 import { createStarTransition } from "./components/star-transition.js";
@@ -67,6 +70,9 @@ const fx = createStarTransition(document.getElementById("transition"));
 await fx.play(() => showNextScreen());
 ```
 
-700 ms, with the swap at 320 ms. The spark elements are created once and
-reused. Under `prefers-reduced-motion` the swap runs immediately and nothing
-is drawn. Needs the `.startx` rules in `web/app.css`.
+950 ms, with the swap at 380 ms. One canvas, drawn only while running and
+cleared afterwards, so it costs nothing at rest. Only `--text` and `--sun` are
+used: `--earth` and `--both` mean power and comms everywhere else in the app
+and must not be spent on decoration. Under `prefers-reduced-motion` the swap
+runs immediately and nothing is drawn. Needs the `.startx` rules in
+`web/app.css`.

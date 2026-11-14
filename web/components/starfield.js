@@ -4,7 +4,7 @@
  *
  *   import { createStarfield } from "./components/starfield.js";
  *   const sky = createStarfield(document.getElementById("sky"));
- *   sky.setDensity("beginner");   // beginner | intermediate | advanced
+ *   sky.setDensity("beginner");   // landing | beginner | intermediate | advanced
  *   sky.destroy();
  *
  * Colours come from the --text, --muted and --sun tokens in scope, at low
@@ -20,11 +20,15 @@ const FRAME_MS = 1000 / FPS;
 
 // Stars per million CSS pixels, so a phone does not get a desktop's worth.
 const DENSITY = {
-  beginner:     { per1M: 150, twinkle: 0.55, shootingEveryMs: 22000, maxR: 1.5 },
-  intermediate: { per1M: 95,  twinkle: 0.35, shootingEveryMs: 45000, maxR: 1.4 },
-  advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 90000, maxR: 1.7 },
+  // the landing page is the arrival: it carries the fullest sky, whatever
+  // mode is remembered, so the page does not look empty beside the viewer's
+  // own starfield inside the Moon canvas
+  landing:      { per1M: 230, twinkle: 0.6,  shootingEveryMs: 16000, maxR: 1.6, gain: 1.45 },
+  beginner:     { per1M: 150, twinkle: 0.55, shootingEveryMs: 22000, maxR: 1.5, gain: 1.15 },
+  intermediate: { per1M: 95,  twinkle: 0.35, shootingEveryMs: 45000, maxR: 1.4, gain: 1 },
+  advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 90000, maxR: 1.7, gain: 1.1 },
 };
-const MAX_STARS = 150;
+const MAX_STARS = 240;
 
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -57,7 +61,7 @@ export function createStarfield(canvas, options = {}) {
         x: Math.random() * width,
         y: Math.random() * height,
         r: rand(0.4, cfg.maxR) * (0.5 + depth * 0.5),
-        base: rand(0.10, 0.42) * (0.45 + depth * 0.55),
+        base: Math.min(0.85, rand(0.10, 0.42) * (0.45 + depth * 0.55) * (cfg.gain || 1)),
         // a share of stars twinkle; the rest are steady, so it never pulses in sync
         twinkles: Math.random() < cfg.twinkle,
         speed: rand(0.00018, 0.0009),

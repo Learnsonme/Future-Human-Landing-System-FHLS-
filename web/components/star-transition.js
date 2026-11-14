@@ -1,60 +1,216 @@
 /**
- * web/components/star-transition.js · W9 · Screen transition (T2).
- * Standalone: no imports. A star brightens in the centre, a few sparks scatter,
- * the next screen appears behind it.
+ * web/components/star-transition.js · W9 · Supernova screen transition (T2).
+ * Standalone: no imports. A star collapses, detonates across the whole screen
+ * with a shockwave, light spikes and an ember burst, then fades to the next screen.
  *
  *   import { createStarTransition } from "./components/star-transition.js";
  *   const fx = createStarTransition(document.getElementById("transition"));
- *   await fx.play(() => showTheNextScreen());   // swap runs at the brightest point
+ *   await fx.play(() => showTheNextScreen());   // swap runs under the flash
  *
- * ~700 ms total, 12 spark elements built once and reused. Honours
- * prefers-reduced-motion by running the swap immediately and drawing nothing.
- * Colours are the --text and --sun tokens, so it stays inside design/style.md.
+ * ~950 ms, with the screen swapped at 380 ms while the flash hides it.
+ * One canvas, drawn only while running and cleared after, so it costs nothing
+ * at rest. Only --text and --sun are used: --earth and --both carry meaning
+ * elsewhere in the app and must not be spent on decoration.
+ * prefers-reduced-motion: the swap runs immediately and nothing is drawn.
  */
 
-const SPARKS = 12;
-const HALF_MS = 320;        // swap happens here, at peak brightness
-const TOTAL_MS = 700;
+const TOTAL_MS = 950;
+const SWAP_MS = 380;      // under the brightest part of the flash
+const EMBERS = 72;
+const SPIKES = 14;
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+const easeIn = (p) => p * p;
+
+function hexToRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec((hex || "").trim());
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [236, 233, 226];
+}
 
 export function createStarTransition(root) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let busy = false;
-
+  const canvas = document.createElement("canvas");
+  canvas.className = "startx-canvas";
+  canvas.setAttribute("aria-hidden", "true");
   root.classList.add("startx");
   root.setAttribute("aria-hidden", "true");
+  root.append(canvas);
 
-  const core = document.createElement("span");
-  core.className = "startx-core";
-  root.append(core);
+  const ctx = canvas.getContext("2d");
+  let busy = false;
+  let raf = 0;
+  let w = 0, h = 0, cx = 0, cy = 0, maxR = 0;
+  let embers = [];
+  let spikes = [];
+  let tint = { text: [236, 233, 226], sun: [242, 179, 61] };
 
-  // built once, reused every time: no DOM churn per navigation
-  const sparks = Array.from({ length: SPARKS }, (_, i) => {
-    const s = document.createElement("span");
-    s.className = "startx-spark";
-    const angle = (i / SPARKS) * 360 + (i % 2 ? 7 : -7);
-    s.style.setProperty("--angle", `${angle}deg`);
-    s.style.setProperty("--reach", `${52 + (i % 4) * 18}px`);
-    root.append(s);
-    return s;
-  });
+  function size() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    cx = w / 2;
+    cy = h / 2;
+    maxR = Math.hypot(w, h) / 2;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const s = getComputedStyle(root);
+    tint = {
+      text: hexToRgb(s.getPropertyValue("--text") || "#ECE9E2"),
+      sun: hexToRgb(s.getPropertyValue("--sun") || "#F2B33D"),
+    };
+  }
+
+  function seed() {
+    embers = Array.from({ length: EMBERS }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      // a spread of speeds so the shell has depth instead of one clean circle
+      speed: rand(0.35, 1.05),
+      size: rand(0.8, 2.4),
+      warm: Math.random() < 0.45,
+      lag: rand(0, 0.12),
+      trail: rand(18, 70),
+    }));
+    spikes = Array.from({ length: SPIKES }, (_, i) => ({
+      angle: (i / SPIKES) * Math.PI * 2 + rand(-0.12, 0.12),
+      len: rand(0.5, 1.1),
+      width: rand(0.8, 2.2),
+      warm: i % 3 === 0,
+    }));
+  }
+
+  function rgba([r, g, b], a) {
+    return `rgba(${r},${g},${b},${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+  }
+
+  function draw(p) {
+    ctx.clearRect(0, 0, w, h);
+
+    // ── 1 · the collapse, then the flash ────────────────────────────────
+    // core pulls in tight before it goes, which is what sells the detonation
+    const coreR = p < 0.18
+      ? 26 * (1 - easeIn(p / 0.18)) + 4
+      : 4 + easeOut((p - 0.18) / 0.22) * 140;
+    const coreAlpha = p < 0.18 ? 1 : Math.max(0, 1 - (p - 0.18) / 0.5);
+
+    if (coreAlpha > 0.01) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, coreR));
+      g.addColorStop(0, rgba(tint.text, coreAlpha));
+      g.addColorStop(0.35, rgba(tint.sun, coreAlpha * 0.55));
+      g.addColorStop(1, rgba(tint.sun, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(1, coreR), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // full-screen wash, brightest right as the screens swap
+    const flash = p < 0.4 ? easeOut(p / 0.4) * 0.42 : Math.max(0, 0.42 * (1 - (p - 0.4) / 0.45));
+    if (flash > 0.004) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+      g.addColorStop(0, rgba(tint.text, flash));
+      g.addColorStop(0.45, rgba(tint.sun, flash * 0.3));
+      g.addColorStop(1, rgba(tint.sun, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // ── 2 · light spikes ────────────────────────────────────────────────
+    if (p > 0.12 && p < 0.75) {
+      const sp = (p - 0.12) / 0.63;
+      const alpha = Math.sin(Math.PI * sp) * 0.5;
+      for (const s of spikes) {
+        const len = easeOut(sp) * maxR * s.len;
+        const x = cx + Math.cos(s.angle) * len;
+        const y = cy + Math.sin(s.angle) * len;
+        const g = ctx.createLinearGradient(cx, cy, x, y);
+        g.addColorStop(0, rgba(s.warm ? tint.sun : tint.text, alpha));
+        g.addColorStop(1, rgba(s.warm ? tint.sun : tint.text, 0));
+        ctx.strokeStyle = g;
+        ctx.lineWidth = s.width;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+
+    // ── 3 · shockwave, two rings so the edge is not a single hard line ──
+    for (const [delay, colour, weight] of [[0.1, tint.text, 2], [0.19, tint.sun, 1.2]]) {
+      if (p <= delay) continue;
+      const rp = Math.min(1, (p - delay) / 0.7);
+      const r = easeOut(rp) * maxR * 1.25;
+      const alpha = (1 - rp) * 0.55;
+      if (alpha <= 0.01 || r <= 0) continue;
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = weight * (1 - rp * 0.6);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // ── 4 · embers thrown clear of the blast ────────────────────────────
+    if (p > 0.1) {
+      for (const e of embers) {
+        const ep = Math.max(0, (p - 0.1 - e.lag) / (0.85 - e.lag));
+        if (ep <= 0 || ep >= 1) continue;
+        const r = easeOut(ep) * maxR * e.speed * 1.2;
+        const x = cx + Math.cos(e.angle) * r;
+        const y = cy + Math.sin(e.angle) * r;
+        const alpha = (1 - ep) * 0.85;
+        const colour = e.warm ? tint.sun : tint.text;
+
+        const tx = cx + Math.cos(e.angle) * Math.max(0, r - e.trail);
+        const ty = cy + Math.sin(e.angle) * Math.max(0, r - e.trail);
+        const g = ctx.createLinearGradient(x, y, tx, ty);
+        g.addColorStop(0, rgba(colour, alpha));
+        g.addColorStop(1, rgba(colour, 0));
+        ctx.strokeStyle = g;
+        ctx.lineWidth = e.size;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+
+        ctx.fillStyle = rgba(colour, alpha);
+        ctx.beginPath();
+        ctx.arc(x, y, e.size * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
 
   function play(swap) {
-    if (reduced.matches) { swap?.(); return Promise.resolve(); }
-    if (busy) { swap?.(); return Promise.resolve(); }
+    if (reduced.matches || busy) { swap?.(); return Promise.resolve(); }
     busy = true;
-
+    size();
+    seed();
     root.classList.add("is-running");
-    // restart the CSS animations cleanly
-    void root.offsetWidth;
 
     return new Promise((resolve) => {
-      const atPeak = setTimeout(() => { try { swap?.(); } catch (e) { console.error(e); } }, HALF_MS);
-      const atEnd = setTimeout(() => {
-        root.classList.remove("is-running");
-        busy = false;
-        resolve();
-      }, TOTAL_MS);
-      root._timers = [atPeak, atEnd];
+      const started = performance.now();
+      let swapped = false;
+
+      const step = (now) => {
+        const p = Math.min(1, (now - started) / TOTAL_MS);
+        if (!swapped && now - started >= SWAP_MS) {
+          swapped = true;
+          try { swap?.(); } catch (err) { console.error(err); }
+        }
+        draw(p);
+        if (p < 1) {
+          raf = requestAnimationFrame(step);
+        } else {
+          ctx.clearRect(0, 0, w, h);
+          root.classList.remove("is-running");
+          raf = 0;
+          busy = false;
+          if (!swapped) swap?.();
+          resolve();
+        }
+      };
+      raf = requestAnimationFrame(step);
     });
   }
 
@@ -62,10 +218,10 @@ export function createStarTransition(root) {
     play,
     get busy() { return busy; },
     destroy() {
-      for (const t of root._timers || []) clearTimeout(t);
+      cancelAnimationFrame(raf);
+      raf = 0;
       root.classList.remove("startx", "is-running");
-      core.remove();
-      for (const s of sparks) s.remove();
+      canvas.remove();
     },
   };
 }

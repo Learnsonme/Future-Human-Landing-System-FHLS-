@@ -579,58 +579,23 @@ body[data-screen="app"]     #screen-app     { display: block; }
   pointer-events: none;
 }
 /* content sits above the sky; the viewer canvas has its own stacking */
-.screen, .startx { position: relative; z-index: 1; }
+.screen { position: relative; z-index: 1; }
 
-/* ---------- star transition ---------- */
+/* ---------- supernova transition ---------- */
 .startx {
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
   pointer-events: none;
   opacity: 0;
 }
 .startx.is-running { opacity: 1; }
+.startx-canvas { display: block; width: 100%; height: 100%; }
 
-.startx-core,
-.startx-spark { opacity: 0; }
-
-.startx.is-running .startx-core {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--text);
-  box-shadow: 0 0 26px 7px rgba(236, 233, 226, .5), 0 0 64px 20px rgba(242, 179, 61, .2);
-  animation: startx-core 700ms cubic-bezier(.4, 0, .2, 1) forwards;
-}
-
-.startx.is-running .startx-spark {
-  position: absolute;
-  width: 2.5px;
-  height: 2.5px;
-  border-radius: 50%;
-  background: var(--text);
-  animation: startx-spark 700ms cubic-bezier(.2, .7, .3, 1) forwards;
-}
-.startx.is-running .startx-spark:nth-child(3n) { background: var(--sun); }
-
-@keyframes startx-core {
-  0%   { opacity: 0; transform: scale(.2); }
-  45%  { opacity: 1; transform: scale(2.1); }
-  70%  { opacity: .85; transform: scale(1.4); }
-  100% { opacity: 0; transform: scale(.4); }
-}
-@keyframes startx-spark {
-  0%   { opacity: 0; transform: rotate(var(--angle)) translateX(0) scale(1); }
-  35%  { opacity: .9; }
-  100% { opacity: 0; transform: rotate(var(--angle)) translateX(var(--reach)) scale(.4); }
-}
-
-/* the arriving screen settles in behind the star */
-body.is-arriving .screen { animation: screen-in 420ms cubic-bezier(.4, 0, .2, 1) both; }
+/* the arriving screen settles in under the flash */
+body.is-arriving .screen { animation: screen-in 520ms cubic-bezier(.4, 0, .2, 1) both; }
 @keyframes screen-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px) scale(.995); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -681,7 +646,7 @@ body.is-arriving .screen { animation: screen-in 420ms cubic-bezier(.4, 0, .2, 1)
 
 /* ---------- nothing moves when the reader asked for stillness ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .startx, .startx-core, .startx-spark { animation: none !important; opacity: 0 !important; }
+  .startx { opacity: 0 !important; }
   body.is-arriving .screen,
   .pin-card,
   .pin-figures dd.is-best::after { animation: none !important; }
