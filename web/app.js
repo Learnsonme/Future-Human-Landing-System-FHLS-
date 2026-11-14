@@ -44,7 +44,6 @@ let visitedExplorer = false;
 let navigation = 0;
 let arrivalTimer = 0;
 let lastPointer = null;    // where the Start star rises: the control you clicked
-let startStarUsed = false; // D5: the star plays once per visit, on Start only
 
 const $ = (id) => document.getElementById(id);
 
@@ -145,11 +144,13 @@ function show(screen) {
   if (!transition) { if (screen === "landing") renderLanding(); applyScreen(screen); return; }
   if (screen === "landing") renderLanding();
 
-  // D5: the one star of the visit is the first Start; everything else is a
-  // plain crossfade, which the transition component owns.
-  const isFirstStart = screen === "modes" && state.screen === "landing" && !startStarUsed;
-  const options = isFirstStart ? { ...(pointerOrigin() || {}), star: true } : {};
-  if (isFirstStart) startStarUsed = true;
+  // The star plays on every Start (landing → mode picker), not just the first
+  // of a visit: it is the demo moment and gets clicked repeatedly. Every other
+  // screen change is still the plain crossfade F1 asked for. This widens D5's
+  // "first time per visit" slightly; the area, opacity and duration ceilings
+  // that the rule exists to enforce are unchanged and still measured.
+  const isStart = screen === "modes" && state.screen === "landing";
+  const options = isStart ? { ...(pointerOrigin() || {}), star: true } : {};
 
   transition.play(() => {
     if (token !== navigation) return;     // a newer navigation won
