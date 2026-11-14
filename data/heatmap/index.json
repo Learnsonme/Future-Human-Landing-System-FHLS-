@@ -1,0 +1,237 @@
+{
+ "layers": {
+  "sunlit": {
+   "label": "Sunlight",
+   "unit": "%",
+   "decode": "pct = value / 2.55",
+   "fill": "--sun-fill"
+  },
+  "earth": {
+   "label": "Earth contact",
+   "unit": "%",
+   "decode": "pct = value / 2.55",
+   "fill": "--earth-fill"
+  },
+  "both": {
+   "label": "Sun and Earth",
+   "unit": "%",
+   "decode": "pct = value / 2.55",
+   "fill": "--both-fill"
+  },
+  "dark": {
+   "label": "Longest blackout",
+   "unit": "days",
+   "decode": "days = value (255 = 255 days or more)",
+   "fill": "--sun-fill",
+   "reverse": true
+  }
+ },
+ "rules": "same as core analyze(): sunlit = Sun centre above terrain (>50 % of disc); earth = Earth centre above terrain",
+ "months": [
+  "2027-01",
+  "2027-02",
+  "2027-03",
+  "2027-04",
+  "2027-05",
+  "2027-06",
+  "2027-07",
+  "2027-08",
+  "2027-09",
+  "2027-10",
+  "2027-11",
+  "2027-12",
+  "2028-01",
+  "2028-02",
+  "2028-03",
+  "2028-04",
+  "2028-05",
+  "2028-06",
+  "2028-07",
+  "2028-08",
+  "2028-09",
+  "2028-10",
+  "2028-11",
+  "2028-12"
+ ],
+ "month_atlas": {
+  "columns": 6,
+  "rows": 4,
+  "order": "month k at column k % 6, row k // 6"
+ },
+ "projection": "polar_stereographic_south",
+ "region_note": "south pole only",
+ "grids": [
+  {
+   "id": "south_2km",
+   "site": null,
+   "px": [
+    181,
+    181
+   ],
+   "spacing_km": 2,
+   "image_x0_km": -181.0,
+   "image_y0_km": -181.0,
+   "image_size_km": [
+    362,
+    362
+   ],
+   "files": {
+    "sunlit": "south_2km_sunlit.png",
+    "sunlit_months": "south_2km_sunlit_months.png",
+    "earth": "south_2km_earth.png",
+    "earth_months": "south_2km_earth_months.png",
+    "both": "south_2km_both.png",
+    "both_months": "south_2km_both_months.png",
+    "dark": "south_2km_dark.png",
+    "dark_months": "south_2km_dark_months.png"
+   }
+  },
+  {
+   "id": "fine_nobile_rim_2",
+   "site": "nobile_rim_2",
+   "px": [
+    81,
+    81
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": 143.375,
+   "image_y0_km": 75.875,
+   "image_size_km": [
+    20.25,
+    20.25
+   ],
+   "files": {
+    "sunlit": "fine_nobile_rim_2_sunlit.png",
+    "earth": "fine_nobile_rim_2_earth.png",
+    "both": "fine_nobile_rim_2_both.png",
+    "dark": "fine_nobile_rim_2_dark.png"
+   }
+  },
+  {
+   "id": "fine_peak_near_shackleton",
+   "site": "peak_near_shackleton",
+   "px": [
+    81,
+    81
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": 14.375,
+   "image_y0_km": -27.625,
+   "image_size_km": [
+    20.25,
+    20.25
+   ],
+   "files": {
+    "sunlit": "fine_peak_near_shackleton_sunlit.png",
+    "earth": "fine_peak_near_shackleton_earth.png",
+    "both": "fine_peak_near_shackleton_both.png",
+    "dark": "fine_peak_near_shackleton_dark.png"
+   }
+  },
+  {
+   "id": "fine_de_gerlache_rim_2",
+   "site": "de_gerlache_rim_2",
+   "px": [
+    81,
+    81
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": -49.625,
+   "image_y0_km": 11.625,
+   "image_size_km": [
+    20.25,
+    20.25
+   ],
+   "files": {
+    "sunlit": "fine_de_gerlache_rim_2_sunlit.png",
+    "earth": "fine_de_gerlache_rim_2_earth.png",
+    "both": "fine_de_gerlache_rim_2_both.png",
+    "dark": "fine_de_gerlache_rim_2_dark.png"
+   }
+  },
+  {
+   "id": "fine_amundsen_rim",
+   "site": "amundsen_rim",
+   "px": [
+    81,
+    81
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": 152.375,
+   "image_y0_km": 58.125,
+   "image_size_km": [
+    20.25,
+    20.25
+   ],
+   "files": {
+    "sunlit": "fine_amundsen_rim_sunlit.png",
+    "earth": "fine_amundsen_rim_earth.png",
+    "both": "fine_amundsen_rim_both.png",
+    "dark": "fine_amundsen_rim_dark.png"
+   }
+  },
+  {
+   "id": "fine_faustini_rim_a",
+   "site": "faustini_rim_a",
+   "px": [
+    81,
+    81
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": 47.375,
+   "image_y0_km": -18.625,
+   "image_size_km": [
+    20.25,
+    20.25
+   ],
+   "files": {
+    "sunlit": "fine_faustini_rim_a_sunlit.png",
+    "earth": "fine_faustini_rim_a_earth.png",
+    "both": "fine_faustini_rim_a_both.png",
+    "dark": "fine_faustini_rim_a_dark.png"
+   }
+  },
+  {
+   "id": "fine_connecting_ridge",
+   "site": "connecting_ridge",
+   "px": [
+    121,
+    121
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": -22.125,
+   "image_y0_km": -27.375,
+   "image_size_km": [
+    30.25,
+    30.25
+   ],
+   "files": {
+    "sunlit": "fine_connecting_ridge_sunlit.png",
+    "earth": "fine_connecting_ridge_earth.png",
+    "both": "fine_connecting_ridge_both.png",
+    "dark": "fine_connecting_ridge_dark.png"
+   }
+  },
+  {
+   "id": "fine_mons_mouton",
+   "site": "mons_mouton",
+   "px": [
+    121,
+    121
+   ],
+   "spacing_km": 0.25,
+   "image_x0_km": 69.375,
+   "image_y0_km": 125.375,
+   "image_size_km": [
+    30.25,
+    30.25
+   ],
+   "files": {
+    "sunlit": "fine_mons_mouton_sunlit.png",
+    "earth": "fine_mons_mouton_earth.png",
+    "both": "fine_mons_mouton_both.png",
+    "dark": "fine_mons_mouton_dark.png"
+   }
+  }
+ ]
+}
