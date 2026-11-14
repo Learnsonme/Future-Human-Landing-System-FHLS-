@@ -52,4 +52,15 @@ check("Shackleton floor never sunlit", floor.summary.pct_sunlit === 0);
 const eq = await core.analyze(0, 0);
 check("equator sunlit ~50% and low precision", near(eq.summary.pct_sunlit, 50, 1) && eq.precision === "low", eq.summary.pct_sunlit);
 
+// 6. Grid selection across the whole Moon (only checked when the grids are present)
+const ids = new Set((await json("horizon/index.json").catch(() => ({ grids: [] }))).grids.map((g) => g.id));
+if (ids.has("north_2km")) {
+  const n = await core.getHorizon(89.9, 0);
+  check("north pole uses north_2km (high)", n.grid_id === "north_2km" && n.precision === "high", n.grid_id);
+}
+if (ids.has("global_fine")) {
+  const e = await core.getHorizon(0.674, 23.473);
+  check("equator uses global_fine (low)", e.grid_id === "global_fine" && e.precision === "low", e.grid_id);
+}
+
 process.exit(fail ? 1 : 0);

@@ -34,6 +34,10 @@ The largest errors are on narrow ridges, outside the 250 m boxes.
 2. **Observer height matters on ridge tops.** At 0 m vs 2 m, Connecting Ridge goes from 42% to 59% and the Shackleton ridge test point from 55% to 86%. Over typical ground the difference is under 1 point. We use 2 m, roughly the height of a solar panel or antenna.
 3. **The time window matters.** The app reports 2027–2028 only, while NASA averages 18.6 years. Individual months differ a lot from the long-term average, which is why the date range is shown.
 4. **NASA's map has artifacts.** For example, there's a single 0% pixel on the lit ridge at 89.45°S, 137.3°W. NASA's README warns about these, so disagreements at single pixels are not automatically our error.
-5. **Outside the south pole the precision is low.** There the terrain comes from a 1.9 km global map on a 1° grid (about 30 km). The angles are exact, but the terrain blocking is approximate, so the UI shows "lower precision".
+5. **Away from the poles the precision is low.**
+   - Since E10, terrain there comes from LOLA's 474 m global map on a 0.25° grid (about 7.5 km), with the 1° grid as a fallback.
+   - Where it overlaps the polar grids, this whole-Moon grid matches the full-precision polar method: correlation 0.99 (south) and 0.97 (north), median difference 0.13–0.17°.
+   - The angles are exact, but the terrain blocking is approximate, so the UI shows "lower precision".
+   - Since E11, the north pole (north of about 84°N) has a 2 km grid built the same way as the south one, from LOLA LDEM_80N_40M. Its projection was checked against six known craters.
 6. **Earth visibility has not been validated** against an external map. It uses the same terrain code as the Sun.
 7. **Visibility is not power or communications.** Seeing the Sun or Earth does not guarantee power generation or a radio link.

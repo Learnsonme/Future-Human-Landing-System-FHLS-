@@ -192,6 +192,29 @@
    "synthetic": false
   },
   {
+   "id": "north_2km",
+   "projection": "polar_stereographic_north",
+   "R_km": 1737.4,
+   "n_az": 180,
+   "az_step_deg": 2,
+   "scale": 0.01,
+   "nodata": -32768,
+   "tile_size": 32,
+   "edge_tiles": "cut short (not padded): width = min(tile_size, nx - tile_size*tx)",
+   "point_order": "row-major within tile: iy (y increasing) then ix (x increasing)",
+   "observer_height_m": 2.0,
+   "max_distance_km": 250,
+   "precision": "high",
+   "source": "LOLA LDEM_80N_40M (near 20 km) + LDEM_75N_240M (to 250 km)",
+   "synthetic": false,
+   "x0_km": -180,
+   "y0_km": -180,
+   "spacing_km": 2,
+   "nx": 181,
+   "ny": 181,
+   "tiles": "north_2km/{tx}_{ty}.bin"
+  },
+  {
    "id": "global_coarse",
    "projection": "equirectangular",
    "lat0": -90,
@@ -211,6 +234,29 @@
    "max_distance_km": 150,
    "point_order": "index = iy*nx + ix, lat = lat0 + iy*step_deg, lon = lon0 + ix*step_deg",
    "source": "LOLA LDEM_16 (16 px/deg, ~1.9 km)"
+  },
+  {
+   "id": "global_fine",
+   "projection": "equirectangular",
+   "lat0": -90,
+   "lon0": -180,
+   "n_az": 72,
+   "az_step_deg": 5,
+   "scale": 0.01,
+   "nodata": -32768,
+   "precision": "low",
+   "observer_height_m": 2.0,
+   "synthetic": false,
+   "step_deg": 0.25,
+   "nx": 1440,
+   "ny": 721,
+   "tile_size": 40,
+   "tiles": "global_fine/{tx}_{ty}.bin",
+   "detail_km": 7.5,
+   "max_distance_km": 150,
+   "edge_tiles": "cut short (not padded): width = min(tile_size, nx - tile_size*tx)",
+   "point_order": "row-major within tile: iy (lat increasing) then ix (lon increasing)",
+   "source": "LOLA LDEM_64 (64 px/deg, ~474 m)"
   }
  ]
 }
