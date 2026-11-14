@@ -9,39 +9,42 @@ Each section below matches one field of the Space Apps 2026 project form (Projec
 FHLS: Future Human Landing System
 
 ## High-Level Project Summary
-FHLS is a free, offline web app for comparing places and dates on the Moon. Spin a 3D Moon built from NASA elevation data, click any spot, and the camera flies down to the terrain, lit by the real Sun for the date you choose.
+FHLS is a free web app that answers one question for any spot on the Moon: when does it see the Sun, and when does it see Earth? Spin a 3D Moon built from NASA elevation data, click anywhere, and the camera flies down to the real terrain, lit by the real Sun for the date you choose.
 
-For that spot it tells you how often, between 2027 and 2028, the Sun is above the surrounding hills (for solar power) and Earth is above them (for direct radio contact). It also shows the longest dark spell and a timeline of good windows.
+For that spot, FHLS shows how often in 2027 and 2028 the Sun clears the surrounding hills (that is what solar panels need) and how often Earth does (that is what a direct radio link needs). It shows the longest dark spell, a timeline of good windows, the skyline with the Sun and Earth moving across it, and heat maps of the whole Moon.
 
-Beginner, Intermediate and Advanced modes give the same answers at three levels of detail, from a plain yes/no up to an hour-by-hour table with a CSV download. This matters because at the lunar south pole, where Artemis astronauts will land, the Sun skims the horizon. Sunlight there can change within a few hundred metres and from one month to the next.
+Beginner, Intermediate and Advanced modes give the same answers at three depths, from a plain yes or no to an hour-by-hour table with a CSV download. The question matters because at the lunar south pole, where Artemis crews will land, the Sun skims the horizon at 1–2°. Sunlight there changes within a few hundred metres and from one month to the next.
 
 ## Link to Project Demo
 [TEAM: public link to the 30-second video, e.g. YouTube unlisted or a Google Drive file set to "anyone with the link"]
 
 ## Link to Final Project
-https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Learnsonme/Future-Human-Landing-System-FHLS- [TEAM: the repo must be public for judges]
+https://learnsonme.github.io/Future-Human-Landing-System-FHLS-/ · Code: https://github.com/Learnsonme/Future-Human-Landing-System-FHLS- (public)
 
 ## Detailed Project Description
 
 **What it does**
-- **Whole Moon:** you can click anywhere. South of 84°S, where NASA's Artemis candidate landing regions are, results use detailed terrain. Elsewhere the Sun and Earth positions are still exact, but the terrain is coarser, and the app labels those results "lower precision".
+- **Whole Moon:** click anywhere, or pick one of 26 candidate sites (Artemis regions, the six Apollo sites, famous craters). South of 84°S, where NASA's Artemis candidate landing regions are, results use detailed terrain. Elsewhere the Sun and Earth positions are still exact, but the terrain is coarser, and the app labels those results "lower precision".
 - **For each spot:**
   - Sun and Earth direction (azimuth and elevation) at any hour
   - whether terrain blocks them
   - the share of hours with sunlight, with Earth in view, and with both
   - the longest stretch without each
   - a timeline of good windows across 2027–2028, the run-up to and year of the first crewed landing planned for Artemis IV
-- **Three modes:** Beginner gives yes/no answers and one sentence. Intermediate adds angles, percentages, the timeline and a horizon panorama. Advanced adds exact numbers, an hour-by-hour table and a CSV download.
-- **Honest output:** the app always says which point a result was computed for, and that seeing the Sun or Earth does not guarantee power or a radio link.
+- **Heat maps:** sunlight, Earth contact, both, and longest blackout, over the whole Moon and per month, with 250 m detail at the south pole.
+- **Skyline panorama:** the real horizon around the spot, with the Sun and Earth moving across it on their own time slider.
+- **Compare:** pin up to three sites side by side, with numbered markers on the Moon.
+- **Three modes:** Beginner gives yes or no answers and one sentence. Intermediate adds angles, shares of time, the timeline and the panorama. Advanced adds exact numbers, an hour-by-hour table and a CSV download.
+- **Honest output:** the app always says which point a result was computed for, and that seeing the Sun or Earth does not guarantee power or a radio link. Light and dark mode, phone layout and full screen are built in.
 
 **How it works**
 1. **Where the Sun and Earth are:** we used NASA/JPL's SPICE toolkit with the DE440 planetary ephemeris and the Moon's DE440 orientation model. From these we computed the Sun and Earth positions relative to the Moon for every hour of 2027–2028 (17,544 steps, 0.4 MB).
-2. **What the terrain hides:** from each grid point, our code looks out in 180 directions across NASA LOLA elevation maps (40 m detail near the observer, 240 m out to 250 km). It records the highest terrain angle in each direction, allowing for the Moon's curvature. This gives a "skyline" for each grid point:
+2. **What the terrain hides:** from each grid point, our code looks out in 180 directions across NASA LOLA elevation maps (40 m detail near the observer, 240 m out to 250 km). It records the highest terrain angle in each direction, allowing for the Moon's curvature. This gives a skyline for each grid point:
    - every 2 km over the south polar region
-   - every 250 m around Artemis candidate regions
-   - every 1° (about 30 km) across the whole Moon, from LOLA's global map
+   - every 250 m around the Artemis candidate regions
+   - every 0.25° across the whole Moon from LOLA's global map, plus a 1° grid for the heat maps
 3. **In the browser:** a small JavaScript library combines the Sun and Earth positions with the skyline at the clicked spot. It computes visibility for all 17,544 hours in about 10 milliseconds, with no server and no internet connection needed.
-4. **The 3D view:** a three.js globe uses NASA LROC colour and LOLA relief. South polar terrain tiles built from LOLA's 40 m map show crater walls and ridges, lit by the computed Sun direction.
+4. **The 3D view:** a three.js globe with NASA LROC colour and LOLA relief. Terrain tiles from LOLA show crater walls and ridges, lit by the computed Sun direction: 40 m at the Artemis sites, 120 m at the Apollo sites and famous craters, and 474 m everywhere else.
 
 **How we checked it (validity)**
 - We compared our sunlight percentages with NASA's published LOLA south polar illumination map (Mazarico et al. 2011, Icarus 211) at **400 random points**, using the same definition and the same 18.6-year averaging period.
@@ -51,9 +54,9 @@ https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Le
 - The known limits are written up in the repository, including how fast sunlight changes on ridge tops and the effect of observer height.
 
 **Benefits**
-- **Mission planners** can compare candidate sites and dates in seconds.
-- **Educators and the public** can see why the lunar south pole is both attractive and hard: peaks with long sunlight sit next to craters that have not seen the Sun for billions of years.
-- **Offline use:** everything works offline, so the app can be used in classrooms with poor internet access.
+- **Mission planners** can compare candidate sites and dates in seconds, with the uncertainty stated plainly.
+- **Teachers and the public** can see why the lunar south pole is both attractive and hard: peaks with months of sunlight sit next to craters that have not seen the Sun for billions of years.
+- **No server:** everything is precomputed and runs in the browser, so it works in a classroom with poor internet.
 
 **What we hope to achieve**
 - An easy, trustworthy way to ask "when and where would a lander have sunlight and a line to Earth?", with the uncertainty stated plainly.
@@ -63,7 +66,7 @@ https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Le
 - **Python:** NumPy, SpiceyPy (NASA NAIF CSPICE) and Pillow.
 - **JavaScript:** three.js, with no framework.
 - **Fonts:** Open Sans.
-- **Hosting:** Netlify (static, offline-capable).
+- **Hosting:** GitHub Pages (static files, no server).
 
 ## Use of Super Intelligence (SI)
 *(For data collection only; judges don't see this field.)*
@@ -71,9 +74,9 @@ https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Le
 [TEAM: confirm this is accurate before submitting.]
 
 Yes. Each team member worked with an AI coding assistant, used as a tool under the team's direction:
-- **Teammate 3:** Claude (Anthropic) for the data engine, browser maths library, wording and documentation.
-- **Teammate 1:** Codex (OpenAI) for the 3D viewer.
-- **Teammate 2:** Claude Code for the web app.
+- **Hariyank Suvarna:** Claude (Claude Code) for the data engine, the browser maths library, wording and documentation.
+- **Abdullah Khan:** Codex (OpenAI) for the 3D viewer.
+- **Alessandro Savastano:** Claude Code for the web app.
 
 [TEAM: state truthfully how the idea and the approach were developed. The rules say SI should not be used to come up with the idea itself.]
 
@@ -83,14 +86,14 @@ Yes. Each team member worked with an AI coding assistant, used as a tool under t
 - The team validated the science output against NASA's published illumination map rather than trusting the AI.
 
 **Where this is acknowledged:**
-- SI-assisted code and data are acknowledged in `data/README.md` and `engine/README.md`, and in the repository README. [TEAM: add the README section; see LOG.md.]
+- AI-assisted code and data are acknowledged in the repository README ("Use of AI"), in `CREDITS.md`, and in a header line at the top of the main code files.
 - Commits made with an assistant carry a co-author line.
 - No SI-generated images, video or audio are used in the app or demo. [TEAM: if any are added, they need a visible watermark.]
 
 ## NASA Data
 - **LRO LOLA elevation maps** (PDS Geosciences Node):
   - LDEM_80S_40M and LDEM_75S_240M: south polar terrain, horizons and 3D tiles
-  - LDEM_16: whole-Moon horizons
+  - LDEM_16 and LDEM_64: whole-Moon horizons and 474 m terrain; LDEM_256 for the 120 m Apollo and crater regions
   - https://pds-geosciences.wustl.edu/missions/lro/lola.htm
 - **LOLA polar illumination map AVGVISIB_85S_060M** (NASA GSFC PGDA product 69; Mazarico et al. 2011), used for validation. https://pgda.gsfc.nasa.gov/products/69
 - **JPL NAIF SPICE generic kernels:** DE440 ephemeris (de440s.bsp), lunar orientation (moon_pa_de440_200625.bpc, moon_de440_250416.tf), pck00011.tpc and naif0012.tls. https://naif.jpl.nasa.gov/naif/data_generic.html
@@ -108,4 +111,4 @@ Yes. Each team member worked with an AI coding assistant, used as a tool under t
 
 **Software:** SpiceyPy (MIT), NumPy (BSD), Pillow (MIT-CMU), three.js (MIT), Open Sans font (SIL OFL).
 
-[TEAM: add anything T1 or T2 used, such as textures or libraries.]
+- Apollo 11 photograph AS11-40-5903 (NASA, public domain) on the landing page.
