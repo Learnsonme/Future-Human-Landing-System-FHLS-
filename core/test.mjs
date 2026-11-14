@@ -33,7 +33,7 @@ check("disc fraction", sunVisibleFraction(1, 1) === 0.5 && sunVisibleFraction(2,
 check("index of last hour", core.indexOf("2028-12-31T23:00:00Z") === 17543 && core.count === 17544);
 
 // 5. Full analysis
-for (const [name, lat, lon] of [["connecting ridge", -89.45, -137.3], ["Shackleton floor", -89.67, 129.8], ["equator (no grid)", 0, 0]]) {
+for (const [name, lat, lon] of [["connecting ridge", -89.45, -137.3], ["Shackleton floor", -89.67, 129.8], ["equator (global grid)", 0, 0]]) {
   const t = performance.now();
   const r = await core.analyze(lat, lon);
   console.log(`     ${name}: ${(performance.now() - t).toFixed(0)} ms, precision ${r.precision}, grid ${r.horizon.grid_id},`, r.summary);

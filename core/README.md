@@ -20,7 +20,7 @@ const core = await loadCore("../data");            // URL of the data/ folder
 **What the results contain**
 - `summary` has five fields: `{ pct_sunlit, pct_earth, pct_both, longest_dark_hours, longest_no_comms_hours }`.
 - Each entry in `windows.power`, `windows.comms` and `windows.both` is `{ start, end, hours }`. `start` and `end` are hour offsets from `result.start_index`, and `end` is exclusive.
-- `precision` is `"high"` when a south polar grid covers the click. It is `"low"` elsewhere, and the UI must then show the "lower precision" label. When no grid covers the click (until `global_coarse` lands), the horizon is treated as flat.
+- `precision` is `"high"` when a south polar grid covers the click. It is `"low"` elsewhere, and the UI must then show the "lower precision" label. Outside the south polar grids, the whole-Moon `global_coarse` grid is used (1° spacing). If no horizon data can be loaded at all, the horizon is treated as flat.
 
 **Definitions** (from DATA_CONTRACT §5)
 - `power` means more than half of the Sun's disc is above the terrain.
