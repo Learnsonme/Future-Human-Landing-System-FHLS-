@@ -1,0 +1,52 @@
+/* S1–S8 · scroll-down sections (T3). Tokens and type from design/style.md. */
+.fhls-sections { width: 100%; margin-top: 64px; border-top: 1px solid var(--line); }
+.fs-section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+.fs-grid { display: grid; grid-template-columns: minmax(180px, 1fr) 2fr; gap: 32px; align-items: start; }
+.fs-title { margin: 8px 0 0; font: 600 28px/1.2 var(--sans); text-transform: uppercase; letter-spacing: .01em; color: var(--text); }
+.fs-body { max-width: 68ch; }
+.fs-body p { margin: 0 0 16px; color: var(--text); }
+.fs-body p:last-child { margin-bottom: 0; }
+
+/* S2 video */
+.fs-video { position: relative; margin-top: 24px; aspect-ratio: 16 / 9; width: 100%; max-width: 960px;
+  background: var(--surface); border: 1px solid var(--line); overflow: hidden; display: grid; place-items: center; }
+.fs-video img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: .55; }
+.fs-video-note { position: relative; margin: 0; font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
+.fs-video video, .fs-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+.fs-play { position: relative; font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text); background: var(--bg); border: 1px solid var(--muted); padding: 12px 18px; cursor: pointer; }
+.fs-play:focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; }
+
+/* S5 flow */
+.fs-flow { list-style: none; margin: 0 0 20px; padding: 0; border-left: 1px solid var(--line); }
+.fs-flow li { position: relative; padding: 0 0 16px 20px; color: var(--text); }
+.fs-flow li::before { content: ""; position: absolute; left: -4px; top: 6px; width: 7px; height: 7px; border: 1px solid var(--muted); background: var(--bg); border-radius: 50%; }
+.fs-flow-k { display: block; font: 500 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.fs-stat { padding: 12px 16px; border-left: 2px solid var(--both); background: var(--surface); }
+.fs-stat .num { font-family: var(--mono); color: var(--both); }
+
+/* S6 team */
+.fs-team { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.fs-team li { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.fs-team li:last-child { border-bottom: 1px solid var(--line); }
+.fs-name { color: var(--text); }
+.fs-role { color: var(--muted); font-size: 13px; }
+
+/* S7 footer */
+.fs-footer { padding: 32px 0 48px; color: var(--muted); font-size: 12px; }
+.fs-footer p { margin: 0 0 6px; }
+.fs-footer p:first-child { color: var(--text); font: 500 12px/1.4 var(--mono); letter-spacing: .06em; }
+
+/* S1 scroll reveal: fade + ≤ 8 px rise, ≤ 500 ms, once (style.md Motion) */
+.fs-reveal { opacity: 0; transform: translateY(8px); transition: opacity 480ms var(--ease, cubic-bezier(.4,0,.2,1)), transform 480ms var(--ease, cubic-bezier(.4,0,.2,1)); }
+.fs-reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .fs-reveal { opacity: 1; transform: none; transition: none; } }
+
+/* S8 phone */
+@media (max-width: 720px) {
+  .fhls-sections { margin-top: 40px; }
+  .fs-section { padding: 40px 0; }
+  .fs-grid { grid-template-columns: 1fr; gap: 16px; }
+  .fs-title { font-size: 22px; }
+  .fs-team li { grid-template-columns: 1fr; gap: 2px; }
+}

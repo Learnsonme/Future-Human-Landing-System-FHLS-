@@ -103,14 +103,14 @@ P1 touches `web/`: allowed for T1 by agreement. Build it as `web/components/stat
 ### T3 · scroll-down sections below the landing (`web/sections/`, owned by T3)
 Below the landing screen, the page scrolls into these sections. Built by T3 in `web/sections/` (HTML partial + CSS + small JS); T2 only adds one include line in `web/index.html`, so tell @T2 in LOG.md. Palette and type from style.md. Must be finished before the Sunday 11:00 freeze; swapping in the real video link after the freeze is fine.
 - [x] D7 · T3 · **Light-mode tokens in style.md** for M13: a light version of every colour token (background, surface, line, text, muted), keeping the Sun/Earth/both/none colours recognisable and readable on light backgrounds (contrast ≥ 4.5:1 for text).
-- [~] S1 · T3 · **Smooth scroll reveal.** Each section fades and rises ≤ 8 px as it enters the screen (IntersectionObserver, ≤ 500 ms, once only; see style.md Motion). `prefers-reduced-motion` → appear instantly. (claimed by T3, 23:00)
-- [~] S2 · T3 · **Video placeholder.** A 16:9 frame with a still poster and "Demo video coming soon". Later replaced by the real demo: muted, captions on, play button, no sound until clicked. (claimed by T3, 23:00)
-- [~] S3 · T3 · **About: how we came to this idea.** Two short paragraphs: the challenge, why the south pole's low Sun and wobbling Earth make landing-site choice hard, how the architect's sun-path/shading-mask idea led to FHLS, and who it helps. (claimed by T3, 23:00)
-- [~] S4 · T3 · **Limits.** One short note: sunlight and Earth visibility are planning inputs, not proof a site is safe; slope, boulders, temperature and mission constraints also matter. (claimed by T3, 23:00)
-- [~] S5 · T3 · **How it's built.** Data → engine → browser in one line or a simple diagram, NASA data used, validation result (r = 0.99 vs NASA's illumination map). (claimed by T3, 23:00)
-- [~] S6 · T3 · **Team.** Three members, names and roles. (claimed by T3, 23:00)
-- [~] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo. (claimed by T3, 23:00)
-- [~] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps. (claimed by T3, 23:00)
+- [x] S1 · T3 · **Smooth scroll reveal.** Each section fades and rises ≤ 8 px as it enters the screen (IntersectionObserver, ≤ 500 ms, once only; see style.md Motion). `prefers-reduced-motion` → appear instantly.
+- [x] S2 · T3 · **Video placeholder.** A 16:9 frame with a still poster and "Demo video coming soon". Later replaced by the real demo: muted, captions on, play button, no sound until clicked.
+- [x] S3 · T3 · **About: how we came to this idea.** Two short paragraphs: the challenge, why the south pole's low Sun and wobbling Earth make landing-site choice hard, how the architect's sun-path/shading-mask idea led to FHLS, and who it helps.
+- [x] S4 · T3 · **Limits.** One short note: sunlight and Earth visibility are planning inputs, not proof a site is safe; slope, boulders, temperature and mission constraints also matter.
+- [x] S5 · T3 · **How it's built.** Data → engine → browser in one line or a simple diagram, NASA data used, validation result (r = 0.99 vs NASA's illumination map).
+- [~] S6 · T3 · **Team.** Three members, names and roles. (claimed by T3; built with placeholders, waiting for the three names)
+- [x] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo.
+- [x] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps.
 
 - [x] S9 · T3 · **Moving Sun and Earth in the sky panorama (Option A).** In the horizon panorama (`web/components/horizon-panorama.js`, coordinate with @T2), draw the Sun and Earth at their positions for the current hour over the real skyline. **Linked to the timeline:** dragging the date slider or timeline moves them to that hour instantly; a ▶ Play / ⏸ Pause button animates time at 1 day per second (options: 1 h/s, 1 day/s, 1 week/s). When either is behind terrain it dims to 35% and its marker gets a dashed outline. Short fading trail of the last ~2 days. Reduced motion → no autoplay, scrubbing still works. All modes; Beginner shows just the Sun/Earth icons with "visible / blocked" labels.
 - [x] E13 · T3 · **Heat-map data.** In the engine, for every point of the south polar grids: `pct_sunlit`, `pct_earth`, `pct_both`, `longest_dark_hours` over 2027–2028 (and per month). Save as small PNG/bin layers in `data/heatmap/` with a legend file. Precomputed, never in the browser.
