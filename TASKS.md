@@ -131,7 +131,7 @@ The user reassigned unfinished T1 work to T3. T3 is authorized to edit `viewer/`
 - [x] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it.
 - [x] E12 · T3 · **120 m "south-pole quality" terrain for 9 regions**: the 6 Apollo sites + Tycho, Copernicus, Aristarchus (12° × 12° each, LOLA LDEM_256 ≈ 118 m), `data/terrain/index_regions.json`
 - [x] V9 · T3 · Viewer: use the 120 m region tiles when flying into those regions
-- [ ] M12 · T3 · **Review round 2.** Check M1–M8 against style.md and the H3 checklist, using `design/review/walkthrough.mjs` on desktop and phone. Log findings to owners before the Sunday 11:00 freeze.
+- [x] M12 · T3 · **Review round 2.** Check M1–M8 against style.md and the H3 checklist, using `design/review/walkthrough.mjs` on desktop and phone. Log findings to owners before the Sunday 11:00 freeze. (see design/review_round2.md; rerun the checks after T2's M6–M8)
 
 ## Sunday
 - 11:00 feature freeze · 12:30 video + page ready · 13:15 submitted · 13:30 deadline · 14:00 judging (ask for an early slot)

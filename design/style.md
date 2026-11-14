@@ -152,7 +152,7 @@ These extend D5 for the round-2 tasks. Where they conflict with D5 above, these 
 - **Animation:** one 600 ms pulse on placement is allowed. Never loop it.
 
 **Logos (M7)**
-- **FHLS logo:** on the landing screen, at most 160 px wide, in `fhls-logo-transparent.png` or the square mark.
+- **FHLS logo:** the wordmark may be the landing **title** (as built in M5/M7), up to 440 px wide. Any secondary placement is at most 160 px wide, in `fhls-logo-transparent.png` or the square mark.
 - **Footer credit:** the NASA Space Apps logo (`app_logo.png`) and the team logo, 24–32 px tall at 80% opacity.
 - **Usage:** follow `design/logo/README.md`. Never use the NASA "meatball" or NASA insignia.
 
