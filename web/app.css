@@ -604,8 +604,16 @@ body[data-screen="app"]     #screen-app     { display: block; }
 .startx-canvas { display: block; width: 100%; height: 100%; }
 
 /* D5 · every screen change is a crossfade; the Start star plays over it */
-body.is-crossfading .screen { animation: screen-fade 520ms var(--ease) both; }
-@keyframes screen-fade {
+/* A crossfade is two halves. One class for both ends made the screen that was
+   already on display replay the fade-in, which looked like a double flash. */
+body.is-leaving .screen { animation: screen-out 260ms var(--ease) both; }
+@keyframes screen-out {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-4px); }
+}
+
+body.is-arriving .screen { animation: screen-in 260ms var(--ease) both; }
+@keyframes screen-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
@@ -658,7 +666,8 @@ body.is-crossfading .screen { animation: screen-fade 520ms var(--ease) both; }
 /* ---------- nothing moves when the reader asked for stillness ---------- */
 @media (prefers-reduced-motion: reduce) {
   .startx { opacity: 0 !important; }
-  body.is-crossfading .screen,
+  body.is-leaving .screen,
+  body.is-arriving .screen,
   .pin-card,
   .pin-figures dd.is-best::after { animation: none !important; }
   .reveal { opacity: 1; transform: none; }

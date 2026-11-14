@@ -188,7 +188,7 @@ export function createStarTransition(root) {
   function finish(resolve) {
     ctx.clearRect(0, 0, w, h);
     root.classList.remove("is-running");
-    document.body.classList.remove("is-crossfading");
+    document.body.classList.remove("is-leaving");
     raf = 0; busy = false;
     resolve();
   }
@@ -196,11 +196,12 @@ export function createStarTransition(root) {
   function play(swap, options = {}) {
     if (prefersReduced() || busy) { swap?.(); return Promise.resolve(); }
     busy = true;
-    document.body.classList.add("is-crossfading");
+    document.body.classList.add("is-leaving");
 
     if (!options.star) {
       return new Promise((resolve) => {
         timer = setTimeout(() => {
+          document.body.classList.remove("is-leaving");   // hand over to is-arriving
           try { swap?.(); } catch (err) { console.error(err); }
           timer = setTimeout(() => finish(resolve), CROSSFADE_MS / 2);
         }, CROSSFADE_MS / 2);
@@ -218,6 +219,7 @@ export function createStarTransition(root) {
         const elapsed = now - started;
         if (!swapped && elapsed >= STAR_SWAP_AT) {
           swapped = true;
+          document.body.classList.remove("is-leaving");
           try { swap?.(); } catch (err) { console.error(err); }
         }
         draw(Math.min(1, elapsed / STAR_MS));
@@ -235,7 +237,7 @@ export function createStarTransition(root) {
       cancelAnimationFrame(raf); clearTimeout(timer);
       raf = 0; busy = false;
       root.classList.remove("startx", "is-running");
-      document.body.classList.remove("is-crossfading");
+      document.body.classList.remove("is-leaving");
       canvas.remove();
     },
   };
