@@ -18,11 +18,11 @@ Cycle: pull → claim → push → work → tick → log → push.
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
 - [~] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button (claimed by T1, 09:04; local only, user authorized no push)
-- [ ] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/)
-- [ ] V3 · T1 · Fly-to animation to the clicked point
-- [ ] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option
-- [ ] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows
-- [ ] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md`
+- [~] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/) (claimed by T1, 09:05; local only, user authorized no push)
+- [~] V3 · T1 · Fly-to animation to the clicked point (claimed by T1, 09:05; local only, user authorized no push)
+- [~] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option (claimed by T1, 09:05; local only, user authorized no push)
+- [~] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows (claimed by T1, 09:05; local only, user authorized no push)
+- [~] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md` (claimed by T1, 09:05; local only, user authorized no push)
 
 ### Web (T2 + Codex)
 - [~] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced) (claimed by T2, 22:46)
