@@ -90,6 +90,8 @@ The user reassigned unfinished T1 work to T3. T3 is authorized to edit `viewer/`
 - [x] M9 · T3 · **Higher-res terrain where it matters.** Full-resolution 40 m LOLA tiles around the 7 Artemis sites (lod 2, same tile format). Check the north tiles too. Hand over to T1 for V8 in LOG.md.
 - [x] M10 · T3 · **Logo files.** Get the official NASA Space Apps logo per the Space Apps brand guidelines, saved as `design/logo/app_logo.png`. Prepare the team logo, and web sizes of the FHLS logo for M7. Document the usage rules in `design/logo/README.md`.
 - [x] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it.
+- [~] E12 · T3 · **120 m "south-pole quality" terrain for 9 regions**: the 6 Apollo sites + Tycho, Copernicus, Aristarchus (12° × 12° each, LOLA LDEM_256 ≈ 118 m), `data/terrain/index_regions.json` (claimed by T3, 21:10)
+- [~] V9 · T3 · Viewer: use the 120 m region tiles when flying into those regions (claimed by T3, 21:10)
 - [ ] M12 · T3 · **Review round 2.** Check M1–M8 against style.md and the H3 checklist, using `design/review/walkthrough.mjs` on desktop and phone. Log findings to owners before the Sunday 11:00 freeze.
 
 ## Sunday
