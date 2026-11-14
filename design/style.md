@@ -46,6 +46,12 @@ In light mode, text and thin strokes use `--sun` / `--earth` / `--both`; areas u
 - **The toggle (M13):** 32 px round button, bottom-right, 16 px from the edges, `--surface` background, 1 px `--line` border, icon in `--muted` (`--text` on hover). Icon shows the mode you will switch **to** (moon in light mode, sun in dark mode). `aria-label` "Switch to light mode" / "Switch to dark mode". Shared focus ring.
 - **Check:** every screen in both modes on laptop and phone; no text below 4.5 : 1.
 
+### Heat-map colours (user decision, round 3)
+The heat map is the one place allowed a multi-colour scale, because it must read at a glance across the whole Moon.
+- Scale, low → high: `#2B4C9B` (blue, least) → `#3FA7C9` (cyan) → `#F2D13D` (yellow, a lot) → `#E0662F` (orange) → `#C9322B` (red, most). Smooth interpolation, opacity 0.6 over the terrain.
+- Always show the legend with % (or days for "Longest blackout", where the scale is reversed: red = longest blackout).
+- Use these colours **only** in the heat map and its legend, never elsewhere in the UI.
+
 ## Type
 - Logo font: **Sugo Display**, used in the Canva logo. Don't embed it as a web font, because its web licence is unconfirmed and the app must stay offline with self-hosted fonts. Where the wordmark is needed, use the logo image `design/logo/fhls-logo-transparent.png`. Other titles use Open Sans SemiBold, UPPERCASE, used sparingly.
 - Body, labels, numbers and data: **Open Sans** (S14, user decision: Plex read as blocky). Self-hosted variable font `viewer/assets/open-sans.woff2` (SIL OFL, weights 300–800), so the app stays offline. Data columns use `font-variant-numeric: tabular-nums` so numbers line up. The `--mono` token now also points at Open Sans; small uppercase labels keep their letter-spacing.
