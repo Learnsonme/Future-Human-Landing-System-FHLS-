@@ -24,6 +24,35 @@ export function createViewer(container, options = {}) {
   let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, detailMaterial, finestMaterial, stars, core;
   let terrainReady = Promise.resolve(null), extrasReady = null, fade = null, firstFrame = false;
   const presentation = options.presentation !== false;
+  // P9: one shared overlay (heat map) draped over the south polar terrain by the terrain shaders.
+  const overlay = { uOverlay: { value: null }, uOverlayRect: { value: new T.Vector4(0, 0, 1, 1) },
+    uOverlayOpacity: { value: 0 }, uOverlayOn: { value: 0 } };
+  function withOverlay(material) {
+    material.onBeforeCompile = shader => {
+      Object.assign(shader.uniforms, overlay);
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOverlayPos;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvOverlayPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
+uniform sampler2D uOverlay; uniform vec4 uOverlayRect; uniform float uOverlayOpacity; uniform float uOverlayOn;
+varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayOn > 0.5) {
+  // render (x, y, z) = MOON_ME (x, z, −y); south polar stereographic: x = 2R·(−u.z)/(1 − u.y), y = 2R·u.x/(1 − u.y)
+  vec3 u = normalize(vOverlayPos);
+  if (u.y < -0.5) {
+    vec2 xy = vec2(-u.z, u.x) * (2.0 * 1737.4 / (1.0 - u.y));
+    vec2 uv = (xy - uOverlayRect.xy) / uOverlayRect.zw;
+    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+      vec4 o = texture2D(uOverlay, uv);
+      // After lighting: the map colour reads the same in sunlight and in the long polar shadows,
+      // while (1 − opacity) of the lit relief still shows through.
+      outgoingLight = mix(outgoingLight, o.rgb, o.a * uOverlayOpacity);
+    }
+  }
+}
+#include <opaque_fragment>`);
+    };
+    material.customProgramCacheKey = () => 'fhls-overlay';
+    return material;
+  }
   // M3: show a matching still of the Moon at once; the live globe crossfades in after its first frame.
   let poster = null;
   if (presentation) {
@@ -149,6 +178,7 @@ export function createViewer(container, options = {}) {
       for (const mat of Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : []) materials.add(mat); });
     for (const mat of materials) for (const value of Object.values(mat)) if (value?.isTexture) textures.add(value);
     for(const texture of looseTextures)textures.add(texture);looseTextures.clear();
+    if (overlay.uOverlay.value) textures.add(overlay.uOverlay.value);
     for (const resource of [...geometries, ...materials, ...textures]) resource.dispose();
     light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss();
   }
@@ -254,6 +284,7 @@ export function createViewer(container, options = {}) {
       Object.assign(detailMaterial, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
       finestMaterial = terrainMaterial.clone();      // 40 m Artemis tiles win over the 120 m strip beneath
       Object.assign(finestMaterial, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      for (const m of [terrainMaterial, detailMaterial, finestMaterial]) withOverlay(m);
       const loader = new T.TextureLoader();
       const texturePromise = loader.loadAsync(asset('moon-color-2k.jpg').href).then(texture => {
         if(disposed||failed){texture.dispose();return texture;}
@@ -329,6 +360,27 @@ export function createViewer(container, options = {}) {
   event(startButton, 'click', start);
   return { ready, start, flyTo, setTime, overview, dispose,
     addMarker(id, lat, lon, label) { checkAlive(); markers.add(id, lat, lon, label); },
+    /**
+     * P9 · drape an image or canvas over the south polar terrain (e.g. the heat map).
+     * Image row 0 = max y; it covers x0_km … x0_km + width, y0_km … y0_km + height on the south polar
+     * stereographic map (same projection as data/terrain and data/heatmap). size_km: number or [w, h].
+     */
+    setOverlay(image, { projection = 'polar_stereographic_south', x0_km, y0_km, size_km, opacity = 0.6 } = {}) {
+      checkAlive();
+      if (projection !== 'polar_stereographic_south') throw new RangeError('Only the south polar overlay is supported.');
+      const [w, h] = Array.isArray(size_km) ? size_km : [size_km, size_km];
+      if (![x0_km, y0_km, w, h, opacity].every(Number.isFinite) || w <= 0 || h <= 0) throw new TypeError('setOverlay needs x0_km, y0_km, size_km.');
+      const old = overlay.uOverlay.value;
+      const texture = new T.Texture(image); texture.colorSpace = T.SRGBColorSpace; texture.needsUpdate = true;
+      texture.minFilter = T.LinearFilter; texture.magFilter = T.LinearFilter; texture.generateMipmaps = false;
+      overlay.uOverlay.value = texture; overlay.uOverlayRect.value.set(x0_km, y0_km, w, h);
+      overlay.uOverlayOpacity.value = Math.max(0, Math.min(1, opacity)); overlay.uOverlayOn.value = 1;
+      if (old && old !== texture) old.dispose();
+    },
+    clearOverlay() {
+      checkAlive(); overlay.uOverlayOn.value = 0;
+      overlay.uOverlay.value?.dispose(); overlay.uOverlay.value = null;
+    },
     removeMarker(id) { checkAlive(); return markers.remove(id); },
     setActiveMarker(id) { checkAlive(); markers.setActive(id); },
     onPick(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onPick needs a function.'); picks.add(callback); return () => picks.delete(callback); },

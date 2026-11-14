@@ -232,6 +232,14 @@ committed T2 app integration check passed on 14 November 2026. Desktop,
 390 px mobile viewport, touch input and reduced-motion paths were exercised;
 real-data demo and integration runs made no external network requests.
 
+### Heat-map overlay (P9)
+
+`viewer.setOverlay(imageOrCanvas, { projection: 'polar_stereographic_south', x0_km, y0_km, size_km, opacity = 0.6 })` drapes an image over the south polar terrain. `size_km` is a number, or `[width, height]`.
+- **Placement:** image row 0 is the max-y edge, on the same polar stereographic map as `data/terrain` and `data/heatmap`. The image covers `x0_km … x0_km + width` and `y0_km … y0_km + height`.
+- **Blending:** done in the terrain shaders after lighting. The map colour reads the same in sunlight and in shadow, and `1 − opacity` of the lit relief shows through.
+- **Removing it:** `viewer.clearOverlay()` removes it. The texture is disposed with the viewer.
+- **Used by:** `web/components/heatmap-control.js` (S10).
+
 ### Comparison markers (M4)
 
 `viewer.addMarker(id, lat, lon, label)` adds or replaces a pin, where `id` is a

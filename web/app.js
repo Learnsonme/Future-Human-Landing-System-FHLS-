@@ -6,6 +6,7 @@ import { createViewer } from "../viewer/index.js";
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
+import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 (T3)
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -33,6 +34,7 @@ let core = null;
 let coreError = null;
 let sites = [];
 let viewer = null;
+let heatControl = null;   // S10 (T3): south-pole heat-map "Map" control over the 3D view
 let landingViewer = null;
 let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.json
 let sky = null;
@@ -134,7 +136,7 @@ function show(screen) {
   if (state.screen === "app" && screen !== "app") {
     // Dispose immediately, before a screen animation: this cancels both active
     // flights and terrain requests. Exploration state lives separately above.
-    const previous = viewer; viewer = null; previous?.dispose();
+    const previous = viewer; viewer = null; heatControl?.attach(null); previous?.dispose();
   }
   if (transition?.busy) {
     transition.destroy();
@@ -181,6 +183,7 @@ function setMode(mode) {
   $("mode-chip").textContent = MODES[mode].label;
   document.body.dataset.mode = mode;
   if (state.screen !== "landing") sky?.setDensity(mode);
+  heatControl?.setMode(mode);   // S10 (T3)
 }
 
 /* ---------- startup ---------- */
@@ -260,6 +263,8 @@ function mountViewer() {
   }
 
   const instance = viewer;
+  heatControl ||= mountHeatmapControl($("viewer-slot"), { dataBase: "../data", mode: state.mode });   // S10 (T3)
+  heatControl.attach(instance);
   instance.onPick((lat, lon) => {
     if (viewer === instance && state.screen === "app") selectSite({ lat, lon }, { fly: true });
   });
@@ -270,6 +275,8 @@ function mountViewer() {
     if (viewer !== instance) return;
     const terrain = {
       "LOLA-120m": "Terrain · LOLA 120 m tiles",
+      "LOLA-474m": "Terrain · LOLA 474 m tiles",               // V8 (T3)
+      "LOLA-40m": "Terrain · LOLA 40 m tiles (Artemis site)",  // V8 (T3)
       "LOLA-overview-480m": "Terrain · LOLA 480 m overview",
       "global-lower-precision": "Terrain · global relief, lower precision",
     }[status.terrain] || status.terrain || "";
