@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FHLS · Lunar viewer</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./viewer.css"><link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+  <header><div><p class="eyebrow">LUNAR LANDING SITE NAVIGATOR</p><h1>FUTURE HUMAN<br>LANDING SYSTEM</h1></div><p class="masthead-note">Whole-Moon exploration<br><span>2027 — 2028 · UTC</span></p></header>
+  <main>
+    <section id="moon" aria-label="Lunar globe and terrain"></section>
+    <aside>
+      <p class="eyebrow">VIEWER DEMONSTRATION</p><h2>Explore a lunar site</h2>
+      <p>Choose any point on the Moon. South of 84°S, fly into the LOLA terrain.</p>
+      <form id="location-form"><div class="fields"><label>Latitude °<input id="latitude" type="number" min="-90" max="90" step="any" value="-89.45" required></label><label>Longitude °E<input id="longitude" type="number" step="any" value="-137.3" required></label></div><button id="fly" disabled>Fly to coordinates</button></form>
+      <div class="presets"><button id="shackleton" disabled>Shackleton rim</button><button id="overview" disabled>Whole Moon</button></div>
+      <label class="time-label">Simulation time · UTC<input id="time" type="datetime-local" min="2027-01-01T00:00" max="2028-12-31T23:00" step="3600" value="2027-01-15T12:00"></label>
+      <label>Terrain height scale<select id="exaggeration"><option value="1">1× · physical elevation</option><option value="1.25">1.25× · exaggerated</option><option value="1.5">1.5× · exaggerated</option></select></label>
+      <dl><div><dt>Selected location</dt><dd id="selection">No point selected</dd></div><div><dt>Solar illumination</dt><dd id="lighting">Loading ephemeris…</dd></div><div><dt>Terrain</dt><dd id="precision">Global relief</dd></div></dl>
+      <p id="notice" role="status">Loading viewer…</p>
+      <p class="footnote">Rendered shadows illustrate the terrain. Scientific visibility results come from the FHLS core. Visibility does not guarantee power or a radio link.</p>
+    </aside>
+  </main>
+  <footer><span>NASA's Scientific Visualization Studio · LRO / LOLA</span><a href="./README.md">Viewer API &amp; handoff</a></footer>
+  <script type="module" src="./demo.js"></script>
+</body>
+</html>
