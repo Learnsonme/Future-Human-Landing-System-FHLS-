@@ -12,25 +12,28 @@ const asset = name => new URL(`assets/${name}`, HERE);
 /** Framework-independent FHLS viewer. All paths are relative to this module. */
 export function createViewer(container, options = {}) {
   if (!(container instanceof HTMLElement)) throw new TypeError('createViewer needs an HTML container.');
+  // Validate synchronous inputs before adding DOM, observers or GPU resources.
+  let utc = parseTime(options.time || '2027-01-15T12:00:00Z');
+  const dataBase = new URL(options.dataBase || '../data/', HERE); if (!dataBase.pathname.endsWith('/')) dataBase.pathname += '/';
   const root = document.createElement('div'); root.className = 'fhls-viewer';
   const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = new URL('viewer.css', HERE).href;
   const message = document.createElement('div'); message.className = 'fhls-viewer-status'; message.setAttribute('role', 'status');
   const startButton = document.createElement('button'); startButton.className = 'fhls-viewer-start'; startButton.textContent = 'Start exploration';
   startButton.disabled = true; root.append(css, message, startButton); container.append(root);
   let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, stars, core;
-  let disposed = false, started = options.presentation === false, flight = null, raf = 0, lastFrame = 0;
-  let utc = parseTime(options.time || '2027-01-15T12:00:00Z'), selection = null, generation = 0, pendingPick;
+  let disposed = false, failed = false, started = options.presentation === false, flight = null, raf = 0, lastFrame = 0;
+  let selection = null, generation = 0, pendingPick;
   let status = { phase: 'loading', message: 'Loading lunar imagery and ephemeris…', time: utc, lighting: 'loading', terrain: 'loading', synthetic: true, exaggeration: 1 };
   const picks = new Set(), statuses = new Set(), listeners = [], abort = new AbortController();
+  const looseTextures = new Set();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const dataBase = new URL(options.dataBase || '../data/', HERE); if (!dataBase.pathname.endsWith('/')) dataBase.pathname += '/';
   const raycaster = new T.Raycaster(), pointer = new T.Vector2();
   const event = (node, type, fn, opts) => { node.addEventListener(type, fn, opts); listeners.push(() => node.removeEventListener(type, fn, opts)); };
   function notify(patch) {
     if (disposed) return;
     status = { ...status, ...patch }; message.textContent = status.message;
     status.synthetic = core ? !!core.synthetic : true;
-    if(status.lighting==='fixed-development')message.textContent = `Development lighting — fixed Sun · ${status.message}`;
+    if(status.lighting==='fixed-development' && !status.message.startsWith('Development lighting — fixed Sun'))message.textContent = `Development lighting — fixed Sun · ${status.message}`;
     if(status.lighting==='synthetic')message.textContent = `Synthetic ephemeris · ${status.message}`;
     root.dataset.phase = status.phase;
     for (const cb of statuses) { try { cb({ ...status }); } catch (e) { console.error(e); } }
@@ -70,7 +73,7 @@ export function createViewer(container, options = {}) {
     renderer.shadowMap.needsUpdate = true;
     notify({ time: utc, lighting: core ? (core.synthetic ? 'synthetic' : 'ephemeris') : 'fixed-development' });
   }
-  function setTime(value) { checkAlive(); utc = parseTime(value); updateLight(); return utc; }
+  function setTime(value) { checkAlive(); utc = parseTime(value); notify({time:utc}); updateLight(); return utc; }
   function resize() {
     if (!renderer || disposed) return;
     const { width, height } = root.getBoundingClientRect(); if (!width || !height) return;
@@ -93,19 +96,27 @@ export function createViewer(container, options = {}) {
     } else controls.update(dt);
     safety(); renderer.render(scene, camera);
   }
-  function dispose() {
-    if (disposed) return; cancelFlight(); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
-    for (const remove of listeners) remove(); controls?.dispose(); terrain?.dispose();
+  function releaseGraphics() {
+    controls?.dispose(); terrain?.dispose();
     const geometries = new Set(), materials = new Set(), textures = new Set();
+    if(terrainMaterial)materials.add(terrainMaterial);
     scene?.traverse(obj => { if (obj.geometry) geometries.add(obj.geometry);
       for (const mat of Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : []) materials.add(mat); });
     for (const mat of materials) for (const value of Object.values(mat)) if (value?.isTexture) textures.add(value);
+    for(const texture of looseTextures)textures.add(texture);looseTextures.clear();
     for (const resource of [...geometries, ...materials, ...textures]) resource.dispose();
-    light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss(); root.remove(); picks.clear(); statuses.clear();
+    light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss();
+  }
+  function dispose() {
+    if (disposed) return; cancelFlight(); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
+    for (const remove of listeners) remove(); releaseGraphics();
+    root.remove(); picks.clear(); statuses.clear();
   }
   async function flyTo(lat, lon) {
     checkAlive(); const location = validateLocation(lat, lon); start(); cancelFlight();
-    const token = generation; await ready; if (disposed || token !== generation) return { cancelled: true };
+    const token = generation;
+    try{await ready;}catch(error){if(disposed)return {cancelled:true};throw error;}
+    if (disposed || token !== generation) return { cancelled: true };
     clearControlInertia(); selection = location;
     if (terrain) {
       notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
@@ -116,12 +127,14 @@ export function createViewer(container, options = {}) {
         notify({ terrain: location.lat <= -84 ? 'LOLA-120m' : 'global-lower-precision' });
       } catch (error) {
         if (disposed || token !== generation) return { cancelled: true };
+        terrain.records=[];terrain.rebuild(terrainGroup,terrainMaterial);
         notify({ terrain: 'overview-only', message: `Detail unavailable: ${error.message}. Using overview.` });
       }
     }
     updateLight(); controls.autoRotate = false; controls.enabled = false;
-    notify({ phase: 'ready', message: location.lat <= -84
-      ? 'LOLA south polar terrain · rendered shadows are illustrative'
+    notify({ phase: 'ready', message: location.lat <= -84 && terrain
+      ? status.terrain==='overview-only' ? 'LOLA overview · detail unavailable · lower precision terrain'
+        : 'LOLA south polar terrain · rendered shadows are illustrative'
       : 'Global relief · lower precision terrain' });
     return new Promise(resolve => {
       flight = { ...makeFlight(camera, controls, location.lat, location.lon, heightAt(location.lat, location.lon),
@@ -137,7 +150,6 @@ export function createViewer(container, options = {}) {
     notify({ phase: 'ready', message: 'Drag to rotate · scroll or pinch to zoom · click a location' });
   }
   const ready = (async () => {
-    const looseTextures = new Set();
     try {
       renderer = new T.WebGLRenderer({ antialias: true, alpha: false });
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setClearColor('#141414');
@@ -157,14 +169,20 @@ export function createViewer(container, options = {}) {
       terrainMaterial = new T.MeshStandardMaterial({ color: '#9A978F', roughness: 1, metalness: 0 });
       const loader = new T.TextureLoader();
       const texturePromise = loader.loadAsync(asset('moon-color-2k.jpg').href).then(texture => {
+        if(disposed||failed){texture.dispose();return texture;}
         looseTextures.add(texture); texture.colorSpace = T.SRGBColorSpace; texture.wrapS = T.RepeatWrapping;
         texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); return texture;
       });
-      const corePromise = Promise.resolve(options.core || loadCore(dataBase.href.replace(/\/$/, ''))).then(value => { core = value; })
-        .catch(error => { notify({ lighting: 'fixed-development', message: `Development lighting — fixed Sun. ${error.message}` }); });
+      const corePromise = Promise.resolve(options.core || loadCore(dataBase.href.replace(/\/$/, ''))).then(value => {
+        if(!value || typeof value.sunDirection!=='function')throw new TypeError('core must provide sunDirection(time).');
+        if(!disposed&&!failed)core = value;
+      })
+        .catch(error => { if(!failed)notify({ lighting: 'fixed-development', message: `Development lighting — fixed Sun. ${error.message}` }); });
       const terrainCandidate = new Terrain(dataBase, abort.signal);
-      const terrainPromise = terrainCandidate.initialize().then(value => { terrain = value; })
-        .catch(error => { terrainCandidate.dispose(); notify({ terrain: 'unavailable', message: `LOLA tiles unavailable: ${error.message}` }); });
+      const terrainPromise = terrainCandidate.initialize().then(value => {
+        if(disposed||failed)value.dispose();else {terrain = value;terrain.exaggeration=status.exaggeration;}
+      })
+        .catch(error => { terrainCandidate.dispose(); if(!failed)notify({ terrain: 'unavailable', message: `LOLA tiles unavailable: ${error.message}` }); });
       const [texture, relief] = await Promise.all([texturePromise,
         fetchOK(asset('moon-displacement.tiff'), abort.signal).then(r => r.arrayBuffer()).then(decodeMoonTIFF), corePromise, terrainPromise]);
       if (disposed) { for (const texture of looseTextures) texture.dispose(); terrain?.dispose(); return; }
@@ -197,8 +215,11 @@ export function createViewer(container, options = {}) {
         : 'Development lighting — fixed Sun; ephemeris unavailable' });
       raf = requestAnimationFrame(animate);
     } catch (error) {
-      for (const texture of looseTextures) texture.dispose();
-      if (!disposed) { notify({ phase: 'error', message: `Viewer unavailable: ${error.message}` }); throw error; }
+      if (!disposed) {
+        failed=true;abort.abort();observer.disconnect();releaseGraphics();
+        startButton.hidden=true;
+        notify({ phase: 'error', message: `Viewer unavailable: ${error.message}` }); throw error;
+      }
     }
   })();
   // Keep an unobserved initialization failure from becoming an unhandled rejection.
@@ -216,7 +237,16 @@ export function createViewer(container, options = {}) {
       flying: !!flight, terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
     setVerticalExaggeration(value) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
-      if (terrain) { terrain.exaggeration = value; terrain.rebuild(terrainGroup, terrainMaterial); updateLight(); }
+      if (terrain) {
+        const oldCentre=selection?new T.Vector3(...locationToRender(selection.lat,selection.lon,heightAt(selection.lat,selection.lon))):null;
+        terrain.exaggeration = value; terrain.rebuild(terrainGroup, terrainMaterial);
+        if(oldCentre){
+          const shift=new T.Vector3(...locationToRender(selection.lat,selection.lon,heightAt(selection.lat,selection.lon))).sub(oldCentre);
+          controls.target.add(shift);camera.position.add(shift);
+          if(flight){flight.target.add(shift);flight.position.add(shift);flight.fromTarget.add(shift);flight.fromPosition.add(shift);}
+        }
+        updateLight();
+      }
       notify({ exaggeration: value });
     }
   };

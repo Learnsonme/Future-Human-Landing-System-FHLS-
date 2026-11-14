@@ -69,5 +69,6 @@ export function parseTime(utc) {
   const ms = Date.parse(utc), start = Date.parse('2027-01-01T00:00:00Z');
   const end = Date.parse('2028-12-31T23:00:00Z');
   if (!Number.isFinite(ms) || ms < start || ms > end) throw new RangeError('Time must be within 2027–2028 hourly coverage.');
+  if(new Date(ms).toISOString().slice(0,16)!==utc.slice(0,16))throw new RangeError('Use a valid UTC calendar date and time.');
   return new Date(start + Math.round((ms - start) / 3600000) * 3600000).toISOString();
 }

@@ -1,6 +1,6 @@
 // Repository-root static server + external Playwright installation; see README.
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { localFrame } from '../coordinates.js';
 const { chromium } = await import(process.env.FHLS_PLAYWRIGHT || 'playwright');
 const base=process.env.FHLS_TEST_URL || 'http://127.0.0.1:8765';
@@ -15,6 +15,7 @@ await context.route('**/*',route=>{
 context.on('page',page=>page.on('pageerror',e=>errors.push(e.message)));
 const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
 try{
+  await mkdir('/private/tmp/fhls-viewer-tests',{recursive:true});
   const page=await context.newPage();await page.goto(base+'/viewer/demo.html');await page.evaluate(()=>window.fhlsDemo.ready);
   await page.evaluate(()=>window.fhlsDemo.flyTo(-89.45,-137.3));
   const dark=await page.locator('canvas').screenshot();

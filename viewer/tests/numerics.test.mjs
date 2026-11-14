@@ -55,7 +55,7 @@ test('Flights reach exact targets without crossing the lunar sphere', () => {
 test('UTC range validation and hourly selection', () => {
   assert.equal(parseTime('2027-01-01T00:29:00Z'),'2027-01-01T00:00:00.000Z');
   assert.equal(parseTime('2028-12-31T23:00:00Z'),'2028-12-31T23:00:00.000Z');
-  for(const t of ['invalid','2027-01-01T00:00:00','2026-12-31T23:00:00Z','2029-01-01T00:00:00Z']) assert.throws(()=>parseTime(t));
+  for(const t of ['invalid','2027-01-01T00:00:00','2026-12-31T23:00:00Z','2029-01-01T00:00:00Z','2027-02-30T12:00:00Z','2027-01-01T24:00:00Z']) assert.throws(()=>parseTime(t));
 });
 
 function crc(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^(0xedb88320&-(c&1));}return(c^0xffffffff)>>>0;}

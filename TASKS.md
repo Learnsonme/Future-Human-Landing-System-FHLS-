@@ -17,12 +17,12 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] E9 · T3 · `south_fine` grids over Artemis candidate regions
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
-- [x] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button (claimed by T1, 09:04; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [x] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/) (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [x] V3 · T1 · Fly-to animation to the clicked point (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [x] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [x] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [~] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md` (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
+- [x] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button
+- [x] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/)
+- [x] V3 · T1 · Fly-to animation to the clicked point
+- [x] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option
+- [x] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows
+- [x] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md`
 
 ### Web (T2 + Codex)
 - [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
