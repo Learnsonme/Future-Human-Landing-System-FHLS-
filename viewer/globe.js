@@ -36,7 +36,8 @@ export function decodeMoonTIFF(buffer) {
 }
 
 export function createGlobe(texture, relief, terrain) {
-  const geometry = new T.SphereGeometry(R_KM, 384, 192);
+  // One-degree latitude rings include the exact −84° terrain boundary.
+  const geometry = new T.SphereGeometry(R_KM, 384, 180);
   const positions = geometry.attributes.position;
   for (let i = 0; i < positions.count; i++) {
     const v = new T.Vector3().fromBufferAttribute(positions, i), { lat, lon } = renderToLocation(v.toArray());
@@ -52,8 +53,9 @@ export function createGlobe(texture, relief, terrain) {
       const index = [];
       for (let i = 0; i < fullIndex.length; i += 3) {
         const a = fullIndex[i], b = fullIndex[i + 1], c = fullIndex[i + 2];
-        const y = (positions.getY(a) + positions.getY(b) + positions.getY(c)) / 3;
-        const lat = Math.asin(y / R_KM) * 180 / Math.PI;
+        const centre = new T.Vector3().fromBufferAttribute(positions,a)
+          .add(new T.Vector3().fromBufferAttribute(positions,b)).add(new T.Vector3().fromBufferAttribute(positions,c));
+        const lat = renderToLocation(centre.toArray()).lat;
         if (!enabled || lat > -84) index.push(a, b, c);
       }
       geometry.setIndex(index);

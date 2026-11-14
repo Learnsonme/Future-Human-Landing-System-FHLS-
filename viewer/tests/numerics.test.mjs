@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { deflateSync } from 'node:zlib';
-import { Vector3, PerspectiveCamera } from '../vendor/three.module.js';
+import { Vector3, PerspectiveCamera, MeshStandardMaterial } from '../vendor/three.module.js';
 import { normalizeLongitude, locationToRender, renderToLocation, moonToRender, renderToMoon,
   locationToPolar, polarToLocation, locationToUV, parseTime, sampleGlobal } from '../coordinates.js';
 import { decodePNG16 } from '../png16.js';
 import { decodeMoonTIFF } from '../globe.js';
+import { Terrain } from '../terrain.js';
 import { arcDirection, makeFlight, updateFlight } from '../navigation.js';
 const near = (a, b, tolerance = 1e-8) => assert.ok(Math.abs(a - b) < tolerance, `${a} ≠ ${b}`);
 const data = new URL('../../data/', import.meta.url);
@@ -95,4 +96,36 @@ test('Numerical CGI displacement loads and wraps at the antimeridian',async()=>{
   assert.equal(p.width,1440);assert.equal(p.height,720);
   let min=Infinity,max=-Infinity;for(const h of p.values){min=Math.min(min,h);max=Math.max(max,h);}assert.ok(min < -5000 && max > 5000);
   near(sampleGlobal(p.values,p.width,p.height,0,180),sampleGlobal(p.values,p.width,p.height,0,-180));
+});
+test('Actual terrain meshes preserve 120 m registration, outward faces, borders and physical heights',async()=>{
+  const manifest=JSON.parse(await readFile(new URL('terrain/index.json',data),'utf8'));
+  const terrain=new Terrain(data);terrain.manifest=manifest;
+  for(const file of ['south/2_2.png','south/3_2.png','south/overview.png']){
+    const meta=manifest.tiles.find(t=>t.file===file),png=await decodePNG16(await buffer(new URL('terrain/'+file,data)));
+    const tile={meta,heights:Float32Array.from(png.values,v=>meta.min_m+v/65535*(meta.max_m-meta.min_m))};
+    if(meta.lod===0)terrain.overview=tile;else terrain.records.push(tile);
+  }
+  const material=new MeshStandardMaterial(),meshes=terrain.records.map(t=>terrain.mesh(t,material,1));
+  for(let k=0;k<2;k++){
+    const mesh=meshes[k],tile=terrain.records[k],p=mesh.geometry.attributes.position,m=tile.meta;
+    assert.ok(p.count>=513*513);
+    for(const [row,col] of [[0,0],[256,256],[512,512]]){
+      const v=new Vector3().fromBufferAttribute(p,row*513+col),loc=renderToLocation(v.toArray()),xy=locationToPolar(loc.lat,loc.lon);
+      near(xy.x,m.x0_km+col*.12,.0002);near(xy.y,m.y0_km+m.size_km-row*.12,.0002);
+      near((v.length()-1737.4)*1000,tile.heights[row*513+col],.2);
+    }
+    const index=mesh.geometry.index;
+    for(let i=0;i<mesh.userData.surfaceIndexCount;i+=3000){
+      const a=new Vector3().fromBufferAttribute(p,index.getX(i)),b=new Vector3().fromBufferAttribute(p,index.getX(i+1)),c=new Vector3().fromBufferAttribute(p,index.getX(i+2));
+      assert.ok(b.sub(a).cross(c.sub(a)).dot(a)>0);
+    }
+  }
+  const a=meshes[0].geometry.attributes.position,b=meshes[1].geometry.attributes.position;
+  for(let row=0;row<513;row++){
+    near(a.getX(row*513+512),b.getX(row*513));near(a.getY(row*513+512),b.getY(row*513));near(a.getZ(row*513+512),b.getZ(row*513));
+  }
+  const cap=terrain.mesh(terrain.overview,material,4);
+  const p=cap.geometry.attributes.position,index=cap.geometry.index;
+  for(let i=0;i<cap.userData.surfaceIndexCount;i++)assert.ok(renderToLocation(new Vector3().fromBufferAttribute(p,index.getX(i)).toArray()).lat<=-84+1e-5);
+  for(const mesh of [...meshes,cap])mesh.geometry.dispose();material.dispose();terrain.dispose();
 });

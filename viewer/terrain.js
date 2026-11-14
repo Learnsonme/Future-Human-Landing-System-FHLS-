@@ -66,6 +66,8 @@ export class Terrain {
   mesh(tile, material, stride, omit = []) {
     const { meta: m, heights } = tile;
     const n = Math.ceil((m.px - 1) / stride) + 1, positions = [], uv = [], polar = [];
+    const owners = [...this.records].sort((a,b) => a.meta.id.localeCompare(b.meta.id));
+    const capRadius = locationToPolar(-84,0).y;
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const col = Math.min(m.px - 1, i * stride), row = Math.min(m.px - 1, j * stride);
       const x = m.x0_km + col * m.spacing_km, y = m.y0_km + m.size_km - row * m.spacing_km;
@@ -73,30 +75,74 @@ export class Terrain {
       let h = heights[row * m.px + col];
       // Canonical border height avoids independent per-tile quantization cracks.
       if (m.lod === 1 && (col === 0 || row === 0 || col === m.px - 1 || row === m.px - 1)) {
-        const owner = [...this.records].sort((a, b) => a.meta.id.localeCompare(b.meta.id)).find(t => this.contains(t.meta, x, y));
+        const owner = owners.find(t => this.contains(t.meta, x, y));
         if (owner) h = sampleGrid(owner.heights, owner.meta.px, owner.meta.px,
           (x - owner.meta.x0_km) / owner.meta.spacing_km, (owner.meta.y0_km + owner.meta.size_km - y) / owner.meta.spacing_km);
       }
-      positions.push(...locationToRender(lat, lon, h * this.exaggeration)); uv.push(tex.u, tex.v); polar.push({ x, y, lat });
+      positions.push(...locationToRender(lat, lon, h * this.exaggeration)); uv.push(tex.u, tex.v); polar.push({ x, y, lat, h });
     }
     const indices = [];
+    const intersections = new Map();
+    const inside = i => Math.hypot(polar[i].x,polar[i].y) <= capRadius + 1e-8;
+    function intersection(a,b) {
+      const key = [a,b].sort((a,b)=>a-b).join(':');
+      if (intersections.has(key)) return intersections.get(key);
+      const p=polar[a],q=polar[b],dx=q.x-p.x,dy=q.y-p.y;
+      const A=dx*dx+dy*dy,B=2*(p.x*dx+p.y*dy),C=p.x*p.x+p.y*p.y-capRadius*capRadius;
+      const d=Math.sqrt(Math.max(0,B*B-4*A*C));
+      const roots=[(-B-d)/(2*A),(-B+d)/(2*A)];
+      const t=Math.max(0,Math.min(1,roots.find(t=>t>=-1e-8&&t<=1+1e-8)));
+      const x=p.x+t*dx,y=p.y+t*dy,h=p.h+t*(q.h-p.h),loc=polarToLocation(x,y),tex=locationToUV(loc.lat,loc.lon);
+      const i=positions.length/3;
+      positions.push(...locationToRender(loc.lat,loc.lon,h*this.exaggeration));uv.push(tex.u,tex.v);
+      polar.push({x,y,h,lat:loc.lat});intersections.set(key,i);return i;
+    }
+    const addTriangle = triangle => {
+      const clipped=[];
+      for(let j=0;j<3;j++){
+        const a=triangle[j],b=triangle[(j+1)%3],ain=inside(a),bin=inside(b);
+        if(ain) clipped.push(a);
+        if(ain!==bin) clipped.push(intersection.call(this,a,b));
+      }
+      for(let j=1;j+1<clipped.length;j++)indices.push(clipped[0],clipped[j],clipped[j+1]);
+    };
     for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
       const a = j * n + i, b = a + 1, c = a + n, d = c + 1;
       const mid = { x: (polar[a].x + polar[d].x) / 2, y: (polar[a].y + polar[d].y) / 2 };
-      if (polarToLocation(mid.x, mid.y).lat > -84) continue;
       if (omit.some(t => this.contains(t.meta, mid.x, mid.y))) continue;
-      indices.push(a, c, b, b, c, d);
+      addTriangle([a,c,b]);addTriangle([b,c,d]);
+    }
+    // Hide small overview/detail height differences at LOD joins with vertical
+    // skirts. Surface vertices and scientific elevations remain unchanged.
+    const edges = new Map();
+    for(let i=0;i<indices.length;i+=3)for(let j=0;j<3;j++){
+      const a=indices[i+j],b=indices[i+(j+1)%3],key=a<b?`${a}:${b}`:`${b}:${a}`;
+      if(edges.has(key))edges.delete(key);else edges.set(key,[a,b]);
+    }
+    const surfaceIndexCount = indices.length;
+    for(const [a,b] of edges.values()){
+      const mid={x:(polar[a].x+polar[b].x)/2,y:(polar[a].y+polar[b].y)/2};
+      // Shared detail edges already agree exactly. An internal skirt would
+      // introduce a vertical shadow caster underneath that continuous surface.
+      if(m.lod===1 && owners.some(t=>t!==tile && this.contains(t.meta,mid.x,mid.y)))continue;
+      const lower=[];
+      for(const i of [a,b]){
+        const v=new T.Vector3(...positions.slice(i*3,i*3+3));v.setLength(v.length()-1);
+        lower.push(positions.length/3);positions.push(...v.toArray());uv.push(uv[i*2],uv[i*2+1]);
+      }
+      indices.push(a,lower[0],b,b,lower[0],lower[1]);
     }
     const geometry = new T.BufferGeometry(); geometry.setAttribute('position', new T.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals();
     // Polar UVs cross the longitude seam; terrain uses a procedural lunar grey material.
     const mesh = new T.Mesh(geometry, material); mesh.castShadow = true; mesh.receiveShadow = true;
+    mesh.userData.surfaceIndexCount = surfaceIndexCount;
     return mesh;
   }
   rebuild(group, material) {
     for (const child of [...group.children]) { group.remove(child); child.geometry.dispose(); }
     if (this.overview) group.add(this.mesh(this.overview, material, 4, this.records));
-    for (const tile of this.records) group.add(this.mesh(tile, material, 2));
+    for (const tile of this.records) group.add(this.mesh(tile, material, 1));
   }
   dispose() { this.generation++; this.records = []; this.cache.clear(); }
 }
