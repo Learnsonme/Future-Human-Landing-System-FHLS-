@@ -49,6 +49,17 @@ Cycle: pull → claim → push → work → tick → log → push.
 ## Rule for "(open to T1)" tasks
 T1 may claim these **only after V1–V6 are done**, and only if they can finish them **before leaving on Saturday**. Unfinished at departure → set back to `[ ]` with a LOG.md note so T2 can take over. Build them as standalone components in `web/components/` with a short usage note.
 
+## Return to Home · shared equally across the three teammates
+Users must have a clear **Home** choice after choosing Beginner / Intermediate / Advanced and after selecting a lunar site. Home returns to the landing screen with its rotating Moon, without reloading the page. Keep the selected mode, site, date and comparison pins in memory when navigating away.
+
+One work package per teammate; each edits only their owned folder and claims their item before starting:
+
+- [ ] H1 · T1 · **Viewer lifecycle and regression checks** (`viewer/`): verify/fix site → Home → Start → site round trips, including a return during a fly-to. The home Moon must render and rotate again, reduced motion must be respected, and repeated navigation must not create duplicate canvases or leave stale flights running. Wait for the actual screen transition in browser checks.
+- [ ] H2 · T2 · **Home control and navigation** (`web/`): add a clearly labeled Home button to the mode picker and persistent app header, available in all three modes before and after site selection. Wire it through the existing screen/transition flow, preserve mode/site/date/pins, and keep Start → mode → explorer working after returning home.
+- [ ] H3 · T3 · **Design, accessibility and acceptance review** (`design/`): specify Home placement, wording, focus and keyboard behavior within `design/style.md`; record a checklist covering every mode, a selected site, desktop/mobile layouts, keyboard navigation and reduced motion. Review T1/T2's finished behavior and record findings for the responsible owner in LOG.md.
+
+Done when H1–H3 are verified, Home is visible and usable after both mode and site selection in every mode, and the round trip restores the home Moon without losing the current exploration state.
+
 ## Optional (only when everything above works)
 - [x] O1 · T2 · Pin up to 3 spots and compare side by side
 - [ ] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions
