@@ -17,6 +17,7 @@ Run every script from this folder (`cd engine`). You need Python 3, numpy, spice
 |---|---|---|---|
 | Ephemeris (E1) | `python3 make_ephemeris.py` | 1 s | `data/ephemeris.*` |
 | Terrain tiles (E5, E11) | `python3 make_terrain.py` then `python3 make_terrain.py north` | 2 s each | `data/terrain/` |
+| Detailed terrain (M9 + whole Moon) | `python3 make_terrain_detail.py artemis`, then `global` | 1 s / 7 s | `data/terrain/detail/`, `data/terrain/global/` |
 | Sites (E6) | `python3 sites.py` | instant | `data/sites*.json` |
 | Polar horizons (E4, E9, E11) | `python3 make_horizon.py` (or `fine`, or a grid id such as `north_2km`) | about 3 min on 10 cores | `data/horizon/` |
 | Whole-Moon horizons (E8, E10) | `python3 make_horizon_global.py coarse`, then `fine` | 4 s / a few min | `data/horizon/global_coarse.bin`, `global_fine/` |
