@@ -196,20 +196,21 @@
    "projection": "equirectangular",
    "lat0": -90,
    "lon0": -180,
-   "step_deg": 1,
-   "nx": 360,
-   "ny": 181,
    "n_az": 72,
    "az_step_deg": 5,
    "scale": 0.01,
    "nodata": -32768,
-   "file": "global_coarse.bin",
    "precision": "low",
-   "point_order": "index = iy*nx + ix, lat = lat0 + iy*step_deg, lon = lon0 + ix*step_deg",
    "observer_height_m": 2.0,
-   "max_distance_km": 150.0,
-   "source": "LOLA LDEM_16 (16 px/deg, ~1.9 km)",
-   "synthetic": false
+   "synthetic": false,
+   "step_deg": 1,
+   "nx": 360,
+   "ny": 181,
+   "file": "global_coarse.bin",
+   "detail_km": 30,
+   "max_distance_km": 150,
+   "point_order": "index = iy*nx + ix, lat = lat0 + iy*step_deg, lon = lon0 + ix*step_deg",
+   "source": "LOLA LDEM_16 (16 px/deg, ~1.9 km)"
   }
  ]
 }

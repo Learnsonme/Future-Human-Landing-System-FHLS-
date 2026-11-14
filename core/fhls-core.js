@@ -21,17 +21,29 @@ const DEG = Math.PI / 180;
 
 // ───────────────────────── projections ─────────────────────────
 
-/** lat/lon (deg, lat < 0) → south polar stereographic x, y (km). */
-export function latLonToPolar(lat, lon) {
+/**
+ * lat/lon (deg) → polar stereographic x, y (km). pole "south" (default, lat < 0):
+ * x = rho·sin(lon), y = rho·cos(lon). pole "north" (lat > 0): x = rho·sin(lon), y = −rho·cos(lon).
+ * Same projections as the data/terrain and data/horizon files.
+ */
+export function latLonToPolar(lat, lon, pole = "south") {
+  if (pole === "north") {
+    const rho = 2 * R_KM * Math.tan(((90 - lat) / 2) * DEG);
+    return { x: rho * Math.sin(lon * DEG), y: -rho * Math.cos(lon * DEG) };
+  }
   const rho = 2 * R_KM * Math.tan(((90 + lat) / 2) * DEG);
   return { x: rho * Math.sin(lon * DEG), y: rho * Math.cos(lon * DEG) };
 }
 
-/** South polar stereographic x, y (km) → { lat, lon } (deg, lon in −180…180). */
-export function polarToLatLon(x, y) {
-  const rho = Math.hypot(x, y);
-  return { lat: (2 * Math.atan(rho / (2 * R_KM))) / DEG - 90, lon: Math.atan2(x, y) / DEG };
+/** Polar stereographic x, y (km) → { lat, lon } (deg, lon in −180…180). */
+export function polarToLatLon(x, y, pole = "south") {
+  const colat = (2 * Math.atan(Math.hypot(x, y) / (2 * R_KM))) / DEG;
+  if (pole === "north") return { lat: 90 - colat, lon: Math.atan2(x, -y) / DEG };
+  return { lat: colat - 90, lon: Math.atan2(x, y) / DEG };
 }
+
+const POLAR_PROJECTION = { south: "polar_stereographic_south", north: "polar_stereographic_north" };
+const poleOfGrid = (g) => (g.projection === POLAR_PROJECTION.north ? "north" : "south");
 
 // ───────────────────────── vectors & local frame ─────────────────────────
 
@@ -126,20 +138,24 @@ export function createCore({ ephemerisMeta, ephemerisBin, horizonIndex = { grids
   }
   const timeOf = (i) => new Date(t0 + i * HOUR_MS);
 
-  /** Pick the finest grid covering lat/lon; returns { grid, ix, iy } or null. */
+  /**
+   * Pick the finest grid covering lat/lon; returns { grid, ix, iy } or null.
+   * Order: polar grids of the click's hemisphere (finest first), then whole-Moon grids (finest first).
+   */
   function findGridPoint(lat, lon) {
+    const pole = lat < 0 ? "south" : "north";
     const polar = horizonIndex.grids
-      .filter((g) => g.projection === "polar_stereographic_south")
+      .filter((g) => g.projection === POLAR_PROJECTION[pole])
       .sort((a, b) => a.spacing_km - b.spacing_km);
-    if (lat < 0) {
-      const { x, y } = latLonToPolar(lat, lon);
-      for (const g of polar) {
-        const ix = Math.round((x - g.x0_km) / g.spacing_km);
-        const iy = Math.round((y - g.y0_km) / g.spacing_km);
-        if (ix >= 0 && iy >= 0 && ix < g.nx && iy < g.ny) return { grid: g, ix, iy };
-      }
+    const { x, y } = latLonToPolar(lat, lon, pole);
+    for (const g of polar) {
+      const ix = Math.round((x - g.x0_km) / g.spacing_km);
+      const iy = Math.round((y - g.y0_km) / g.spacing_km);
+      if (ix >= 0 && iy >= 0 && ix < g.nx && iy < g.ny) return { grid: g, ix, iy };
     }
-    const gc = horizonIndex.grids.find((g) => g.projection === "equirectangular");
+    const gc = horizonIndex.grids
+      .filter((g) => g.projection === "equirectangular")
+      .sort((a, b) => a.step_deg - b.step_deg)[0];
     if (gc) {
       const ix = ((Math.round((lon - gc.lon0) / gc.step_deg) % gc.nx) + gc.nx) % gc.nx;
       const iy = Math.max(0, Math.min(gc.ny - 1, Math.round((lat - gc.lat0) / gc.step_deg)));
@@ -179,9 +195,9 @@ export function createCore({ ephemerisMeta, ephemerisBin, horizonIndex = { grids
       const v = raw[k + a];
       values[a] = v === g.nodata ? 0 : v * g.scale;
     }
-    const point = g.tiles
-      ? polarToLatLon(g.x0_km + ix * g.spacing_km, g.y0_km + iy * g.spacing_km)
-      : { lat: g.lat0 + iy * g.step_deg, lon: g.lon0 + ix * g.step_deg };
+    const point = g.projection === "equirectangular"
+      ? { lat: g.lat0 + iy * g.step_deg, lon: g.lon0 + ix * g.step_deg }
+      : polarToLatLon(g.x0_km + ix * g.spacing_km, g.y0_km + iy * g.spacing_km, poleOfGrid(g));
     return { values, az_step_deg: g.az_step_deg, precision: g.precision || "high", grid_id: g.id, point };
   }
 
@@ -239,17 +255,25 @@ export function createCore({ ephemerisMeta, ephemerisBin, horizonIndex = { grids
   }
 
   /**
-   * Unit Sun direction in the south polar TERRAIN frame at (lat, lon): x, y along the polar
-   * stereographic axes of data/terrain tiles, z = local up. Use this to light the terrain mesh.
+   * Unit Sun direction in the polar TERRAIN frame at (lat, lon): x, y along the polar
+   * stereographic axes of the data/terrain tiles of that hemisphere (south tiles for lat < 0,
+   * north tiles for lat ≥ 0), z = local up. Use this to light the terrain mesh.
    */
   function sunDirectionPolar(lat, lon, t) {
     const { sun } = at(lat, lon, t);
     const ce = Math.cos(sun.el * DEG);
     const e = ce * Math.sin(sun.az * DEG), nn = ce * Math.cos(sun.az * DEG), u = Math.sin(sun.el * DEG);
-    const { x, y } = latLonToPolar(lat, lon);
+    const pole = lat < 0 ? "south" : "north";
+    const { x, y } = latLonToPolar(lat, lon, pole);
     const rho = Math.hypot(x, y);
-    const [nx, ny] = rho < 1e-9 ? [0, 1] : [x / rho, y / rho];   // north = away from the pole
-    const [ex, ey] = rho < 1e-9 ? [1, 0] : [y / rho, -x / rho];
+    let nx, ny, ex, ey;
+    if (pole === "south") {
+      [nx, ny] = rho < 1e-9 ? [0, 1] : [x / rho, y / rho];     // north = away from the pole
+      [ex, ey] = rho < 1e-9 ? [1, 0] : [y / rho, -x / rho];
+    } else {
+      [nx, ny] = rho < 1e-9 ? [0, 1] : [-x / rho, -y / rho];   // north = toward the pole
+      [ex, ey] = rho < 1e-9 ? [1, 0] : [-y / rho, x / rho];
+    }
     return { x: nn * nx + e * ex, y: nn * ny + e * ey, z: u };
   }
 

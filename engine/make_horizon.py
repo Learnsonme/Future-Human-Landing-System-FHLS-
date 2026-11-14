@@ -6,6 +6,7 @@ Run:  cd engine && python3 make_horizon.py              all grids (all CPU cores
 
 Grids:
   south_2km         2 km spacing over everything south of ~84°S.
+  north_2km         the same for everything north of ~84°N (E11; north map: y = −rho·cos(lon)).
   fine_<site>       250 m spacing boxes around the sites in sites.py (E9). The 2 km grid can sit
                     ~1 km off a ridge top and badly underestimate sunlight there; these fix that.
 fhls-core.js automatically uses the finest grid that covers a click.
@@ -39,7 +40,11 @@ COMMON = {"projection": "polar_stereographic_south", "R_km": 1737.4, "n_az": 180
 
 def all_grids():
     grids = [{"id": "south_2km", **COMMON, "x0_km": -180, "y0_km": -180, "spacing_km": 2,
-              "nx": 181, "ny": 181, "tiles": "south_2km/{tx}_{ty}.bin"}]
+              "nx": 181, "ny": 181, "tiles": "south_2km/{tx}_{ty}.bin"},
+             {"id": "north_2km", **COMMON, "projection": "polar_stereographic_north",
+              "source": "LOLA LDEM_80N_40M (near 20 km) + LDEM_75N_240M (to 250 km)",
+              "x0_km": -180, "y0_km": -180, "spacing_km": 2,
+              "nx": 181, "ny": 181, "tiles": "north_2km/{tx}_{ty}.bin"}]
     spacing = 0.25
     for site_id, lat, lon, box_km in sites.fine_boxes():
         cx, cy = D.latlon_to_xy(lat, lon)
@@ -60,7 +65,8 @@ def run_tile(job):
         for ix in range(TILE * tx, min(TILE * (tx + 1), grid["nx"])):
             x = grid["x0_km"] + ix * grid["spacing_km"]
             y = grid["y0_km"] + iy * grid["spacing_km"]
-            rows.append(H.horizon_at(x, y, grid["n_az"]))
+            pole = "north" if grid["projection"] == "polar_stereographic_north" else "south"
+            rows.append(H.horizon_at(x, y, grid["n_az"], pole=pole))
     values = np.round(np.array(rows) / grid["scale"])
     values = np.clip(np.nan_to_num(values, nan=grid["nodata"]), -32767, 32767).astype("<i2")
     values.tofile(OUT / grid["tiles"].format(tx=tx, ty=ty))

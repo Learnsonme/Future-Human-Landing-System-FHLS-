@@ -26,6 +26,15 @@ check("earth az/el vs SPICE", near(a.earth.az, 129.6, 0.05) && near(a.earth.el, 
 const p = latLonToPolar(-88.1, 44.9), q = polarToLatLon(p.x, p.y);
 check("polar round trip", near(q.lat, -88.1, 1e-9) && near(q.lon, 44.9, 1e-9), q);
 
+const pn = latLonToPolar(86.2, 77.0, "north"), qn = polarToLatLon(pn.x, pn.y, "north");
+check("north polar round trip", near(qn.lat, 86.2, 1e-9) && near(qn.lon, 77.0, 1e-9), qn);
+
+// sunDirectionPolar must agree with az/el in both hemispheres (|v| = 1, z = sin(el))
+for (const [la, lo] of [[-89.45, -137.3], [86.2, 77.0]]) {
+  const v = core.sunDirectionPolar(la, lo, 348), s = core.at(la, lo, 348).sun;
+  check(`sunDirectionPolar ${la > 0 ? "north" : "south"}`, near(Math.hypot(v.x, v.y, v.z), 1, 1e-9) && near(Math.asin(v.z) * 180 / Math.PI, s.el, 1e-9));
+}
+
 // 3. Disc fraction
 check("disc fraction", sunVisibleFraction(1, 1) === 0.5 && sunVisibleFraction(2, 1) === 1 && sunVisibleFraction(0, 1) === 0);
 
