@@ -86,11 +86,24 @@ P1 touches `web/`: allowed for T1 by agreement. Build it as `web/components/stat
 - [ ] P6 · T1 · **Clean console.** Zero errors and zero 404s from opening the site through Start → mode → click → fly-to → Home.
 - [ ] P7 · T1 · **Smooth and light.** Cap device pixel ratio at 2, pause rendering when the tab is hidden, aim for smooth motion on a normal laptop.
 
+- [ ] P8 · T1 · **Faint shooting stars on the landing background.** Tune the existing shooting stars (W9, `web/components/starfield.js`) or add them if missing: very faint, thin short trail, rare (one about every 20–40 s at a random spot and angle), never over text, landing screen only. `prefers-reduced-motion` → none. Tell @T2 in LOG.md, since it's their component.
+
 ### T2 · web/
 - [x] M5 · T2 · **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
 - [ ] M6 · T2 · **Simplify the landing actions and add background depth.** Remove "CHOOSE A MODE", because Start does the same. Add the background visual effects allowed by M11 (e.g. depth layers of stars drifting slowly at different speeds), on the landing screen only, palette tokens only.
 - [~] M7 · T2 · FHLS logo + favicons DONE; Space Apps and team logos BLOCKED on M10 (files do not exist). **Put the logos on the site.** Use the FHLS logo from `design/logo/` (wordmark/header plus favicon tags), the NASA Space Apps logo `design/logo/app_logo.png`, and the team logo, all from M10. Placement: the FHLS logo on the landing screen, and the Space Apps and team logos small in a footer credit line. Follow `design/logo/README.md` and the Space Apps brand rules noted there.
 - [ ] M8 · T2 · **Show what you pinned.** When a site is pinned, call `viewer.addMarker` (M4). The marker number matches its pin card (1–3). Unpinning removes the marker, and markers survive mode changes and Home round trips.
+
+### T3 · scroll-down sections below the landing (`web/sections/`, owned by T3)
+Below the landing screen, the page scrolls into these sections. Built by T3 in `web/sections/` (HTML partial + CSS + small JS); T2 only adds one include line in `web/index.html`, so tell @T2 in LOG.md. Palette and type from style.md. Must be finished before the Sunday 11:00 freeze; swapping in the real video link after the freeze is fine.
+- [ ] S1 · T3 · **Smooth scroll reveal.** Each section fades and slides up gently as it enters the screen (IntersectionObserver, about 0.6–0.8 s, once only). `prefers-reduced-motion` → appear instantly.
+- [ ] S2 · T3 · **Video placeholder.** A 16:9 frame with a still poster and "Demo video coming soon". Later replaced by the real demo: muted, captions on, play button, no sound until clicked.
+- [ ] S3 · T3 · **About: how we came to this idea.** Two short paragraphs: the challenge, why the south pole's low Sun and wobbling Earth make landing-site choice hard, how the architect's sun-path/shading-mask idea led to FHLS, and who it helps.
+- [ ] S4 · T3 · **Limits.** One short note: sunlight and Earth visibility are planning inputs, not proof a site is safe; slope, boulders, temperature and mission constraints also matter.
+- [ ] S5 · T3 · **How it's built.** Data → engine → browser in one line or a simple diagram, NASA data used, validation result (r = 0.99 vs NASA's illumination map).
+- [ ] S6 · T3 · **Team.** Three members, names and roles.
+- [ ] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo.
+- [ ] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps.
 
 ### T3 · engine/, design/, plus reassigned viewer/ work
 The user reassigned unfinished T1 work to T3. T3 is authorized to edit `viewer/` for V8, O2 and M1–M3; claim these before continuing. M4 is complete and pushed.
