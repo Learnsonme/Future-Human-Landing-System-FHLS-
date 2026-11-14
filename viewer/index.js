@@ -18,7 +18,7 @@ export function createViewer(container, options = {}) {
   let utc = parseTime(options.time || '2027-01-15T12:00:00Z');
   const dataBase = new URL(options.dataBase || '../data/', HERE); if (!dataBase.pathname.endsWith('/')) dataBase.pathname += '/';
   const root = document.createElement('div'); root.className = 'fhls-viewer';
-  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = new URL('viewer.css', HERE).href;
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = new URL('viewer.css' + new URL(import.meta.url).search, HERE).href;   // same version tag as this module
   const message = document.createElement('div'); message.className = 'fhls-viewer-status'; message.setAttribute('role', 'status');
   const startButton = document.createElement('button'); startButton.className = 'fhls-viewer-start'; startButton.textContent = 'Start exploration';
   startButton.disabled = true; root.append(css, message, startButton); container.append(root);

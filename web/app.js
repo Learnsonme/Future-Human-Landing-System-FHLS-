@@ -2,7 +2,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js";
+import { createViewer } from "../viewer/index.js?v=20261115-s16";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
