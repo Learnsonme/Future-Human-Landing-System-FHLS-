@@ -227,8 +227,13 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
   function outOfSight(name) {
     if (!selection || !core) return null;
     const { el } = core.at(selection.lat, selection.lon, utc)[name];
-    if (el <= 0) return 'below the horizon';
-    return horizonBlocked(name) ? 'behind the terrain' : null;
+    // Same rule as the results panel (core analyze): visible when the body's centre is above the site's
+    // own skyline. A high ridge sees below 0° (its skyline dips under the flat horizon), so a Sun at
+    // −0.5° can still be shining there; 0° is only the fallback until the skyline has loaded.
+    const blocked = horizonBlocked(name);
+    if (blocked === null) return el <= 0 ? 'below the horizon' : null;
+    if (!blocked) return null;
+    return el <= 0 ? 'below the horizon' : 'behind the terrain';
   }
   function showSkyNote(text) {
     if (!sky) return;
