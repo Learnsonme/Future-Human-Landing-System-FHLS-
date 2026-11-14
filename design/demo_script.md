@@ -32,7 +32,7 @@
 2. **Beginner mode:** it has the biggest, most readable text on video.
 3. Pick a date where the ridge is lit at the start of the slider drag. **15 Jan 2027, 12:00 UTC** works: at the Connecting Ridge pin the Sun is 0.48° up and fully visible, and Earth is in view. It falls inside a 165-hour Sun + Earth window that starts 11 Jan 03:00 UTC.
 4. Record each shot separately, with a few seconds of slack at both ends. Cut them together and trim to **≤ 30.0 s**. Check the exported file's length.
-5. Subtitles: burn them in, white IBM Plex Sans on a semi-transparent `#141414` bar.
+5. Subtitles: burn them in, white Open Sans on a semi-transparent `#141414` bar.
 6. Optional music: royalty-free only, and list it in the project references.
 7. Upload to YouTube (unlisted is fine) or Drive (anyone with the link). Test the link in a private window. Paste it into the project page.
 

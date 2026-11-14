@@ -11,7 +11,8 @@
  * alpha, so it stays inside design/style.md. The modes differ in how many
  * stars there are and how often they twinkle, never in hue.
  *
- * S13 (T3): slow left → right drift; frequent, visible landing shooting stars.
+ * M6 (T3): three star layers (far/mid/near) drifting left → right at ~2/4/8 px/s, near layer with up to
+ *   12 px pointer parallax on the landing. S13 (T3): slow left → right drift; frequent, visible landing shooting stars.
  * Budget: at most 150 stars, redrawn at 24fps, paused when the tab is hidden
  * and when prefers-reduced-motion is set (then it paints once and stops).
  */
@@ -34,7 +35,13 @@ const DENSITY = {
 const MAX_STARS = 240;
 // S13 (T3, user request): the whole field drifts slowly left → right (px per second, nearer stars a little
 // faster), and landing shooting stars are more frequent and clearly visible.
-const DRIFT_PX_S = [2.5, 7];
+// M6 (T3): three depth layers, far → near: share of stars, drift (px/s), size, brightness, pointer parallax (px).
+const LAYERS = [
+  { share: 0.58, vx: 2, r: 0.8, alpha: [0.30, 0.55], parallax: 3 },
+  { share: 0.30, vx: 4, r: 1.1, alpha: [0.50, 0.75], parallax: 6 },
+  { share: 0.12, vx: 8, r: 1.6, alpha: [0.70, 0.90], parallax: 12 },
+];
+const layerFor = (u) => (u < LAYERS[0].share ? 0 : u < LAYERS[0].share + LAYERS[1].share ? 1 : 2);
 const SHOOT_EVERY_MS = [6000, 14000];
 const SHOOT_TRAIL_PX = [70, 150];
 const SHOOT_PEAK = 0.75;
@@ -54,6 +61,12 @@ export function createStarfield(canvas, options = {}) {
   let width = 0, height = 0;
   let colours = { text: "#ECE9E2", muted: "#9A978F", sun: "#F2B33D" };
   let destroyed = false;
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  const onPointer = (e) => {
+    if (e.pointerType && e.pointerType !== "mouse") return;    // touch: no parallax
+    pointer.tx = (e.clientX / innerWidth) * 2 - 1;
+    pointer.ty = (e.clientY / innerHeight) * 2 - 1;
+  };
 
   function readColours() {
     const s = getComputedStyle(canvas);
@@ -67,13 +80,14 @@ export function createStarfield(canvas, options = {}) {
     const match = !!cfg.match;
     stars = Array.from({ length: Math.max(0, wanted) }, () => {
       const depth = Math.random();            // 0 far, 1 near — drives size and brightness
+      const L = LAYERS[layerFor(depth)];
       return {
         x: Math.random() * width,
         y: Math.random() * height,
-        // the viewer draws every star the same size, with no attenuation
-        r: match ? cfg.maxR : rand(0.4, cfg.maxR) * (0.5 + depth * 0.5),
+        // M6: on the landing each layer has its own size and brightness
+        r: match ? L.r : rand(0.4, cfg.maxR) * (0.5 + depth * 0.5),
         base: match
-          ? rand(0.5, 0.85)
+          ? rand(...L.alpha)
           : Math.min(0.85, rand(0.10, 0.42) * (0.45 + depth * 0.55) * (cfg.gain || 1)),
         // a share of stars twinkle; the rest are steady, so it never pulses in sync
         twinkles: Math.random() < cfg.twinkle,
@@ -82,7 +96,9 @@ export function createStarfield(canvas, options = {}) {
         // the viewer's field is a single token, so matched skies have no warm star
         warm: match ? false : Math.random() < 0.08,
         muted: match,
-        vx: rand(...DRIFT_PX_S) * (0.6 + depth * 0.4),
+        // S13/M6: every star drifts left → right at its layer's speed (±15 %, so it never looks like a grid)
+        vx: L.vx * rand(0.85, 1.15),
+        parallax: match ? L.parallax : 0,
       };
     });
   }
@@ -107,6 +123,11 @@ export function createStarfield(canvas, options = {}) {
 
   function paint(t) {
     ctx.clearRect(0, 0, width, height);
+    // M6: optional pointer parallax on the landing, eased; −1…1 of the layer's maximum, off under reduced motion
+    const still = reduced.matches || mode !== "landing";
+    pointer.x += ((still ? 0 : pointer.tx) - pointer.x) * 0.08;
+    pointer.y += ((still ? 0 : pointer.ty) - pointer.y) * 0.08;
+    const px = still ? 0 : pointer.x, py = still ? 0 : pointer.y;
     const [tr, tg, tb] = hexToRgb(colours.text);
     const [sr, sg, sb] = hexToRgb(colours.sun);
     const [mr, mg, mb] = hexToRgb(colours.muted);
@@ -120,9 +141,9 @@ export function createStarfield(canvas, options = {}) {
       const [r, g, b] = s.muted ? [mr, mg, mb] : s.warm ? [sr, sg, sb] : [tr, tg, tb];
       ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
       // S13: slow drift to the right, wrapping at the edge (t = 0 under reduced motion → still)
-      const x = width ? (((s.x + s.vx * t / 1000) % width) + width) % width : s.x;
+      const x = width ? (((s.x + s.vx * t / 1000 + px * s.parallax) % width) + width) % width : s.x;
       ctx.beginPath();
-      ctx.arc(x, s.y, s.r, 0, Math.PI * 2);
+      ctx.arc(x, s.y + py * s.parallax, s.r, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -212,6 +233,7 @@ export function createStarfield(canvas, options = {}) {
 
   document.addEventListener("visibilitychange", onVisibility);
   window.addEventListener("resize", onResize);
+  window.addEventListener("pointermove", onPointer, { passive: true });
   reduced.addEventListener?.("change", onReducedChange);
 
   if (resize()) start();
@@ -233,6 +255,7 @@ export function createStarfield(canvas, options = {}) {
       clearTimeout(resizeTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("pointermove", onPointer);
       reduced.removeEventListener?.("change", onReducedChange);
       ctx.clearRect(0, 0, width, height);
     },

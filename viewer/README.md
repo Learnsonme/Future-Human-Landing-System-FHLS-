@@ -176,8 +176,8 @@ longitude registration and displacement conversion.
   Height = sample × 0.5 − 10000 metres above the 1737.4 km reference sphere.
   The original 0…360° columns are shifted to −180…180° without resampling.
   [Original PDS product directory](https://pds-geosciences.wustl.edu/lro/lro-l-lola-4-gdr-v1/lrolol_1001/data/ldem_4/).
-- `assets/plex-sans.woff2`, `assets/plex-mono.woff2`: local IBM Plex fonts;
-  SIL Open Font License files accompany them.
+- `assets/open-sans.woff2`: local Open Sans variable font (latin, weights 300–800),
+  SIL Open Font License in `assets/OFL-open-sans.txt`.
 - `vendor/three.module.js` and `vendor/OrbitControls.js`: Three.js r170,
   MIT license in `vendor/THREE-LICENSE.txt`; OrbitControls imports the local module.
 - `../data/terrain/`: T3's real LOLA heightmaps, not duplicated here.
@@ -241,13 +241,13 @@ real-data demo and integration runs made no external network requests.
 
 **Labels**
 - Small labels read "Sun" and "Earth".
-- A label reads "· behind terrain" when the selected site's skyline, from `core.getHorizon`, hides the body.
+- With a site selected, a body the site's skyline (from `core.getHorizon`) hides, or that is below the horizon, is not drawn at all, so no globe pokes out from behind the terrain.
 
 **Look-at buttons**
 - "Look at Sun" and "Look at Earth" appear at the top right once a site is selected. They swing the camera in 0.9 s, or instantly under reduced motion, to face that body from 20 km behind the site and 4 km up.
 - For a low polar Sun or Earth, the site's skyline fills the lower half of the view.
 - The same action is available as `viewer.lookAt('sun' | 'earth')`.
-- **If the body can't be seen** from the selected site at that hour (below the horizon, or behind the terrain according to the site's skyline), the camera does not point into the ground. A note says, for example, "Earth is not in sight from this area right now: it is below the horizon", and the camera flies back to the normal view of the site.
+- **If the body can't be seen** from the selected site at that hour (below the horizon, or behind the terrain according to the site's skyline), the camera does not point into the ground. A note says, for example, "Earth is not in sight from this area right now: it is below the horizon". The camera keeps its current angle. The same note appears if time moves the body out of sight while you are facing it.
 - **While facing a body,** if `setTime` (the slider or Play) moves it out of sight, the same note appears and the view returns to normal. Dragging the view or picking a new site ends "looking at".
 
 ### Heat-map overlay (P9)
@@ -268,7 +268,7 @@ may exist. Coordinates use the same planetocentric, east-positive degrees as
 `viewer.setActiveMarker(id)` optionally highlights that pin in `--sun`; pass
 `null` to clear. Other pins use `--text`. Re-add an ID to renumber it.
 
-Pins are 12 px rings with 1.5 px strokes and 11 px IBM Plex Mono numbers, at a
+Pins are 12 px rings with 1.5 px strokes and 11 px Open Sans numbers, at a
 constant screen size on the globe and terrain. Labels behind the Moon, offscreen,
 or occluded by sampled local relief are hidden. Occlusion is illustrative,
 not a scientific visibility result. They create no additional canvas.

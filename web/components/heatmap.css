@@ -2,14 +2,14 @@
 .heat-control {
   position: absolute; top: 12px; left: 12px; z-index: 5; max-width: calc(100% - 24px);
   padding: 10px 12px; background: var(--surface, #1E1E1E); border: 1px solid var(--line, #2E2E2E);
-  font: 400 12px/1.4 var(--sans, "IBM Plex Sans", sans-serif); color: var(--text, #ECE9E2);
+  font: 400 12px/1.4 var(--sans, "Open Sans", sans-serif); color: var(--text, #ECE9E2);
 }
 .heat-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
-.heat-title { font: 500 12px/1 var(--mono, "IBM Plex Mono", monospace); letter-spacing: .12em; text-transform: uppercase; }
+.heat-title { font: 500 12px/1 var(--mono, "Open Sans", sans-serif); letter-spacing: .12em; text-transform: uppercase; }
 .heat-note { color: var(--muted, #9A978F); }
 .heat-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
 .heat-btn {
-  font: 400 12px/1 var(--sans, "IBM Plex Sans", sans-serif); color: var(--muted, #9A978F);
+  font: 400 12px/1 var(--sans, "Open Sans", sans-serif); color: var(--muted, #9A978F);
   background: transparent; border: 1px solid var(--line, #2E2E2E); padding: 6px 8px; min-height: 28px; cursor: pointer;
 }
 .heat-btn:hover { color: var(--text, #ECE9E2); }

@@ -1,5 +1,5 @@
-@font-face { font-family: 'IBM Plex Sans'; src: url('../viewer/assets/plex-sans.woff2') format('woff2'); font-weight: 400 600; font-display: swap; }
-@font-face { font-family: 'IBM Plex Mono'; src: url('../viewer/assets/plex-mono.woff2') format('woff2'); font-weight: 400 500; font-display: swap; }
+/* S14 (T3): Open Sans, self-hosted (OFL), variable weight 300–800 */
+@font-face { font-family: 'Open Sans'; src: url('../viewer/assets/open-sans.woff2') format('woff2'); font-weight: 300 800; font-display: swap; }
 
 /* FHLS web shell — follows design/style.md. Only the tokens below may be used. */
 :root {
@@ -14,8 +14,9 @@
   --none: #3A3A3A;
   --terrain: #6B6760;
 
-  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Open Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* S14: labels and numbers use Open Sans too (tabular figures keep columns aligned) */
+  --mono: "Open Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --gap: 24px;
   --ease: cubic-bezier(.4, 0, .2, 1);

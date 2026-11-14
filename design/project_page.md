@@ -62,7 +62,7 @@ https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Le
 **Tools**
 - **Python:** NumPy, SpiceyPy (NASA NAIF CSPICE) and Pillow.
 - **JavaScript:** three.js, with no framework.
-- **Fonts:** IBM Plex Sans and Mono.
+- **Fonts:** Open Sans.
 - **Hosting:** Netlify (static, offline-capable).
 
 ## Use of Super Intelligence (SI)
@@ -106,6 +106,6 @@ Yes. Each team member worked with an AI coding assistant, used as a tool under t
 - Representative landing points in Artemis regions: "Evaluating potential landing sites for the Artemis III mission using a multi-criteria decision making approach", arXiv:2406.19863. https://arxiv.org/abs/2406.19863
 - LPSC 2024 abstract #1695 (Connecting Ridge point). https://www.hou.usra.edu/meetings/lpsc2024/pdf/1695.pdf
 
-**Software:** SpiceyPy (MIT), NumPy (BSD), Pillow (MIT-CMU), three.js (MIT), IBM Plex fonts (SIL OFL).
+**Software:** SpiceyPy (MIT), NumPy (BSD), Pillow (MIT-CMU), three.js (MIT), Open Sans font (SIL OFL).
 
 [TEAM: add anything T1 or T2 used, such as textures or libraries.]

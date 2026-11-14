@@ -97,7 +97,7 @@ export function drawHorizonPanorama(canvas, data = {}) {
   const yOf = (el) => plot.y + plot.h - ((el - lo) / (hi - lo)) * plot.h;
 
   // ── grid: compass points and elevation lines ────────────────────────────
-  ctx.font = '11px ui-monospace, "IBM Plex Mono", monospace';
+  ctx.font = '11px "Open Sans", ui-sans-serif, sans-serif';
   ctx.fillStyle = c.muted;
   ctx.strokeStyle = c.line;
   ctx.lineWidth = 1;
@@ -173,7 +173,7 @@ export function drawHorizonPanorama(canvas, data = {}) {
     ctx.fill();
     if (m.label) {
       ctx.globalAlpha = 1;
-      ctx.font = '11px ui-monospace, "IBM Plex Mono", monospace';
+      ctx.font = '11px "Open Sans", ui-sans-serif, sans-serif';
       ctx.textAlign = x > plot.x + plot.w - 110 ? "right" : "left";
       ctx.fillText(m.label, x + (ctx.textAlign === "right" ? -10 : 10), y - 8);
     }

@@ -185,6 +185,9 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     for (const [name, mesh, radius] of [['sun', sky.sun, SUN_R_KM], ['earth', sky.earth, EARTH_R_KM]]) {
       const P = bodyRender(name), node = sky.labels[name];
       if (!P) { mesh.visible = false; node.hidden = true; continue; }
+      // with a site chosen, a body the site's skyline hides is not drawn at all (user request: no globe
+      // poking out from behind the terrain); the "not in sight" message says where it is instead
+      if (outOfSight(name)) { mesh.visible = false; node.hidden = true; continue; }
       const dir = P.clone().sub(camera.position), dist = dir.length(); dir.normalize();
       mesh.visible = true;
       mesh.position.copy(camera.position).addScaledVector(dir, D);
@@ -196,9 +199,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       const show = screen.z < 1 && Math.abs(screen.x) <= 1 && Math.abs(screen.y) <= 1 && !behindMoon;
       node.hidden = !show;
       if (show) {
-        const blocked = horizonBlocked(name);
-        node.textContent = `${name === 'sun' ? 'Sun' : 'Earth'}${blocked ? ' · behind terrain' : ''}`;
-        node.classList.toggle('is-blocked', !!blocked);
+        node.textContent = name === 'sun' ? 'Sun' : 'Earth';
         node.style.left = `${(screen.x + 1) * w / 2}px`; node.style.top = `${(1 - screen.y) * h / 2}px`;
       }
     }
@@ -216,24 +217,13 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     sky.note.textContent = text; sky.note.hidden = false;
     clearTimeout(skyNoteTimer); skyNoteTimer = setTimeout(() => { if (sky) sky.note.hidden = true; }, 5000);
   }
-  /** Back to the normal view of the selected site (the fly-down pose). */
-  function returnToSite() {
-    if (!selection || disposed) return;
-    lookingAt = null; cancelFlight(); clearControlInertia(); controls.enabled = false;
-    const near = Math.abs(selection.lat) >= 84 || terrain?.regionAt(selection.lat, selection.lon) ? true : terrain?.records.length ? 'mid' : false;
-    return new Promise(resolve => {
-      flight = { ...makeFlight(camera, controls, selection.lat, selection.lon, heightAt(selection.lat, selection.lon), near,
-        reduced.matches ? 0.001 : 900, performance.now()), resolve };
-      if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + 1); finishFlight(); }
-    });
-  }
-  /** While facing a body, time moved on and it left the sky: say so and go back to the normal view. */
+  /** While facing a body, time moved on and it left the sky: say so. The camera stays where it is. */
   function checkLookingAt() {
     if (!lookingAt) return;
     const why = outOfSight(lookingAt);
     if (why) {
-      showSkyNote(`${lookingAt === 'sun' ? 'The Sun' : 'Earth'} has gone ${why === 'below the horizon' ? 'below the horizon' : 'behind the terrain'} here. Back to the normal view.`);
-      returnToSite();
+      showSkyNote(`${lookingAt === 'sun' ? 'The Sun' : 'Earth'} has gone ${why} here.`);
+      lookingAt = null;
     }
   }
   /** Swing the camera to face the Sun or Earth over the selected site's skyline. */
@@ -241,8 +231,9 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     if (!selection || !core || disposed) return;
     const why = outOfSight(name);
     if (why) {
+      // message only: the camera keeps its angle (user request)
       showSkyNote(`${name === 'sun' ? 'The Sun is' : 'Earth is'} not in sight from this area right now: it is ${why}.`);
-      return returnToSite();
+      return Promise.resolve();
     }
     const P = bodyRender(name); if (!P) return;
     lookingAt = name;

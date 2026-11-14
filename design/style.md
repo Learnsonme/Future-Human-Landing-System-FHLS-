@@ -47,8 +47,8 @@ In light mode, text and thin strokes use `--sun` / `--earth` / `--both`; areas u
 - **Check:** every screen in both modes on laptop and phone; no text below 4.5 : 1.
 
 ## Type
-- Logo font: **Sugo Display**, used in the Canva logo. Don't embed it as a web font, because its web licence is unconfirmed and the app must stay offline with self-hosted fonts. Where the wordmark is needed, use the logo image `design/logo/fhls-logo-transparent.png`. Other titles use IBM Plex Sans SemiBold, UPPERCASE, used sparingly.
-- Body: **IBM Plex Sans**. Numbers and data: **IBM Plex Mono** (gives a real mission-control feel).
+- Logo font: **Sugo Display**, used in the Canva logo. Don't embed it as a web font, because its web licence is unconfirmed and the app must stay offline with self-hosted fonts. Where the wordmark is needed, use the logo image `design/logo/fhls-logo-transparent.png`. Other titles use Open Sans SemiBold, UPPERCASE, used sparingly.
+- Body, labels, numbers and data: **Open Sans** (S14, user decision: Plex read as blocky). Self-hosted variable font `viewer/assets/open-sans.woff2` (SIL OFL, weights 300–800), so the app stays offline. Data columns use `font-variant-numeric: tabular-nums` so numbers line up. The `--mono` token now also points at Open Sans; small uppercase labels keep their letter-spacing.
 - Sizes: 14px body, 12px labels, 32–48px page titles. No more than 3 sizes per screen.
 
 ## Rules to avoid the "AI-generated" look
@@ -147,7 +147,7 @@ These extend D5 for the round-2 tasks. Where they conflict with D5 above, these 
 
 **Pin markers (M4, M8)**
 - **Ring:** a 1.5 px `--text` ring, 12 px across, constant on screen at every zoom.
-- **Label:** the pin number (1–3) in IBM Plex Mono 11 px.
+- **Label:** the pin number (1–3) in Open Sans 11 px.
 - **The active pin** uses `--sun`. Never use `--earth` or `--both`.
 - **Animation:** one 600 ms pulse on placement is allowed. Never loop it.
 
