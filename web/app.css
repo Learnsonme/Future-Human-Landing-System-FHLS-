@@ -605,17 +605,11 @@ body.home-return.is-arriving .screen { animation: home-return 500ms var(--ease) 
 .startx.is-running { opacity: 1; }
 .startx-canvas { display: block; width: 100%; height: 100%; }
 
-/* the blast sweeps the old screen aside, then the new one arrives behind it */
-body.is-leaving .screen { animation: screen-out 440ms cubic-bezier(.55, 0, .85, .3) both; }
-@keyframes screen-out {
-  from { opacity: 1; transform: none; filter: blur(0); }
-  to   { opacity: 0; transform: translateX(-9%) scale(.97); filter: blur(3px); }
-}
-
-body.is-arriving .screen { animation: screen-in 620ms cubic-bezier(.16, .8, .3, 1) both; }
-@keyframes screen-in {
-  from { opacity: 0; transform: translateX(11%) scale(.985); filter: blur(4px); }
-  to   { opacity: 1; transform: none; filter: blur(0); }
+/* D5 · every screen change is a crossfade; the Start star plays over it */
+body.is-crossfading .screen { animation: screen-fade 520ms var(--ease) both; }
+@keyframes screen-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ---------- micro-interactions ---------- */
@@ -666,12 +660,80 @@ body.is-arriving .screen { animation: screen-in 620ms cubic-bezier(.16, .8, .3, 
 /* ---------- nothing moves when the reader asked for stillness ---------- */
 @media (prefers-reduced-motion: reduce) {
   .startx { opacity: 0 !important; }
-  body.is-arriving .screen,
-  body.is-leaving .screen,
+  body.is-crossfading .screen,
   .pin-card,
   .pin-figures dd.is-best::after { animation: none !important; }
   .reveal { opacity: 1; transform: none; }
   .btn:hover:not(:disabled) { transform: none; }
   .mode:hover, .site:hover { padding-left: 0; }
   .pin-card:hover { transform: none; }
+}
+
+
+/* ===================================================================
+   D6 fixes and H2 · Home navigation
+   =================================================================== */
+
+/* screen-reader-only text, for the explorer's heading */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* programmatic focus announces the screen without painting a ring */
+.focus-quiet:focus { outline: none; }
+
+/* ---------- H3 · Home ---------- */
+.home { font-size: 12px; letter-spacing: .1em; }
+.appbar .home,
+.modes-top .home {
+  /* 44 x 44 touch target without enlarging the text */
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+}
+.appbar-divider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 20px;
+  background: var(--line);
+}
+.modes-top { margin-bottom: 18px; margin-left: -10px; }
+
+/* ---------- F3 · stars belong in the margins, not behind the data ---------- */
+body[data-screen="app"] .app-grid,
+body[data-screen="app"] .timebar,
+body[data-screen="app"] .compare,
+body[data-screen="app"] .panorama,
+body[data-screen="app"] .hourtable {
+  background: var(--bg);
+}
+body[data-screen="app"] .appbar { background: var(--bg); }
+.panel, .pin-card, .stage { background: var(--surface); }
+#timeline-canvas, #panorama-canvas { background: var(--bg); }
+
+/* ---------- F7 · show the candidate list instead of clipping it at five ---------- */
+.sites .site-list { max-height: none; overflow: visible; }
+
+/* ---------- F8 · the range label and the date field at phone width ---------- */
+.timebar-head .eyebrow { white-space: nowrap; }
+
+/* ---------- F4 · keep content clear of the Netlify badge corner ---------- */
+body[data-screen="app"] .app-grid { padding-bottom: 64px; }
+
+@media (max-width: 600px) {
+  /* A3 · HOME stays in the first row of the app bar, never wrapped */
+  .appbar { flex-wrap: wrap; }
+  .appbar .home { order: -2; }
+  .appbar-divider { order: -1; }
+  .appbar .brand { order: 0; }
+  .appbar label[for="date"] { display: block; width: 100%; margin-bottom: -6px; }
+  .appbar input[type="date"] { width: 100%; }
 }

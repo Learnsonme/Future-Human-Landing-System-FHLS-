@@ -13,8 +13,8 @@ const MODES = {
   advanced:     { label: "Advanced" },
 };
 
-// Shackleton: the point T3 validated the ephemeris against. Used for the landing strip.
-const REFERENCE = { lat: -89.90, lon: 0 };
+// Shackleton ridge: the point T3 validated the ephemeris against (D6/F6).
+const REFERENCE = { lat: -89.45, lon: -137.3 };
 
 const state = {
   screen: "landing",
@@ -44,6 +44,10 @@ let visitedExplorer = false;
 let navigation = 0;
 let arrivalTimer = 0;
 let lastPointer = null;   // where the blast starts: the control you clicked
+let lastPointer = null;    // where the Start star rises: the control you clicked
+let startStarUsed = false; // D5: the star plays once per visit, on Start only
+let modesOpenedFrom = "landing";   // where Back in the mode picker returns to
+let returnFocusId = null;          // the control that left the explorer
 
 const $ = (id) => document.getElementById(id);
 
@@ -106,12 +110,26 @@ function applyScreen(screen) {
   document.body.classList.add("is-arriving");
   clearTimeout(arrivalTimer);
   arrivalTimer = setTimeout(() => document.body.classList.remove("is-arriving", "home-return"), 620);
+  moveFocusTo(screen);
   observeReveals();
 }
 
-// The blast starts at the control that was used. A keyboard activation leaves
+// C2: announce the new screen. C3: returning to the explorer restores the
+// control that left it. Programmatic focus must not paint a ring.
+function moveFocusTo(screen) {
+  let target = null;
+  if (screen === "app") target = (returnFocusId && $(returnFocusId)) || $("app-heading");
+  else if (screen === "modes") target = $("modes-heading");
+  else target = $("landing-heading");
+  if (!target) return;
+  target.classList.add("focus-quiet");
+  target.focus({ preventScroll: true });
+  target.addEventListener("blur", () => target.classList.remove("focus-quiet"), { once: true });
+}
+
+// The star rises at the control that was used. A keyboard activation leaves
 // no pointer, so fall back to the focused element, then to the centre.
-function blastOrigin() {
+function pointerOrigin() {
   if (lastPointer && performance.now() - lastPointer.at < 1200) {
     return { x: lastPointer.x, y: lastPointer.y };
   }
@@ -155,6 +173,15 @@ function show(screen) {
     document.body.classList.remove("is-leaving");
     applyScreen(screen);
   }, blastOrigin());
+  if (state.screen === "app") returnFocusId = document.activeElement?.id || null;
+  if (!transition) { applyScreen(screen); return; }
+
+  // D5: the one star of the visit is the first Start; everything else crossfades
+  const isFirstStart = screen === "modes" && state.screen === "landing" && !startStarUsed;
+  const options = isFirstStart ? { ...(pointerOrigin() || {}), star: true } : {};
+  if (isFirstStart) startStarUsed = true;
+
+  transition.play(() => applyScreen(screen), options);
 }
 
 function goHome() {
@@ -693,7 +720,6 @@ function advancedPanel(r, hour) {
       ["Windows with both", String(r.windows.both.length)],
       ["Horizon bins", `${r.horizon.values.length} × ${r.horizon.az_step_deg}°`],
     ]),
-    el("p", "Hour-by-hour table and CSV download arrive with W6.", "pending"),
   );
   return out;
 }
@@ -1009,10 +1035,23 @@ $("skip-to-modes").addEventListener("click", () => show("modes"));
 $("back-to-landing").addEventListener("click", () => show(pickerOrigin));
 for (const button of document.querySelectorAll("[data-home]")) button.addEventListener("click", goHome);
 $("change-mode").addEventListener("click", () => show("modes"));
+$("start").addEventListener("click", () => { modesOpenedFrom = "landing"; show("modes"); });
+$("skip-to-modes").addEventListener("click", () => { modesOpenedFrom = "landing"; show("modes"); });
+$("change-mode").addEventListener("click", () => { modesOpenedFrom = "app"; show("modes"); });
+
+// Back goes to whichever screen opened the picker; Home always goes home.
+$("back-to-landing").addEventListener("click", () => show(modesOpenedFrom));
+for (const id of ["home-app", "home-modes"]) {
+  $(id).addEventListener("click", () => {
+    viewer?.overview?.();          // H1: cancel any flight before leaving
+    show("landing");
+  });
+}
 
 for (const btn of document.querySelectorAll(".mode")) {
   btn.addEventListener("click", () => {
     setMode(btn.dataset.mode);
+    modesOpenedFrom = "app";
     show("app");
     renderResults();
   });
