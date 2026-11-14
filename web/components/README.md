@@ -76,3 +76,16 @@ used: `--earth` and `--both` mean power and comms everywhere else in the app
 and must not be spent on decoration. Under `prefers-reduced-motion` the swap
 runs immediately and nothing is drawn. Needs the `.startx` rules in
 `web/app.css`.
+
+## time-player.js (S9, T3)
+`createTimePlayer(mountEl, { getHour, setHour, lastHour })` adds Play/Pause and a speed choice (1 h/s, 1 day/s, 1 week/s). It moves the app's hour about 15 times a second, never starts by itself, and stops when its panel is hidden or the end of 2028 is reached.
+
+## horizon-panorama.js additions (S9, T3)
+These options are optional and backward compatible:
+- `tracks[].fade`: a fading trail, with older points drawn fainter.
+- `markers[].blocked`: the body is behind terrain, drawn at 35% with a dashed outline.
+- `markers[].label`: small text beside the marker, as used in Beginner ("Sun · visible").
+
+## heatmap.js · heatmap-control.js · heatmap.css (S10, T3)
+- **heatmap.js** loads `data/heatmap/` and builds the coloured overlay canvas. Its `valueAt(lat, lon, layer, month)` returns the exact stored value.
+- **heatmap-control.js** provides `mountHeatmapControl(stage, { mode })`, with `.attach(viewer)` and `.setMode(mode)`. It gives the per-mode "Map" control over the 3D view and uses `viewer.setOverlay` (P9).

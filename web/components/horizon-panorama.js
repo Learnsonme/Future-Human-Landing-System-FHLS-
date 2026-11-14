@@ -10,6 +10,11 @@
  *     markers: [{ az, el, tone: "sun", label: "Sun now" }],
  *   });
  *
+ * S9 (T3) additions, all optional and backward compatible:
+ *   tracks[].fade = true      draw the points with opacity rising from old to new (a fading trail)
+ *   markers[].blocked = true  body is behind terrain: drawn at 35 % with a dashed outline
+ *   markers[].label = "…"     small text next to the marker (used in Beginner: "Sun · visible")
+ *
  * Colours come from CSS custom properties on the canvas (--sun, --earth,
  * --terrain, --line, --muted, --text, --surface), so it follows design/style.md
  * wherever it is mounted. Pass `colours` to override.
@@ -139,9 +144,13 @@ export function drawHorizonPanorama(canvas, data = {}) {
   // ── tracks: one dot per sample, so gaps in azimuth do not become lines ──
   for (const track of tracks) {
     ctx.fillStyle = c[track.tone] || c.text;
-    for (const p of track.points) {
-      ctx.fillRect(xOf(p.az) - 0.75, yOf(p.el) - 0.75, 1.5, 1.5);
-    }
+    const n = track.points.length;
+    track.points.forEach((p, k) => {
+      if (track.fade) ctx.globalAlpha = 0.08 + 0.8 * ((k + 1) / n);   // S9: older = fainter
+      const size = track.fade ? 2 : 1.5;
+      ctx.fillRect(xOf(p.az) - size / 2, yOf(p.el) - size / 2, size, size);
+    });
+    ctx.globalAlpha = 1;
   }
 
   // ── markers for "now" ───────────────────────────────────────────────────
@@ -151,12 +160,22 @@ export function drawHorizonPanorama(canvas, data = {}) {
     ctx.strokeStyle = c[m.tone] || c.text;
     ctx.fillStyle = c[m.tone] || c.text;
     ctx.lineWidth = 1;
+    ctx.globalAlpha = m.blocked ? 0.35 : 1;          // S9: behind terrain → dimmed, dashed
+    ctx.setLineDash(m.blocked ? [2, 2] : []);
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.arc(x, y, m.label ? 6 : 4, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+    ctx.arc(x, y, m.label ? 2.5 : 1.5, 0, Math.PI * 2);
     ctx.fill();
+    if (m.label) {
+      ctx.globalAlpha = 1;
+      ctx.font = '11px ui-monospace, "IBM Plex Mono", monospace';
+      ctx.textAlign = x > plot.x + plot.w - 110 ? "right" : "left";
+      ctx.fillText(m.label, x + (ctx.textAlign === "right" ? -10 : 10), y - 8);
+    }
+    ctx.globalAlpha = 1;
   }
 
   return true;
