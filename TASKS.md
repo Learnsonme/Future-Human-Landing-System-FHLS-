@@ -28,7 +28,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
 - [x] W2 · T2 · Embed viewer; on click call core and show results panel
 - [x] W3 · T2 · Results panel per mode (real data — synthetic never needed)
-- [ ] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)
+- [~] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands) (claimed by T2, 10:25)
 - [ ] W5 · T2 · Horizon panorama chart (Intermediate) (open to T1): standalone component, input = horizon array + Sun/Earth tracks
 - [ ] W6 · T2 · Advanced: hour table + CSV export (open to T1)
 - [~] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1) (claimed by T2, 09:08)
