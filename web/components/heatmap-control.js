@@ -37,7 +37,12 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
   const legend = el("div", "heat-legend"); const bar = el("div", "heat-bar"); bar.setAttribute("aria-hidden", "true");
   const ticks = el("div", "heat-ticks"); legend.append(bar, ticks);
   const readout = el("p", "heat-readout"); readout.setAttribute("aria-live", "polite");
-  root.append(head, buttons, monthWrap, legend, readout);
+  // P13: on phones the panel folds into a small "Map" button so it doesn't cover the Moon
+  const toggle = el("button", "heat-toggle"); toggle.type = "button"; toggle.setAttribute("aria-expanded", "false");
+  toggle.innerHTML = '<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M2.5 4.5 7 3l4 1.5 4.5-1.5v10L11 14.5 7 13l-4.5 1.5z M7 3v10M11 4.5v10"/></svg><span>Map</span>';
+  toggle.addEventListener("click", () => { const open = !root.classList.contains("is-open"); root.classList.toggle("is-open", open); toggle.setAttribute("aria-expanded", String(open)); });
+  const body = el("div", "heat-body"); body.append(head, buttons, monthWrap, legend, readout);
+  root.append(toggle, body);
   stage.append(root);
 
   // P10: the same blue → cyan → yellow → orange → red scale as the map (heatmap.js scaleColour)

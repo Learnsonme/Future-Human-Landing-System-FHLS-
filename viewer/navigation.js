@@ -15,6 +15,21 @@ export function ease(t) {
   return 3 * (1-u) * u*u + u*u*u;
 }
 
+/** P11 · ease-in-out for flights: zero speed and zero acceleration at both ends (no jolt, no stutter on arrival). */
+export function flightEase(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return t * t * t * (t * (6 * t - 15) + 10);
+}
+
+/** P11 · flight time from how far the camera travels: 1.2 s for a short hop … 2.5 s across the Moon. */
+export function flightDuration(fromPosition, toPosition) {
+  const a = fromPosition.clone().normalize(), b = toPosition.clone().normalize();
+  const angle = Math.acos(Math.max(-1, Math.min(1, a.dot(b))));
+  const travelKm = angle * (fromPosition.length() + toPosition.length()) / 2 + Math.abs(fromPosition.length() - toPosition.length());
+  return 1200 + 1300 * Math.min(1, travelKm / 4000);
+}
+
 // Change only the initial presentation viewpoint. The MOON_ME Sun and the
 // Moon's orientation stay untouched. A 30° phase angle shows a gibbous Moon.
 export function sunlitCameraPosition(moonSun, distance) {
@@ -43,13 +58,15 @@ export function makeFlight(camera, controls, lat, lon, heightM, detailed, durati
   const [rise, back] = detailed === 'mid' ? [60, -70] : detailed ? [24, -26] : [110, -65];
   const position = target.clone().addScaledVector(up, rise).addScaledVector(north, back);
   const matrix = new Matrix4().lookAt(position, target, up);
+  // P11: duration null → from the distance travelled
+  duration ??= flightDuration(camera.position, position);
   return { start: now, duration, fromPosition: camera.position.clone(), position,
     fromTarget: controls.target.clone(), target, fromQ: camera.quaternion.clone(),
     toQ: new Quaternion().setFromRotationMatrix(matrix), up, detailed, lat, lon };
 }
 
 export function updateFlight(flight, camera, controls, now) {
-  const t = Math.max(0, Math.min(1, (now - flight.start) / flight.duration)), e = ease(t);
+  const t = Math.max(0, Math.min(1, (now - flight.start) / flight.duration)), e = flightEase(t);
   const distance = flight.fromPosition.length() * (1 - e) + flight.position.length() * e;
   // Interpolate the actual endpoint radii. A fixed 14 km floor used to pop a
   // close-up camera outwards at takeoff and jump on arrival at a sky viewpoint.

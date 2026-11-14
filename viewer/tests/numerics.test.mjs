@@ -8,7 +8,7 @@ import { normalizeLongitude, locationToRender, renderToLocation, moonToRender, r
 import { decodePNG16 } from '../png16.js';
 import { decodeMoonTIFF } from '../globe.js';
 import { Terrain } from '../terrain.js';
-import { arcDirection, makeFlight, updateFlight, sunlitCameraPosition, ease } from '../navigation.js';
+import { arcDirection, makeFlight, updateFlight, sunlitCameraPosition, ease, flightEase, flightDuration } from '../navigation.js';
 const near = (a, b, tolerance = 1e-8) => assert.ok(Math.abs(a - b) < tolerance, `${a} ≠ ${b}`);
 const data = new URL('../../data/', import.meta.url);
 const buffer = async url => { const b = await readFile(url); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
@@ -153,4 +153,14 @@ test('Actual terrain meshes preserve 120 m registration, outward faces, borders 
   const p=cap.geometry.attributes.position,index=cap.geometry.index;
   for(let i=0;i<cap.userData.surfaceIndexCount;i++)assert.ok(renderToLocation(new Vector3().fromBufferAttribute(p,index.getX(i)).toArray()).lat<=-84+1e-5);
   for(const mesh of [...meshes,cap])mesh.geometry.dispose();material.dispose();terrain.dispose();
+});
+
+test('P11 flight easing is ease-in-out with zero end speed, and duration scales with distance', () => {
+  assert.equal(flightEase(0), 0); assert.equal(flightEase(1), 1); assert.ok(Math.abs(flightEase(.5) - .5) < 1e-12);
+  for (let i = 1; i <= 100; i++) assert.ok(flightEase(i / 100) > flightEase((i - 1) / 100));
+  const h = 1e-4; assert.ok(flightEase(h) / h < 1e-6 && (1 - flightEase(1 - h)) / h < 1e-6);   // no jolt at either end
+  const far = new Vector3(4600, 1200, 2900), site = new Vector3(...locationToRender(-89.5, -150, 1000));
+  const near = site.clone().multiplyScalar(1.01), hop = new Vector3(...locationToRender(-89.3, -140, 1000)).multiplyScalar(1.01);
+  const across = flightDuration(far, site), short = flightDuration(near, hop);
+  assert.ok(short >= 1200 && short < 1400, `short hop ${short}`); assert.ok(across > 2000 && across <= 2500, `across ${across}`);
 });

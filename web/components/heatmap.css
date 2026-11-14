@@ -25,3 +25,15 @@
 .heat-control[data-loading] .heat-head::after { content: "loading…"; color: var(--muted, #9A978F); }
 .heat-control [hidden] { display: none; }
 @media (max-width: 600px) { .heat-control { top: 8px; left: 8px; padding: 8px; } .heat-btn { min-height: 36px; } }
+/* P13 · phones: the panel folds into a small "Map" button (open shows the full panel) */
+.heat-toggle { display: none; }
+@media (max-width: 768px) {
+  .heat-control { padding: 0; border: 0; background: none; }
+  .heat-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 6px 10px;
+    font: 500 12px/1 var(--sans, sans-serif); color: var(--text, #ECE9E2); background: var(--surface, #1E1E1E);
+    border: 1px solid var(--line, #2E2E2E); cursor: pointer; }
+  .heat-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+  .heat-toggle:focus-visible { outline: 2px solid var(--sun, #F2B33D); outline-offset: 2px; }
+  .heat-control .heat-body { display: none; }
+  .heat-control.is-open .heat-body { display: block; margin-top: 6px; padding: 8px; background: var(--surface, #1E1E1E); border: 1px solid var(--line, #2E2E2E); }
+}

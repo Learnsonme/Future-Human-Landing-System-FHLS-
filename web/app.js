@@ -2,13 +2,14 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261115-p10";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261115-p13";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
 import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 (T3)
 import { createTimePlayer } from "./components/time-player.js";            // S9 (T3)
 import { createPanoramaSlider } from "./components/panorama-slider.js";    // S11 (T3)
+import { mountCameraToolbar } from "./components/camera-toolbar.js";        // P12 (T3)
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -36,6 +37,7 @@ let core = null;
 let coreError = null;
 let sites = [];
 let viewer = null;
+let camBar = null, selectSeq = 0;   // P12 (T3): camera toolbar; guards a slow analyze() after Clear selection
 let heatControl = null;   // S10 (T3): south-pole heat-map "Map" control over the 3D view
 let timePlayer = null;    // S9 (T3): Play / Pause on the timeline
 let panoSlider = null;    // S11 (T3): the panorama's own time slider
@@ -141,7 +143,7 @@ function show(screen) {
   if (state.screen === "app" && screen !== "app") {
     // Dispose immediately, before a screen animation: this cancels both active
     // flights and terrain requests. Exploration state lives separately above.
-    const previous = viewer; viewer = null; heatControl?.attach(null); previous?.dispose();
+    const previous = viewer; viewer = null; heatControl?.attach(null); camBar?.attach(null); previous?.dispose();
   }
   if (transition?.busy) {
     transition.destroy();
@@ -270,6 +272,8 @@ function mountViewer() {
   const instance = viewer;
   mountTimePlayer();   // S9 (T3)
   heatControl ||= mountHeatmapControl($("viewer-slot"), { dataBase: "../data", mode: state.mode });   // S10 (T3)
+  camBar ||= mountCameraToolbar($("viewer-slot").parentElement, $("viewer-slot"), { onClear: clearSelection, onStart: goHome });   // P12 (T3)
+  camBar.attach(instance);
   heatControl.attach(instance);
   instance.onPick((lat, lon) => {
     if (viewer === instance && state.screen === "app") selectSite({ lat, lon }, { fly: true });
@@ -340,6 +344,7 @@ function renderSiteList() {
 
 async function selectSite(site, { fly = true } = {}) {
   if (!core) return;
+  const seq = ++selectSeq;   // P12 (T3)
   if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
   try { viewer?.showLander?.(state.site.lat, state.site.lon, state.site.name); } catch { /* viewer gone */ }   // S16 (T3)
@@ -355,7 +360,9 @@ async function selectSite(site, { fly = true } = {}) {
   $("r-sub").textContent = "Computing…";
 
   try {
-    state.result = await core.analyze(state.site.lat, state.site.lon);
+    const result = await core.analyze(state.site.lat, state.site.lon);
+    if (seq !== selectSeq) return;   // P12 (T3): cleared or replaced meanwhile
+    state.result = result;
   } catch (err) {
     console.error("analyze failed", err);
     $("r-sub").textContent = "Could not compute this point.";
@@ -363,6 +370,20 @@ async function selectSite(site, { fly = true } = {}) {
   }
   renderResults();
   drawTimeline();
+}
+
+// P12 (T3): "Clear selection" (toolbar or Esc): no site, empty panel, no lander; the camera stays.
+function clearSelection() {
+  if (!state.site && !state.result) return;
+  selectSeq++;
+  state.site = null; state.result = null; panoHour = null;
+  for (const b of document.querySelectorAll(".site")) { b.classList.remove("is-on"); b.removeAttribute("aria-current"); }
+  $("r-title").textContent = "No site selected";
+  $("r-sub").textContent = "Pick one of the candidate sites, or click anywhere on the Moon.";
+  $("r-body").hidden = true; $("r-body").replaceChildren();
+  $("pin-row").hidden = true;
+  renderPanorama(); renderHourTable(); drawTimeline();
+  const cap = $("timeline-caption"); if (cap) cap.textContent = "Pick a site to see its windows.";
 }
 
 function renderResults() {

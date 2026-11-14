@@ -282,6 +282,12 @@ patch; the extents are the image's outer edges in degrees. The south polar overl
 wins wherever it covers. `viewer.clearGlobalOverlay()` removes it. Both are applied in the same shader
 step, after lighting.
 
+### Camera toolbar API (P11, P12)
+- **Flights (P11):** every flight (site, Back, Overview) starts from the current camera with no jump. It lasts 1.2–2.5 s depending on distance (`flightDuration`) and uses an ease-in-out curve with zero speed and acceleration at both ends (`flightEase`), so it doesn't stutter on arrival. Detail tiles load during the flight and cross-fade in. Any new click, drag or button cancels the flight.
+- `viewer.back()`: flies to the camera pose before the last zoom or fly step and resolves `false` if there is none. The history holds the pose before each `flyTo`, Look at, Overview and drag/zoom gesture (a burst within 1 s counts as one step), up to 30 entries. `viewer.canGoBack()`; status patches carry `canGoBack`.
+- `viewer.flyOverview()`: zooms smoothly out to the whole Moon in the current viewing direction. The selection and the lander stay.
+- `viewer.clearSelection()`: removes the lander and forgets the selected point (no Look at). The camera doesn't move.
+
 ### Selected-spot lander (S16)
 `viewer.showLander(lat, lon, label?)` puts a small lunar-lander glyph (our own 24 px SVG: `--text`
 outline, `--sun` descent stage and window) with its feet on that spot, with an optional label below

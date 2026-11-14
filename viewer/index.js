@@ -4,7 +4,7 @@ import { loadCore } from '../core/fhls-core.js';
 import { R_KM, moonToRender, locationToRender, renderToLocation, validateLocation, parseTime } from './coordinates.js';
 import { createGlobe, createStars, decodeMoonTIFF } from './globe.js';
 import { Terrain, fetchOK } from './terrain.js';
-import { makeFlight, updateFlight, sunlitCameraPosition } from './navigation.js';
+import { makeFlight, updateFlight, sunlitCameraPosition, flightDuration } from './navigation.js';
 import { Markers } from './markers.js';
 import { Lander } from './lander.js';
 
@@ -254,6 +254,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
       return Promise.resolve();
     }
     const P = bodyRender(name); if (!P) return;
+    pushView('look');
     lookingAt = name;
     cancelFlight(); clearControlInertia();
     const site = new T.Vector3(...locationToRender(selection.lat, selection.lon, heightAt(selection.lat, selection.lon)));
@@ -295,7 +296,56 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
   function finishFlight() {
     const complete = flight; flight = null;
     controls.enabled = true; controls.minDistance = 2; controls.maxDistance = 3 * R_KM;
+    complete.onDone?.();                        // P12: an overview flight keeps overview zoom limits
     controls.update(); complete.resolve({ cancelled: false });
+  }
+  // P12 · camera history for "Back": the pose before each flight, Look at, Overview and drag/zoom gesture.
+  // A burst of wheel/drag events within 1 s counts as one step.
+  const views = []; let lastGestureAt = 0;
+  function pushView(kind) {
+    if (!camera || !controls) return;
+    const now = performance.now();
+    if (kind === 'gesture' && now - lastGestureAt < 1000) { lastGestureAt = now; return; }
+    if (kind === 'gesture') lastGestureAt = now;
+    views.push({ position: camera.position.clone(), target: controls.target.clone(), quaternion: camera.quaternion.clone(),
+      up: camera.up.clone(), min: controls.minDistance, max: controls.maxDistance });
+    if (views.length > 30) views.shift();
+    notify({ canGoBack: true });
+  }
+  function flyToPose(pose, duration, onDone) {
+    cancelFlight(); clearControlInertia(); controls.enabled = false; lookingAt = null;
+    const done = new Promise(resolve => {
+      flight = { start: performance.now(), duration: reduced.matches ? 0.001 : duration ?? flightDuration(camera.position, pose.position),
+        fromPosition: camera.position.clone(), position: pose.position.clone(), fromTarget: controls.target.clone(), target: pose.target.clone(),
+        fromQ: camera.quaternion.clone(), toQ: pose.quaternion.clone(), up: pose.up.clone(), onDone, resolve };
+      if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + 1); finishFlight(); }
+    });
+    needsRender = true; scheduleFrame();
+    return done;
+  }
+  /** P12 · fly back to the camera pose before the last zoom / fly step. Resolves false if there is none. */
+  async function back() {
+    checkAlive(); await ready;
+    const pose = views.pop(); notify({ canGoBack: views.length > 0 });
+    if (!pose) return false;
+    await flyToPose(pose, null, () => { controls.minDistance = pose.min; controls.maxDistance = pose.max; });
+    return true;
+  }
+  /** P12 · zoom smoothly back out to the whole Moon, same viewing direction; keeps the selection. */
+  async function flyOverview() {
+    checkAlive(); await ready; start();
+    pushView('overview');
+    const D = Math.min(overviewMaxDistance(), new T.Vector3(4600, 1200, 2900).length());
+    const position = camera.position.clone().normalize().multiplyScalar(D), up = new T.Vector3(0, 1, 0);
+    const target = new T.Vector3(0, 0, 0);
+    const toQ = new T.Quaternion().setFromRotationMatrix(new T.Matrix4().lookAt(position, target, up));
+    await flyToPose({ position, target, quaternion: toQ, up }, null, () => {
+      controls.minDistance = R_KM + 18; controls.maxDistance = overviewMaxDistance();
+    });
+  }
+  /** P12 · forget the selected point: no lander, no Sun/Earth look-at; the camera stays where it is. */
+  function clearSelection() {
+    checkAlive(); selection = null; siteHorizon = null; lookingAt = null; lander.clear(); needsRender = true;
   }
   function animate(now) {
     raf = 0;
@@ -358,6 +408,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
     const token = generation;
     try{await ready;}catch(error){if(disposed)return {cancelled:true};throw error;}
     if (disposed || token !== generation) return { cancelled: true };
+    pushView('fly');
     clearControlInertia(); selection = location; siteHorizon = null; lookingAt = null;
     core?.getHorizon?.(location.lat, location.lon).then(h => { if (selection === location) siteHorizon = h; }).catch(() => {});
     controls.autoRotate = false; controls.enabled = false;
@@ -366,10 +417,10 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
     const near = Math.abs(location.lat) >= 84 || terrain?.regionAt(location.lat, location.lon) ? true : 'mid';
     const arrival = new Promise(resolve => {
       flight = { ...makeFlight(camera, controls, location.lat, location.lon, heightAt(location.lat, location.lon),
-        near, 1800, performance.now()), resolve };
+        near, null, performance.now()), resolve };     // P11: 1.2–2.5 s by distance
       if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + flight.duration); finishFlight(); }
     });
-    const fadeFrom = performance.now() + FADE_FROM * 1800;
+    const fadeFrom = performance.now() + FADE_FROM * (flight?.duration || 1800);
     root.setAttribute('aria-busy', 'true');
     notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
     (async () => {
@@ -435,7 +486,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
       controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.enablePan = false;
       controls.minDistance = R_KM + 18; controls.maxDistance = 4 * R_KM; controls.autoRotate = !started && !reduced.matches; controls.autoRotateSpeed = 1;
       controls.addEventListener('change', () => { needsRender = true; });
-      controls.addEventListener('start', () => { cancelFlight(); start(); lookingAt = null; });
+      controls.addEventListener('start', () => { pushView('gesture'); cancelFlight(); start(); lookingAt = null; });
       event(reduced, 'change', () => {
         controls.autoRotate = !started && !reduced.matches;
         if (reduced.matches) {
@@ -586,6 +637,9 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
       needsRender = true;
     },
     removeMarker(id) { checkAlive(); return markers.remove(id); },
+    /** P12 · camera toolbar: back (undo last zoom/fly), flyOverview (whole Moon, animated), clearSelection. */
+    back, flyOverview, clearSelection,
+    canGoBack() { return views.length > 0; },
     /** S16 · show the lander glyph on the selected spot (one at a time; a new spot moves it). */
     showLander(lat, lon, label = '') { checkAlive(); lander.show(lat, lon, label); needsRender = true; },
     clearLander() { checkAlive(); lander.clear(); needsRender = true; },
