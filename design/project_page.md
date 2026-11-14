@@ -19,7 +19,7 @@ Beginner, Intermediate and Advanced modes give the same answers at three levels 
 [TEAM: public link to the 30-second video, e.g. YouTube unlisted or a Google Drive file set to "anyone with the link"]
 
 ## Link to Final Project
-[TEAM: GitHub Pages URL once W7 deploys] · Code: https://github.com/Learnsonme/Future-Human-Landing-System-FHLS- (the repo must be public)
+https://futurehumanlandingsystem.netlify.app/web/ · Code: https://github.com/Learnsonme/Future-Human-Landing-System-FHLS- [TEAM: the repo must be public for judges]
 
 ## Detailed Project Description
 
@@ -63,7 +63,7 @@ Beginner, Intermediate and Advanced modes give the same answers at three levels 
 - **Python:** NumPy, SpiceyPy (NASA NAIF CSPICE) and Pillow.
 - **JavaScript:** three.js, with no framework.
 - **Fonts:** IBM Plex Sans and Mono.
-- **Hosting:** GitHub Pages.
+- **Hosting:** Netlify (static, offline-capable).
 
 ## Use of Super Intelligence (SI)
 *(For data collection only; judges don't see this field.)*
