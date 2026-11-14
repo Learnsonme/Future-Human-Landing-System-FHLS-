@@ -75,6 +75,17 @@ All of these follow `design/style.md`. Anything animated must also follow the M1
 - [x] M4 · T1 · **Pin markers in the viewer.** Add `viewer.addMarker(id, lat, lon, label)` and `viewer.removeMarker(id)`, and document them in `viewer/README.md`. Markers must be visible on the globe and on the terrain. Use a thin `--text` ring with a small number label (1–3) and no glow. (claimed by T1, 11:50)
 - (V8 above now covers loading all the new terrain: north, whole Moon at 474 m, and 40 m Artemis.)
 
+### T1 · polish pass (Saturday, all done before leaving)
+Small fixes only, no new features. Claim each one, push, tick, log. If one is unfinished when you leave, set it back to `[ ]` and leave a LOG.md note for T2.
+P1 touches `web/`: allowed for T1 by agreement. Build it as `web/components/stats-ticker.js` and tell @T2 in LOG.md, because M6 also changes the landing screen.
+- [ ] P1 · T1 · **Landing stats move slowly left → right.** The three stat cards (Ephemeris · Terrain · Live check) become one strip drifting slowly to the right in a seamless loop (about 40 s per full cycle). Pause on hover/focus, keep text readable, palette tokens only. `prefers-reduced-motion` → static strip, no motion.
+- [ ] P2 · T1 · **No blank Moon on load.** Show a still poster image of the Moon until the 3D viewer is ready, then cross-fade. No white or empty flash.
+- [ ] P3 · T1 · **Camera feel.** Smooth ease-in-out fly-to, no jitter at the end, zoom limits so you can't clip into the terrain or zoom out to a dot.
+- [ ] P4 · T1 · **Phone touch.** One-finger rotate, pinch zoom, tap to pick a site. Test at 375 px width.
+- [ ] P5 · T1 · **Loading and error states.** Subtle indicator while terrain tiles load; if a tile fails, fall back to the coarser terrain instead of a hole.
+- [ ] P6 · T1 · **Clean console.** Zero errors and zero 404s from opening the site through Start → mode → click → fly-to → Home.
+- [ ] P7 · T1 · **Smooth and light.** Cap device pixel ratio at 2, pause rendering when the tab is hidden, aim for smooth motion on a normal laptop.
+
 ### T2 · web/
 - [x] M5 · T2 · **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
 - [ ] M6 · T2 · **Simplify the landing actions and add background depth.** Remove "CHOOSE A MODE", because Start does the same. Add the background visual effects allowed by M11 (e.g. depth layers of stars drifting slowly at different speeds), on the landing screen only, palette tokens only.
