@@ -38,6 +38,7 @@ let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.j
 let sky = null;
 let transition = null;
 let revealObserver = null;
+let lastPointer = null;   // where the blast starts: the control you clicked
 
 const $ = (id) => document.getElementById(id);
 
@@ -93,14 +94,34 @@ function applyScreen(screen) {
   if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
 
   document.body.classList.add("is-arriving");
-  setTimeout(() => document.body.classList.remove("is-arriving"), 500);
+  setTimeout(() => document.body.classList.remove("is-arriving"), 620);
   observeReveals();
+}
+
+// The blast starts at the control that was used. A keyboard activation leaves
+// no pointer, so fall back to the focused element, then to the centre.
+function blastOrigin() {
+  if (lastPointer && performance.now() - lastPointer.at < 1200) {
+    return { x: lastPointer.x, y: lastPointer.y };
+  }
+  const el = document.activeElement;
+  if (el && el !== document.body && el.getBoundingClientRect) {
+    const r = el.getBoundingClientRect();
+    if (r.width || r.height) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  return null;
 }
 
 function show(screen) {
   if (screen === state.screen) return;        // no transition when nothing changes
-  if (transition) transition.play(() => applyScreen(screen));
-  else applyScreen(screen);
+  if (!transition) { applyScreen(screen); return; }
+
+  // the outgoing screen is swept aside while the star collapses
+  document.body.classList.add("is-leaving");
+  transition.play(() => {
+    document.body.classList.remove("is-leaving");
+    applyScreen(screen);
+  }, blastOrigin());
 }
 
 /* ---------- mode ---------- */
@@ -306,6 +327,10 @@ function renderResults() {
 /* ---------- atmosphere (W9) ---------- */
 
 function startAtmosphere() {
+  document.addEventListener("pointerdown", (e) => {
+    lastPointer = { x: e.clientX, y: e.clientY, at: performance.now() };
+  }, { capture: true, passive: true });
+
   try {
     sky = createStarfield($("sky"), { density: state.mode });
   } catch (err) {

@@ -5,19 +5,24 @@
  *
  *   import { createStarTransition } from "./components/star-transition.js";
  *   const fx = createStarTransition(document.getElementById("transition"));
- *   await fx.play(() => showTheNextScreen());   // swap runs under the flash
+ *   await fx.play(() => showTheNextScreen(), { x, y });   // origin: the click
  *
- * ~950 ms, with the screen swapped at 380 ms while the flash hides it.
+ * ~1150 ms: the star collapses first, infalling matter streaming into the point
+ * you clicked, then detonates there. The screen is swapped at 440 ms, under the
+ * brightest part of the flash.
  * One canvas, drawn only while running and cleared after, so it costs nothing
  * at rest. Only --text and --sun are used: --earth and --both carry meaning
  * elsewhere in the app and must not be spent on decoration.
  * prefers-reduced-motion: the swap runs immediately and nothing is drawn.
  */
 
-const TOTAL_MS = 950;
-const SWAP_MS = 380;      // under the brightest part of the flash
+const TOTAL_MS = 1150;
+const SWAP_MS = 440;      // under the brightest part of the flash
+const COLLAPSE_END = 0.26;   // of the run: infall, then the pinpoint
+const BLAST = 0.30;          // detonation
 const EMBERS = 72;
 const SPIKES = 14;
+const INFALL = 54;
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const easeOut = (p) => 1 - Math.pow(1 - p, 3);
@@ -43,15 +48,20 @@ export function createStarTransition(root) {
   let w = 0, h = 0, cx = 0, cy = 0, maxR = 0;
   let embers = [];
   let spikes = [];
+  let infall = [];
   let tint = { text: [236, 233, 226], sun: [242, 179, 61] };
 
-  function size() {
+  function size(origin) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
     h = window.innerHeight;
-    cx = w / 2;
-    cy = h / 2;
-    maxR = Math.hypot(w, h) / 2;
+    cx = origin && Number.isFinite(origin.x) ? origin.x : w / 2;
+    cy = origin && Number.isFinite(origin.y) ? origin.y : h / 2;
+    // far enough to clear the screen from wherever the click was
+    maxR = Math.max(
+      Math.hypot(cx, cy), Math.hypot(w - cx, cy),
+      Math.hypot(cx, h - cy), Math.hypot(w - cx, h - cy),
+    );
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -72,6 +82,14 @@ export function createStarTransition(root) {
       lag: rand(0, 0.12),
       trail: rand(18, 70),
     }));
+    infall = Array.from({ length: INFALL }, () => ({
+      angle: Math.random() * Math.PI * 2,
+      from: rand(0.3, 1.0),        // fraction of maxR it falls in from
+      lag: rand(0, 0.45),          // of the collapse, so it streams rather than snaps
+      size: rand(0.6, 1.8),
+      warm: Math.random() < 0.35,
+      trail: rand(26, 90),
+    }));
     spikes = Array.from({ length: SPIKES }, (_, i) => ({
       angle: (i / SPIKES) * Math.PI * 2 + rand(-0.12, 0.12),
       len: rand(0.5, 1.1),
@@ -87,12 +105,39 @@ export function createStarTransition(root) {
   function draw(p) {
     ctx.clearRect(0, 0, w, h);
 
-    // ── 1 · the collapse, then the flash ────────────────────────────────
-    // core pulls in tight before it goes, which is what sells the detonation
-    const coreR = p < 0.18
-      ? 26 * (1 - easeIn(p / 0.18)) + 4
-      : 4 + easeOut((p - 0.18) / 0.22) * 140;
-    const coreAlpha = p < 0.18 ? 1 : Math.max(0, 1 - (p - 0.18) / 0.5);
+    // ── 0 · the collapse: matter streaming into the point ───────────────
+    if (p < BLAST) {
+      const cp = Math.min(1, p / COLLAPSE_END);
+      for (const f of infall) {
+        const fp = Math.min(1, Math.max(0, (cp - f.lag) / (1 - f.lag)));
+        if (fp <= 0) continue;
+        const r = (1 - easeIn(fp)) * maxR * f.from;     // accelerating inward
+        const x = cx + Math.cos(f.angle) * r;
+        const y = cy + Math.sin(f.angle) * r;
+        const alpha = Math.min(1, fp * 1.6) * 0.75;
+        const colour = f.warm ? tint.sun : tint.text;
+        const bx = cx + Math.cos(f.angle) * (r + f.trail);
+        const by = cy + Math.sin(f.angle) * (r + f.trail);
+        const g = ctx.createLinearGradient(x, y, bx, by);
+        g.addColorStop(0, rgba(colour, alpha));
+        g.addColorStop(1, rgba(colour, 0));
+        ctx.strokeStyle = g;
+        ctx.lineWidth = f.size;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+      }
+    }
+
+    // ── 1 · the pinpoint, then the flash ────────────────────────────────
+    // it tightens to almost nothing before it goes, which sells the blast
+    const coreR = p < BLAST
+      ? Math.max(1.5, 22 * (1 - easeIn(p / BLAST)))
+      : 1.5 + easeOut((p - BLAST) / 0.22) * 150;
+    const coreAlpha = p < BLAST
+      ? 0.55 + 0.45 * easeIn(p / BLAST)
+      : Math.max(0, 1 - (p - BLAST) / 0.5);
 
     if (coreAlpha > 0.01) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, coreR));
@@ -106,7 +151,10 @@ export function createStarTransition(root) {
     }
 
     // full-screen wash, brightest right as the screens swap
-    const flash = p < 0.4 ? easeOut(p / 0.4) * 0.42 : Math.max(0, 0.42 * (1 - (p - 0.4) / 0.45));
+    const fp = (p - BLAST) / 0.14;
+    const flash = p < BLAST ? 0
+      : fp < 1 ? easeOut(fp) * 0.46
+      : Math.max(0, 0.46 * (1 - (p - BLAST - 0.14) / 0.42));
     if (flash > 0.004) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
       g.addColorStop(0, rgba(tint.text, flash));
@@ -117,8 +165,8 @@ export function createStarTransition(root) {
     }
 
     // ── 2 · light spikes ────────────────────────────────────────────────
-    if (p > 0.12 && p < 0.75) {
-      const sp = (p - 0.12) / 0.63;
+    if (p > BLAST && p < 0.82) {
+      const sp = (p - BLAST) / 0.52;
       const alpha = Math.sin(Math.PI * sp) * 0.5;
       for (const s of spikes) {
         const len = easeOut(sp) * maxR * s.len;
@@ -137,9 +185,9 @@ export function createStarTransition(root) {
     }
 
     // ── 3 · shockwave, two rings so the edge is not a single hard line ──
-    for (const [delay, colour, weight] of [[0.1, tint.text, 2], [0.19, tint.sun, 1.2]]) {
+    for (const [delay, colour, weight] of [[BLAST, tint.text, 2.4], [BLAST + 0.07, tint.sun, 1.4]]) {
       if (p <= delay) continue;
-      const rp = Math.min(1, (p - delay) / 0.7);
+      const rp = Math.min(1, (p - delay) / 0.62);
       const r = easeOut(rp) * maxR * 1.25;
       const alpha = (1 - rp) * 0.55;
       if (alpha <= 0.01 || r <= 0) continue;
@@ -151,9 +199,9 @@ export function createStarTransition(root) {
     }
 
     // ── 4 · embers thrown clear of the blast ────────────────────────────
-    if (p > 0.1) {
+    if (p > BLAST) {
       for (const e of embers) {
-        const ep = Math.max(0, (p - 0.1 - e.lag) / (0.85 - e.lag));
+        const ep = Math.max(0, (p - BLAST - e.lag) / (0.78 - e.lag));
         if (ep <= 0 || ep >= 1) continue;
         const r = easeOut(ep) * maxR * e.speed * 1.2;
         const x = cx + Math.cos(e.angle) * r;
@@ -181,10 +229,10 @@ export function createStarTransition(root) {
     }
   }
 
-  function play(swap) {
+  function play(swap, origin) {
     if (reduced.matches || busy) { swap?.(); return Promise.resolve(); }
     busy = true;
-    size();
+    size(origin);
     seed();
     root.classList.add("is-running");
 

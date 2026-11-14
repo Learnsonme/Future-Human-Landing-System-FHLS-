@@ -592,11 +592,17 @@ body[data-screen="app"]     #screen-app     { display: block; }
 .startx.is-running { opacity: 1; }
 .startx-canvas { display: block; width: 100%; height: 100%; }
 
-/* the arriving screen settles in under the flash */
-body.is-arriving .screen { animation: screen-in 520ms cubic-bezier(.4, 0, .2, 1) both; }
+/* the blast sweeps the old screen aside, then the new one arrives behind it */
+body.is-leaving .screen { animation: screen-out 440ms cubic-bezier(.55, 0, .85, .3) both; }
+@keyframes screen-out {
+  from { opacity: 1; transform: none; filter: blur(0); }
+  to   { opacity: 0; transform: translateX(-9%) scale(.97); filter: blur(3px); }
+}
+
+body.is-arriving .screen { animation: screen-in 620ms cubic-bezier(.16, .8, .3, 1) both; }
 @keyframes screen-in {
-  from { opacity: 0; transform: translateY(10px) scale(.995); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translateX(11%) scale(.985); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
 }
 
 /* ---------- micro-interactions ---------- */
@@ -648,6 +654,7 @@ body.is-arriving .screen { animation: screen-in 520ms cubic-bezier(.4, 0, .2, 1)
 @media (prefers-reduced-motion: reduce) {
   .startx { opacity: 0 !important; }
   body.is-arriving .screen,
+  body.is-leaving .screen,
   .pin-card,
   .pin-figures dd.is-best::after { animation: none !important; }
   .reveal { opacity: 1; transform: none; }
