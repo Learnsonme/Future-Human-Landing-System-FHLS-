@@ -87,7 +87,7 @@ All of these follow `design/style.md`. Anything animated must also follow the M1
 ### T3 · engine/, design/
 - [~] M9 · T3 · **Higher-res terrain where it matters.** Full-resolution 40 m LOLA tiles around the 7 Artemis sites (lod 2, same tile format). Check the north tiles too. Hand over to T1 for V8 in LOG.md. (claimed by T3, 17:50)
 - [~] M10 · T3 · **Logo files.** Get the official NASA Space Apps logo per the Space Apps brand guidelines, saved as `design/logo/app_logo.png`. Prepare the team logo, and web sizes of the FHLS logo for M7. Document the usage rules in `design/logo/README.md`. (claimed by T3, 17:50)
-- [~] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it. (claimed by T3, 17:50)
+- [x] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it.
 - [ ] M12 · T3 · **Review round 2.** Check M1–M8 against style.md and the H3 checklist, using `design/review/walkthrough.mjs` on desktop and phone. Log findings to owners before the Sunday 11:00 freeze.
 
 ## Sunday

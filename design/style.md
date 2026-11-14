@@ -78,6 +78,54 @@ The full-screen supernova goes beyond these limits: it lights 92–97% of the vi
 - **Live setting:** listen for changes to the setting while the page is open, not just on load.
 - The date slider still moves the shadows. That is content, not decoration.
 
+### Round 2 additions (M11)
+These extend D5 for the round-2 tasks. Where they conflict with D5 above, these win.
+
+**Title + Moon entrance (M5)**
+- **When:** on first page load, once per visit.
+- **What moves:** the title block and the Moon enter as **one composition**. The title slides in from the left and the Moon from the right, each at most 48 px, converging into place.
+- **Timing:** about 700 ms with `--ease`, opacity 0 → 1. The Moon may also scale 0.96 → 1. The Moon may lag the title by up to 120 ms.
+- **Not allowed:** rotation, bounce, blur above 4 px, and letter-by-letter or typewriter text.
+- **After the entrance, text stays still** while it is being read.
+- **Never block input:** Start must be clickable within 300 ms of load.
+- **Reduced motion:** everything simply appears.
+
+**Background depth (M6), landing screen only**
+- **Star layers:** up to 3 layers (far, mid, near) with rising density and size, drifting slowly in one fixed direction at about 2, 4 and 8 px/s.
+- **Optional pointer parallax:** the near layer at most 12 px, the Moon at most 6 px, the title 0 px.
+- **Shooting stars:** at most one every ~15 s (as in D5).
+- **Colours:** palette tokens only. No nebula clouds, colour gradients or glow blobs.
+- **Reduced motion:** static layers, no parallax.
+
+**Space → terrain handover (M1)**
+- **One continuous camera path:** the globe and the terrain detail **crossfade over 400–600 ms of the flight**, with no pop, jump or flash.
+- **The same Sun vector** lights both, so shadows don't flip at the handover.
+- **The whole fly-to** stays 1.2–2.5 s.
+- **Reduced motion:** an instant cut.
+
+**Landing Moon blend (M2)**
+- **No box:** the canvas background is transparent (or exactly `--bg`). No visible rectangle, border or vignette edge.
+- **Stars:** the page's stars continue behind the Moon's surroundings, but not over the disc.
+- **Brightness:** the lit limb must not be brighter than `--text`.
+- **Halo:** none.
+
+**First Moon on load (M3)**
+- **Speed:** a Moon is visible within about 1 s.
+- **First frame:** a poster image with the same framing and lighting.
+- **Swap:** a ≤ 300 ms crossfade to the live globe.
+- **No spinner.**
+
+**Pin markers (M4, M8)**
+- **Ring:** a 1.5 px `--text` ring, 12 px across, constant on screen at every zoom.
+- **Label:** the pin number (1–3) in IBM Plex Mono 11 px.
+- **The active pin** uses `--sun`. Never use `--earth` or `--both`.
+- **Animation:** one 600 ms pulse on placement is allowed. Never loop it.
+
+**Logos (M7)**
+- **FHLS logo:** on the landing screen, at most 160 px wide, in `fhls-logo-transparent.png` or the square mark.
+- **Footer credit:** the NASA Space Apps logo (`app_logo.png`) and the team logo, 24–32 px tall at 80% opacity.
+- **Usage:** follow `design/logo/README.md`. Never use the NASA "meatball" or NASA insignia.
+
 ## Navigation: Home (H3)
 **What Home means:** go back to the landing screen (the spinning Moon). Nothing is lost: mode, selected site, date, hour and pins all stay, and Start → mode → explorer resumes where you were.
 
