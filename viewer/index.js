@@ -20,7 +20,7 @@ export function createViewer(container, options = {}) {
   let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, stars, core;
   let disposed = false, started = options.presentation === false, flight = null, raf = 0, lastFrame = 0;
   let utc = parseTime(options.time || '2027-01-15T12:00:00Z'), selection = null, generation = 0, pendingPick;
-  let status = { phase: 'loading', message: 'Loading lunar imagery and ephemeris…', time: utc, lighting: 'loading', terrain: 'loading' };
+  let status = { phase: 'loading', message: 'Loading lunar imagery and ephemeris…', time: utc, lighting: 'loading', terrain: 'loading', synthetic: true, exaggeration: 1 };
   const picks = new Set(), statuses = new Set(), listeners = [], abort = new AbortController();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const dataBase = new URL(options.dataBase || '../data/', HERE); if (!dataBase.pathname.endsWith('/')) dataBase.pathname += '/';
@@ -29,6 +29,9 @@ export function createViewer(container, options = {}) {
   function notify(patch) {
     if (disposed) return;
     status = { ...status, ...patch }; message.textContent = status.message;
+    status.synthetic = core ? !!core.synthetic : true;
+    if(status.lighting==='fixed-development')message.textContent = `Development lighting — fixed Sun · ${status.message}`;
+    if(status.lighting==='synthetic')message.textContent = `Synthetic ephemeris · ${status.message}`;
     root.dataset.phase = status.phase;
     for (const cb of statuses) { try { cb({ ...status }); } catch (e) { console.error(e); } }
   }
@@ -207,6 +210,9 @@ export function createViewer(container, options = {}) {
     getStatus() { return { ...status }; },
     getDiagnostics() { return { camera: camera?.position.toArray(), target: controls?.target.toArray(),
       sunDirection: core ? moonToRender(core.sunDirection(utc)) : null, selected: selection ? { ...selection } : null,
+      lightDirection: light?.position.clone().sub(light.target.position).normalize().toArray(),
+      shadows: light ? { enabled: light.castShadow, mapSize: light.shadow.mapSize.toArray(),
+        extentKm: light.shadow.camera.right, nearKm: light.shadow.camera.near, farKm: light.shadow.camera.far } : null,
       flying: !!flight, terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
     setVerticalExaggeration(value) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
