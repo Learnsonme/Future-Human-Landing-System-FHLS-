@@ -23,7 +23,9 @@ const DENSITY = {
   // the landing page is the arrival: it carries the fullest sky, whatever
   // mode is remembered, so the page does not look empty beside the viewer's
   // own starfield inside the Moon canvas
-  landing:      { per1M: 230, twinkle: 0.6,  shootingEveryMs: 16000, maxR: 1.6, gain: 1.45 },
+  // matches the viewer's own 3-D starfield (--muted, 1.1 px, no twinkle) so the
+  // page sky and the sky inside the Moon canvas read as one continuous field
+  landing:      { per1M: 240, twinkle: 0,    shootingEveryMs: 0,     maxR: 1.1, gain: 1.3, match: true },
   beginner:     { per1M: 150, twinkle: 0.55, shootingEveryMs: 22000, maxR: 1.5, gain: 1.15 },
   intermediate: { per1M: 95,  twinkle: 0.35, shootingEveryMs: 45000, maxR: 1.4, gain: 1 },
   advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 90000, maxR: 1.7, gain: 1.1 },
@@ -55,19 +57,24 @@ export function createStarfield(canvas, options = {}) {
   function makeStars() {
     const cfg = DENSITY[mode] || DENSITY.intermediate;
     const wanted = Math.min(MAX_STARS, Math.round((width * height / 1e6) * cfg.per1M));
+    const match = !!cfg.match;
     stars = Array.from({ length: Math.max(0, wanted) }, () => {
       const depth = Math.random();            // 0 far, 1 near — drives size and brightness
       return {
         x: Math.random() * width,
         y: Math.random() * height,
-        r: rand(0.4, cfg.maxR) * (0.5 + depth * 0.5),
-        base: Math.min(0.85, rand(0.10, 0.42) * (0.45 + depth * 0.55) * (cfg.gain || 1)),
+        // the viewer draws every star the same size, with no attenuation
+        r: match ? cfg.maxR : rand(0.4, cfg.maxR) * (0.5 + depth * 0.5),
+        base: match
+          ? rand(0.5, 0.85)
+          : Math.min(0.85, rand(0.10, 0.42) * (0.45 + depth * 0.55) * (cfg.gain || 1)),
         // a share of stars twinkle; the rest are steady, so it never pulses in sync
         twinkles: Math.random() < cfg.twinkle,
         speed: rand(0.00018, 0.0009),
         phase: Math.random() * Math.PI * 2,
-        // one in twelve is a warm star, the only colour variation
-        warm: Math.random() < 0.08,
+        // the viewer's field is a single token, so matched skies have no warm star
+        warm: match ? false : Math.random() < 0.08,
+        muted: match,
       };
     });
   }
@@ -94,6 +101,7 @@ export function createStarfield(canvas, options = {}) {
     ctx.clearRect(0, 0, width, height);
     const [tr, tg, tb] = hexToRgb(colours.text);
     const [sr, sg, sb] = hexToRgb(colours.sun);
+    const [mr, mg, mb] = hexToRgb(colours.muted);
 
     for (const s of stars) {
       let alpha = s.base;
@@ -101,7 +109,7 @@ export function createStarfield(canvas, options = {}) {
         // slow sine, offset per star, so brightness drifts rather than blinks
         alpha = s.base * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(s.phase + t * s.speed)));
       }
-      const [r, g, b] = s.warm ? [sr, sg, sb] : [tr, tg, tb];
+      const [r, g, b] = s.muted ? [mr, mg, mb] : s.warm ? [sr, sg, sb] : [tr, tg, tb];
       ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -130,8 +138,9 @@ export function createStarfield(canvas, options = {}) {
   }
 
   function maybeShoot(t) {
-    if (reduced.matches || shooting || t < nextShootingAt) return;
     const cfg = DENSITY[mode] || DENSITY.intermediate;
+    if (!cfg.shootingEveryMs) return;
+    if (reduced.matches || shooting || t < nextShootingAt) return;
     nextShootingAt = t + cfg.shootingEveryMs * rand(0.6, 1.8);
     const fromLeft = Math.random() < 0.5;
     shooting = {
