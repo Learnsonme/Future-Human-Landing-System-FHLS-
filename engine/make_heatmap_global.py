@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """P10 · Whole-Moon heat-map layers → data/heatmap/global_*.png
 
 Run:  cd engine && python3 make_heatmap_global.py        (a few minutes, all cores)

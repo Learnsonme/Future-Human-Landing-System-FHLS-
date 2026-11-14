@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E13 · South-pole heat-map layers → data/heatmap/
 
 Run:  cd engine && python3 make_heatmap.py          (~1–2 min, all cores)

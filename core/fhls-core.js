@@ -1,3 +1,4 @@
+// Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 /**
  * fhls-core.js · FHLS browser maths (T3). Pure functions + a small data loader. No UI.
  * Formats: DATA_CONTRACT.md. Angles in degrees. Azimuth 0 = north, clockwise.

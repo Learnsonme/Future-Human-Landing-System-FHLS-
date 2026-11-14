@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E7 · Validate our sunlight numbers against NASA's published south pole illumination map.
 
 Run:  cd engine && python3 validate.py          (writes engine/validation_results.csv, prints stats)

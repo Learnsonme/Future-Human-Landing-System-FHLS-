@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E1 · Hourly Sun + Earth position table for 2027-01-01 → 2028-12-31 23:00 UTC.
 
 Run:  cd engine && python3 make_ephemeris.py

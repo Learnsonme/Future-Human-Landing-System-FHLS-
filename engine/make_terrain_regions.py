@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E12 · 120 m ("south-pole quality") terrain for chosen regions → data/terrain/regions/ + index_regions.json
 
 Run:  cd engine && python3 make_terrain_regions.py

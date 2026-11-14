@@ -1,3 +1,4 @@
+// Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 // FHLS web shell. Screens and mode (W1); site selection → core → results panel (W2).
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";

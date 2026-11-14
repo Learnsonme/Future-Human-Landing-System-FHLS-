@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """M9 + global terrain · detailed 3D terrain tiles for the viewer.
 
 Run:  cd engine && python3 make_terrain_detail.py artemis   40 m tiles around the Artemis sites

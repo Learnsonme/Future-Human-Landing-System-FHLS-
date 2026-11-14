@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E8 + E10 · Whole-Moon horizon grids (LOW precision label) → data/horizon/
 
 Run:  cd engine && python3 make_horizon_global.py coarse   global_coarse.bin (1°, LDEM_16, ~4 s)

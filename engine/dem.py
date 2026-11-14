@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """Shared LOLA polar DEM helpers (used by terrain tiles and horizon grids).
 
 Projection, south (verified against Shoemaker, Haworth, Faustini, de Gerlache, Shackleton):

@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E4 + E9 · Horizon grids → data/horizon/ (format: DATA_CONTRACT.md §2).
 
 Run:  cd engine && python3 make_horizon.py              all grids (all CPU cores)
