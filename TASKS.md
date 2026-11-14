@@ -45,7 +45,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 T1 may claim these **only after V1–V6 are done**, and only if they can finish them **before leaving on Saturday**. Unfinished at departure → set back to `[ ]` with a LOG.md note so T2 can take over. Build them as standalone components in `web/components/` with a short usage note.
 
 ## Optional (only when everything above works)
-- [ ] O1 · T2 · Pin up to 3 spots and compare side by side
+- [~] O1 · T2 · Pin up to 3 spots and compare side by side (claimed by T2, 12:10)
 - [ ] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions
 
 ## Sunday
