@@ -112,7 +112,7 @@ Below the landing screen, the page scrolls into these sections. Built by T3 in `
 - [x] S11 · T3 · **Own time slider for the horizon panorama.** A separate slider inside the panorama, independent of the timeline at the top: moving it moves only the panorama's Sun and Earth (with trails and visible/blocked states), never the main hour, the 3D view or the results panel. It starts at the timeline's hour when a site is chosen; a "Match timeline" link re-syncs it. Keyboard accessible; all modes.
 - [x] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo.
 - [x] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps.
-- [ ] S12 · T3 · **Make the landing scroll like a real website, in this layout** (before the Sunday 11:00 freeze).
+- [~] S12 · T3 · **Make the landing scroll like a real website, in this layout** (before the Sunday 11:00 freeze). (claimed by T3)
   - **Why it's invisible today:** `web/sections/` is built (S1–S8) but `web/index.html` never loads it. Add the one line next to the app.js script tag: `<script type="module" src="sections/sections.js"></script>` (T3 adds it, tell @T2 in LOG.md). Check the landing screen can actually scroll (no `overflow: hidden` / fixed 100 % height trapping it) and add a quiet "Scroll ↓" cue at the bottom of the hero.
   - **Layout, top to bottom, each block fading in on scroll (S1 rules):**
     1. **Video: "How to use FHLS · Beginner mode".** Full-width 16:9 frame, placeholder poster + "Video coming soon" for now; later the Beginner walkthrough video (muted, English captions, plays on click). Set via `VIDEO` in `sections.js`.
