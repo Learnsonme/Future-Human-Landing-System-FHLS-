@@ -20,7 +20,10 @@ const state = {
   site: null,          // { lat, lon, name } once something is picked
   hour: 348,           // hour index into 2027–2028 (348 = 2027-01-15 12:00 UTC)
   result: null,        // the last core.analyze() result
+  pins: [],            // O1: up to MAX_PINS of { site, summary, precision, gridId }
 };
+
+const MAX_PINS = 3;
 
 const LAST_HOUR = 17543;
 
@@ -253,8 +256,119 @@ function renderResults() {
        gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
+  renderPinControl();
   renderPanorama();
   renderHourTable();
+}
+
+/* ---------- pinned sites (O1) ---------- */
+// Only the summary is kept, not the hour arrays: three analyses would be a
+// few megabytes of typed arrays for numbers nobody reads again.
+
+const COMPARE_ROWS = [
+  { key: "pct_sunlit", label: "Time with sunlight", unit: "%", best: "max", tone: "val-sun" },
+  { key: "pct_earth", label: "Time with Earth contact", unit: "%", best: "max", tone: "val-earth" },
+  { key: "pct_both", label: "Time with both", unit: "%", best: "max", tone: "val-both" },
+  { key: "longest_dark_hours", label: "Longest dark period", unit: "h", best: "min" },
+  { key: "longest_no_comms_hours", label: "Longest gap in contact", unit: "h", best: "min" },
+];
+
+function samePlace(a, b) {
+  return Math.abs(a.lat - b.lat) < 1e-6 && Math.abs(a.lon - b.lon) < 1e-6;
+}
+
+function pinCurrent() {
+  const r = state.result;
+  if (!r || !state.site) return;
+  if (state.pins.some((p) => samePlace(p.site, state.site))) return;
+  if (state.pins.length >= MAX_PINS) return;
+
+  state.pins.push({
+    site: { ...state.site },
+    summary: { ...r.summary },
+    precision: r.precision,
+    gridId: r.horizon?.grid_id || null,
+  });
+  renderPins();
+  renderPinControl();
+}
+
+function unpin(i) {
+  state.pins.splice(i, 1);
+  renderPins();
+  renderPinControl();
+}
+
+function renderPinControl() {
+  const row = $("pin-row");
+  if (!state.result) {
+    row.hidden = true;
+    return;
+  }
+  row.hidden = false;
+
+  const already = state.pins.some((p) => samePlace(p.site, state.site));
+  const full = state.pins.length >= MAX_PINS;
+  const btn = $("pin-site");
+  btn.disabled = already || full;
+  btn.textContent = already ? "Pinned" : "Pin for comparison";
+  $("pin-count").textContent =
+    full ? `${MAX_PINS} of ${MAX_PINS} pinned — remove one to add another`
+         : `${state.pins.length} of ${MAX_PINS} pinned`;
+}
+
+function bestIndex(row) {
+  const values = state.pins.map((p) => p.summary[row.key]);
+  if (values.length < 2) return -1;
+  const target = row.best === "max" ? Math.max(...values) : Math.min(...values);
+  // no marker when everything ties
+  return values.every((v) => v === target) ? -1 : values.indexOf(target);
+}
+
+function renderPins() {
+  const section = $("compare");
+  if (!state.pins.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  $("compare-sub").textContent =
+    `${state.pins.length} of ${MAX_PINS} · figures are for all of 2027–2028`;
+
+  const marks = new Map(COMPARE_ROWS.map((row) => [row.key, bestIndex(row)]));
+  const cards = state.pins.map((pin, i) => {
+    const card = el("article", null, "pin-card");
+
+    const head = el("header", null, "pin-head");
+    const name = el("button", pin.site.name || "Picked point", "pin-name");
+    name.type = "button";
+    name.title = "Show this site again";
+    name.addEventListener("click", () => selectSite(pin.site));
+    const remove = el("button", "Remove", "btn btn--quiet pin-remove");
+    remove.type = "button";
+    remove.addEventListener("click", () => unpin(i));
+    head.append(name, remove);
+
+    const meta = el("p", formatLatLon(pin.site.lat, pin.site.lon), "pin-coord");
+    const prec = el("p", pin.precision === "high" ? "Full precision" : "Lower precision",
+      pin.precision === "high" ? "pin-prec" : "pin-prec is-low");
+
+    const dl = el("dl", null, "pin-figures");
+    for (const row of COMPARE_ROWS) {
+      const value = pin.summary[row.key];
+      const text = row.unit === "%"
+        ? `${value.toFixed(1)} %`
+        : (value >= 48 ? `${(value / 24).toFixed(1)} days` : `${value} hours`);
+      const dd = el("dd", text, row.tone || null);
+      if (marks.get(row.key) === i) dd.classList.add("is-best");
+      dl.append(el("dt", row.label), dd);
+    }
+
+    card.append(head, meta, prec, dl);
+    return card;
+  });
+
+  $("compare-grid").replaceChildren(...cards);
 }
 
 /* ---------- precision wording (W8) ---------- */
@@ -755,6 +869,9 @@ $("date").addEventListener("change", (e) => {
 
 $("time-slider").addEventListener("input", (e) => setHour(Number(e.target.value)));
 
+$("pin-site").addEventListener("click", pinCurrent);
+$("clear-pins").addEventListener("click", () => { state.pins = []; renderPins(); renderPinControl(); });
+
 $("csv-day").addEventListener("click", () => downloadCsv("day"));
 $("csv-all").addEventListener("click", () => downloadCsv("all"));
 
@@ -779,6 +896,8 @@ window.FHLS = {
   setSite(lat, lon, name) { return selectSite({ lat, lon, name }); },
   setMode,
   show,
+  pin: pinCurrent,
+  get pins() { return state.pins.map((p) => ({ ...p })); },
   get viewer() { return viewer; },
   buildCsv: (scope = "all") => {
     const r = state.result;

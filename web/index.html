@@ -159,12 +159,33 @@
 
         <div class="r-body" id="r-body" hidden></div>
 
+        <div class="pin-row" id="pin-row" hidden>
+          <button class="btn" id="pin-site" type="button">Pin for comparison</button>
+          <span class="pin-count num" id="pin-count"></span>
+        </div>
+
         <p class="pending">
           Sunlight above means more than half the Sun's disc clears the terrain; Earth in view means
           the centre of Earth does. Neither guarantees usable power or a radio link.
         </p>
       </aside>
     </div>
+
+    <section class="compare" id="compare" hidden>
+      <div class="compare-head">
+        <div>
+          <h2 class="eyebrow">Pinned sites</h2>
+          <p class="compare-sub" id="compare-sub">—</p>
+        </div>
+        <button class="btn btn--quiet" id="clear-pins" type="button">Clear all</button>
+      </div>
+      <div class="compare-grid" id="compare-grid"></div>
+      <p class="pending">
+        A dot marks the largest share or the shortest gap among the pinned sites. It compares
+        these sites only and is not a recommendation: a landing site is chosen on far more than
+        sunlight and a line of sight to Earth.
+      </p>
+    </section>
 
     <section class="panorama" id="panorama" hidden>
       <div class="panorama-head">
