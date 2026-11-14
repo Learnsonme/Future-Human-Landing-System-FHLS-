@@ -68,5 +68,27 @@ Done when H1–H3 are verified, Home is visible and usable after both mode and s
 - [x] C2 · T3 · `core/fhls-core.js`: use north polar grids + tiled `global_fine` automatically
 - [ ] V8 · T1 · Viewer: fly-down terrain for the north pole from the north tiles (after E11; index in `data/terrain/index_north.json`)
 
+## Round 2 · polish from user feedback (14 Nov) · 4 tasks each
+All of these follow `design/style.md`. Anything animated must also follow the M11 update to "Motion (D5)", so read M11 before building M1, M5 or M6. Claim before you start, as usual.
+
+### T1 · viewer/
+- [ ] M1 · T1 · **Smooth the move from space down to the terrain.** No jump or pop where the globe hands over to the terrain tiles. Keep one continuous camera path and crossfade globe → terrain detail. Fly-to stays 1.2–2.5 s (D5); with reduced motion it is an instant cut.
+- [ ] M2 · T1 · **Landing Moon blends into the page.** The Moon currently sits in a visibly lighter/darker box, and its brightness doesn't match the page. Make the canvas background transparent (or exactly `--bg`), with no edge or box, so the page's stars continue behind and around the Moon. Keep the real-Sun lighting from F5.
+- [ ] M3 · T1 · **Landing Moon shows up straight away.** It appears late during loading. Show a lightweight first frame immediately (a small texture or a poster image of the same view), then swap in the full-resolution globe without a flash. Report the time to first visible Moon before and after.
+- [ ] M4 · T1 · **Pin markers in the viewer.** Add `viewer.addMarker(id, lat, lon, label)` and `viewer.removeMarker(id)`, and document them in `viewer/README.md`. Markers must be visible on the globe and on the terrain. Use a thin `--text` ring with a small number label (1–3) and no glow.
+- (V8 above, extended: also load the **40 m Artemis tiles from M9** when flying into those sites.)
+
+### T2 · web/
+- [ ] M5 · T2 · **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
+- [ ] M6 · T2 · **Simplify the landing actions and add background depth.** Remove "CHOOSE A MODE", because Start does the same. Add the background visual effects allowed by M11 (e.g. depth layers of stars drifting slowly at different speeds), on the landing screen only, palette tokens only.
+- [ ] M7 · T2 · **Put the logos on the site.** Use the FHLS logo from `design/logo/` (wordmark/header plus favicon tags), the NASA Space Apps logo `design/logo/app_logo.png`, and the team logo, all from M10. Placement: the FHLS logo on the landing screen, and the Space Apps and team logos small in a footer credit line. Follow `design/logo/README.md` and the Space Apps brand rules noted there.
+- [ ] M8 · T2 · **Show what you pinned.** When a site is pinned, call `viewer.addMarker` (M4). The marker number matches its pin card (1–3). Unpinning removes the marker, and markers survive mode changes and Home round trips.
+
+### T3 · engine/, design/
+- [ ] M9 · T3 · **Higher-res terrain where it matters.** Full-resolution 40 m LOLA tiles around the 7 Artemis sites (lod 2, same tile format). Check the north tiles too. Hand over to T1 for V8 in LOG.md.
+- [ ] M10 · T3 · **Logo files.** Get the official NASA Space Apps logo per the Space Apps brand guidelines, saved as `design/logo/app_logo.png`. Prepare the team logo, and web sizes of the FHLS logo for M7. Document the usage rules in `design/logo/README.md`.
+- [ ] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it.
+- [ ] M12 · T3 · **Review round 2.** Check M1–M8 against style.md and the H3 checklist, using `design/review/walkthrough.mjs` on desktop and phone. Log findings to owners before the Sunday 11:00 freeze.
+
 ## Sunday
 - 11:00 feature freeze · 12:30 video + page ready · 13:15 submitted · 13:30 deadline · 14:00 judging (ask for an early slot)
