@@ -380,6 +380,17 @@ body[data-screen="app"]     #screen-app     { display: block; }
 .exact-time .btn { min-height: 44px; padding: 8px; }
 .time-steps { margin-top: 4px; gap: 4px 12px; }
 .time-hint { min-height: 18px; margin: 4px 0; color: var(--muted); font-size: 12px; }
+.best-dates { margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.best-dates h4 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+.best-dates p { margin: 8px 0; }
+.best-note, .best-blackout { color: var(--muted); font-size: 12px; }
+.best-window-list { padding-left: 20px; margin: 12px 0; }
+.best-window-list li { padding-left: 4px; }
+.best-window { display: block; width: 100%; min-height: 44px; border: 0; border-bottom: 1px solid var(--line); padding: 10px 0; background: transparent; font: inherit; font-variant-numeric: tabular-nums; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.best-window:hover { text-decoration: underline; }
+.best-window:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+.best-dates .btn { min-height: 44px; }
+.pin-figures dd.pin-best-window { grid-column: 1 / -1; text-align: left; overflow-wrap: anywhere; }
 .timebar-head {
   display: flex;
   justify-content: space-between;

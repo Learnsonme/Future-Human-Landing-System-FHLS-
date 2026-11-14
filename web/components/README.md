@@ -93,7 +93,7 @@ These options are optional and backward compatible:
 ## panorama-slider.js (S11, T3)
 `createPanoramaSlider(mountEl, { lastHour, timeOf, getTimelineHour, onChange })` gives the horizon panorama its **own** time slider, independent of the main timeline.
 - **What it moves:** only the panorama's Sun and Earth. The main hour, the 3D view and the results panel stay put.
-- **Starting point:** when a site is chosen, it starts at the timeline's hour.
+- **Starting point:** when a site is chosen or the main time changes, it matches the timeline's hour. Scrubbing this slider still leaves the main time alone.
 - **"Match timeline"** copies the timeline's hour into it, and is only shown when the two differ.
 - **Keyboard:** the arrow keys step it one hour at a time.
 
@@ -126,3 +126,29 @@ and `setActiveMarker` with each new explorer. Removing a card renumbers the
 remaining markers/cards without changing their IDs. The retained pin list restores
 them after Home or a mode change. Clearing the current site preserves comparison
 pins; clearing the pin list removes both cards and markers.
+
+## exact-time.js (S21)
+
+`parseUtcFields(day, hour)` validates whole UTC hours, including calendar dates;
+`sliderHour(key, shift, current, last)` resolves hourly/day keyboard steps and bounds.
+`app.js` commits the fields on Enter or blur through the core's `indexOf()` and
+existing `setHour()`. Main time changes update the exact fields, timeline, live
+results, panorama and viewer together. Invalid drafts keep the selected hour;
+valid out-of-range dates clamp with an inline hint. Editing exact time pauses Play.
+
+## best-dates.js (S20)
+
+`bestWindows(result, n = 3)` ranks the core's combined windows by descending
+duration, then earlier start. It returns compact absolute indices, a blackout
+matching `summary.longest_dark_hours`, and flags for sunlight-only/permanent-shadow
+cases. The core's window arrays stay unchanged. `windowLabel()` formats UTC dates;
+`windowsCsv()` exports exact UTC boundaries with **exclusive ends**, including
+1 Jan 2029 00:00 for a window covering the final sample of 2028.
+
+The app caches each analysis's ranking, keeps window buttons stable on time jumps,
+and stores only the best window's three numbers with comparison pins. New/cleared
+selections release the previous card and hide its dates while analysis is pending.
+Run `node --test viewer/tests/exact-time.test.mjs viewer/tests/best-dates.test.mjs`
+from the repo root for UTC, ranking, boundary and real-data checks. Browser checks:
+`viewer/tests/exact-time.mjs` and `viewer/tests/best-dates.mjs` (Playwright import
+override `FHLS_PLAYWRIGHT`, local server override `FHLS_TEST_URL`, default port 8765).

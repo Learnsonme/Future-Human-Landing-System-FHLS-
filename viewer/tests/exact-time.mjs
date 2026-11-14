@@ -58,6 +58,11 @@ try {
   for (const width of [1280, 375]) for (const theme of ['light', 'dark']) {
     await p.setViewportSize({ width, height: 850 });
     if (await p.evaluate(() => document.documentElement.dataset.theme) !== theme) await p.locator('#theme-toggle').click();
+    for (const mode of ['beginner','intermediate','advanced']) {
+      await p.evaluate(m => { FHLS.setMode(m); document.getElementById('time-slider').dispatchEvent(new Event('input',{bubbles:true})); }, mode);
+      await check('2027-01-01T00:00:00.000Z');
+      assert.equal(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),false,`${width} ${theme} ${mode} overflow`);
+    }
     await p.locator('#exact-time').scrollIntoViewIfNeeded();
     assert.equal(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width} ${theme} overflow`);
     for (const id of ['exact-date', 'exact-hour']) assert.ok((await p.locator('#' + id).boundingBox()).height >= 44);

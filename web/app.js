@@ -3,7 +3,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261114-exact-time";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261114-best-dates";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -16,6 +16,7 @@ import { createThemeToggle } from "./components/theme.js";
 
 import { createTextEntrances } from "./components/text-entrance.js";
 import { parseUtcFields, sliderHour } from "./components/exact-time.js";
+import { bestWindows, windowLabel, windowsCsv } from "./components/best-dates.js";
 const textEntrances = createTextEntrances();
 
 const MODES = {
@@ -369,6 +370,12 @@ async function selectSite(site, { fly = true } = {}) {
   const seq = ++selectSeq;   // P12 (T3)
   if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
+  // Never show the previous site's dates under a newly selected site's name.
+  state.result = null;
+  clearBestDates();
+  $("r-body").hidden = true;
+  $("pin-row").hidden = true;
+  renderPanorama(); renderHourTable(); drawTimeline();
   syncPinMarkers();
   try { viewer?.showLander?.(state.site.lat, state.site.lon, state.site.name); } catch { /* viewer gone */ }   // S16 (T3)
   panoHour = state.hour;   // S11 (T3): the panorama starts at the timeline's hour for a new site
@@ -387,6 +394,7 @@ async function selectSite(site, { fly = true } = {}) {
     if (seq !== selectSeq) return;   // P12 (T3): cleared or replaced meanwhile
     state.result = result;
   } catch (err) {
+    if (seq !== selectSeq) return;
     console.error("analyze failed", err);
     $("r-sub").textContent = "This point could not be computed. Try another spot.";
     return;
@@ -405,6 +413,7 @@ function clearSelection() {
   $("r-title").textContent = "No site selected";
   $("r-sub").textContent = "Pick one of the candidate sites, or click anywhere on the Moon.";
   $("r-body").hidden = true; $("r-body").replaceChildren();
+  clearBestDates();
   $("pin-row").hidden = true;
   renderPanorama(); renderHourTable(); drawTimeline();
   const cap = $("timeline-caption"); if (cap) cap.textContent = "Pick a site to see its windows.";
@@ -429,10 +438,71 @@ function renderResults() {
        gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
+  renderBestDates(r);
   textEntrances.enter(body, state.mode);
   renderPinControl();
   renderPanorama();
   renderHourTable();
+}
+
+/* ---------- S20: dates ranked from the core's existing visibility windows ---------- */
+const dateSummaries = new WeakMap();
+let bestCardResult = null, bestCardMode = null;
+function clearBestDates() {
+  $("best-dates").hidden = true;
+  $("best-dates").replaceChildren();
+  bestCardResult = null; bestCardMode = null;
+}
+function dateSummary(r) {
+  if (!dateSummaries.has(r)) dateSummaries.set(r, bestWindows(r));
+  return dateSummaries.get(r);
+}
+
+function renderBestDates(r) {
+  const card = $("best-dates");
+  card.hidden = false;
+  // A time jump changes live values, not the ranking; keep focus on the clicked window.
+  if (bestCardResult === r && bestCardMode === state.mode) return;
+  bestCardResult = r; bestCardMode = state.mode;
+  const s = dateSummary(r), exact = state.mode === "advanced";
+  const timeOf = h => core.timeOf(h);
+  card.replaceChildren(el("h4", "Best landing dates"), el("p",
+    "A good window is a continuous run with both sunlight and Earth in view. These are the longest in 2027–2028.", "best-note"));
+  if (s.noEarth) card.append(el("p", "No direct line to Earth from here in 2027–2028"));
+  if (s.neverSunlit) card.append(el("p", "This spot never gets sunlight in 2027–2028."));
+  else {
+    if (s.noEarth) card.append(el("p", "Best sunlight windows (no Earth contact)", "best-note"));
+    const list = el("ol", null, "best-window-list");
+    for (const w of s.ranked.slice(0, state.mode === "beginner" ? 1 : 3)) {
+      const label = windowLabel(w, timeOf, exact);
+      const text = state.mode === "beginner"
+        ? `${s.noEarth ? "Best sunlight window" : "Best time to land here"}: ${label} of ${s.noEarth ? "sunlight" : "sunlight and Earth contact"}.`
+        : label;
+      const button = el("button", text, `best-window ${s.noEarth ? "val-sun" : "val-both"}`);
+      button.type = "button";
+      button.title = "Jump to the start of this window";
+      button.addEventListener("click", () => { timePlayer?.stop(); setHour(w.start); });
+      const li = el("li"); li.append(button); list.append(li);
+    }
+    card.append(list);
+    if (!s.ranked.length) card.append(el("p", "No overlapping sunlight and Earth-contact windows in 2027–2028."));
+    else card.append(el("p", "Select a window to jump to its start.", "best-note"));
+  }
+  const dark = s.blackout;
+  card.append(el("p", dark
+    ? `Longest blackout: ${windowLabel(dark, timeOf, exact)} without sunlight.`
+    : "No blackout in this period.", "best-blackout"));
+  card.append(el("p", "Dates are UTC. End times are excluded; windows are limited to the 2027–2028 data period.", "best-note"));
+  if (exact && s.ranked.length) {
+    const csv = el("button", "Download windows CSV", "btn btn--quiet"); csv.type = "button";
+    csv.addEventListener("click", () => {
+      const url = URL.createObjectURL(new Blob([windowsCsv(s, timeOf)], { type: "text/csv;charset=utf-8" }));
+      const a = el("a"); a.href = url; a.download = `fhls-best-windows-${r.lat.toFixed(3)}-${r.lon.toFixed(3)}.csv`;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    card.append(csv);
+  }
+  card.append(el("p", "Sunlight and Earth in view; not a guarantee of power, radio link or a safe landing.", "best-note"));
 }
 
 /* ---------- atmosphere (W9) ---------- */
@@ -518,6 +588,7 @@ function pinCurrent() {
   if (!r || !state.site) return;
   if (state.pins.some((p) => samePlace(p.site, state.site))) return;
   if (state.pins.length >= MAX_PINS) return;
+  const dates = dateSummary(r);
 
   state.pins.push({
     id: `pin-${++nextPinId}`,
@@ -525,6 +596,7 @@ function pinCurrent() {
     summary: { ...r.summary },
     precision: r.precision,
     gridId: r.horizon?.grid_id || null,
+    bestDates: { kind: dates.kind, window: dates.ranked[0] ? { ...dates.ranked[0] } : null, neverSunlit: dates.neverSunlit },
   });
   renderPins();
   renderPinControl();
@@ -606,6 +678,11 @@ function renderPins() {
       if (marks.get(row.key) === i) dd.classList.add("is-best");
       dl.append(el("dt", row.label), dd);
     }
+    const dates = pin.bestDates;
+    const best = dates.window;
+    dl.append(el("dt", "Best window"), el("dd", best
+      ? `${windowLabel(best, h => core.timeOf(h))}${dates.kind === "power" ? " · sunlight only; no Earth contact" : " · sunlight + Earth"}`
+      : dates.neverSunlit ? "Never sunlit in 2027–2028" : "No overlapping window", `pin-best-window ${best ? dates.kind === "power" ? "val-sun" : "val-both" : ""}`));
 
     card.append(head, meta, prec, dl);
     return card;
@@ -1191,12 +1268,15 @@ function commitExactTime(day = $("exact-date").value, hour = $("exact-hour").val
     return;
   }
   timePlayer?.stop();
+  // Blur can commit before a Go click submits. Keep its feedback on the second commit.
+  if (ms === +core.timeOf(state.hour)) return;
   const outside = ms < +core.timeOf(0) || ms > +core.timeOf(LAST_HOUR);
   setHour(core.indexOf(ms));
   if (outside) $("time-hint").textContent = "Limited to 1 Jan 2027 00:00 – 31 Dec 2028 23:00 UTC.";
 }
 $("exact-time").addEventListener("submit", e => { e.preventDefault(); commitExactTime(); });
 $("exact-time").addEventListener("focusin", () => timePlayer?.stop());
+$("exact-time").addEventListener("input", () => { $("time-hint").textContent = ""; });
 for (const id of ["exact-date", "exact-hour"]) {
   $(id).addEventListener("blur", () => {
     const iso = hourToDate(state.hour).toISOString();
