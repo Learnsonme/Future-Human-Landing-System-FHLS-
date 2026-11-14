@@ -43,8 +43,8 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] D2 · T3 · Logo assets (transparent PNG, square icon)
 - [~] D3 · T3 · Demo story + video (by Sun 12:30) (claimed by T3, 12:10; script done, video to record Sun AM)
 - [x] D4 · T3 · Project page text + AI-use disclosure
-- [ ] D5 · T3 · **Motion section for `design/style.md`** (W9 is built and waiting on it): what may animate and what must not, durations and easings, how star density and brightness should differ between Beginner / Intermediate / Advanced, and the reduced-motion rule.
-- [ ] D6 · T3 · Anti-generic-AI review of the deployed site against `design/style.md` before the Sunday 11:00 freeze: https://futurehumanlandingsystem.netlify.app/web/ — you wrote the rules, so you should be the one to rule on the atmosphere pass.
+- [~] D5 · T3 · **Motion section for `design/style.md`** (W9 is built and waiting on it): what may animate and what must not, durations and easings, how star density and brightness should differ between Beginner / Intermediate / Advanced, and the reduced-motion rule. (claimed by T3, 13:50)
+- [~] D6 · T3 · Anti-generic-AI review of the deployed site against `design/style.md` before the Sunday 11:00 freeze: https://futurehumanlandingsystem.netlify.app/web/ — you wrote the rules, so you should be the one to rule on the atmosphere pass. (claimed by T3, 13:50)
 
 ## Rule for "(open to T1)" tasks
 T1 may claim these **only after V1–V6 are done**, and only if they can finish them **before leaving on Saturday**. Unfinished at departure → set back to `[ ]` with a LOG.md note so T2 can take over. Build them as standalone components in `web/components/` with a short usage note.
@@ -56,7 +56,7 @@ One work package per teammate; each edits only their owned folder and claims the
 
 - [ ] H1 · T1 · **Viewer lifecycle and regression checks** (`viewer/`): verify/fix site → Home → Start → site round trips, including a return during a fly-to. The home Moon must render and rotate again, reduced motion must be respected, and repeated navigation must not create duplicate canvases or leave stale flights running. Wait for the actual screen transition in browser checks.
 - [ ] H2 · T2 · **Home control and navigation** (`web/`): add a clearly labeled Home button to the mode picker and persistent app header, available in all three modes before and after site selection. Wire it through the existing screen/transition flow, preserve mode/site/date/pins, and keep Start → mode → explorer working after returning home.
-- [ ] H3 · T3 · **Design, accessibility and acceptance review** (`design/`): specify Home placement, wording, focus and keyboard behavior within `design/style.md`; record a checklist covering every mode, a selected site, desktop/mobile layouts, keyboard navigation and reduced motion. Review T1/T2's finished behavior and record findings for the responsible owner in LOG.md.
+- [~] H3 · T3 · **Design, accessibility and acceptance review** (`design/`): specify Home placement, wording, focus and keyboard behavior within `design/style.md`; record a checklist covering every mode, a selected site, desktop/mobile layouts, keyboard navigation and reduced motion. Review T1/T2's finished behavior and record findings for the responsible owner in LOG.md. (claimed by T3, 13:50)
 
 Done when H1–H3 are verified, Home is visible and usable after both mode and site selection in every mode, and the round trip restores the home Moon without losing the current exploration state.
 
