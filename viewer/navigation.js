@@ -1,6 +1,29 @@
 import { Vector3, Quaternion, Matrix4 } from './vendor/three.module.js';
-import { locationToRender, localFrame, R_KM } from './coordinates.js';
-export const ease = t => t * t * (3 - 2 * t);
+import { locationToRender, localFrame, moonToRender, R_KM } from './coordinates.js';
+
+// Match design/style.md's cubic-bezier(.4, 0, .2, 1), including inversion
+// of its time (x) coordinate rather than treating the curve parameter as time.
+export function ease(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  let lo = 0, hi = 1, u = t;
+  for (let i = 0; i < 24; i++) {
+    u = (lo + hi) / 2;
+    const x = 3 * (1-u) * (1-u) * u * .4 + 3 * (1-u) * u * u * .2 + u*u*u;
+    if (x < t) lo = u; else hi = u;
+  }
+  return 3 * (1-u) * u*u + u*u*u;
+}
+
+// Change only the initial presentation viewpoint. The MOON_ME Sun and the
+// Moon's orientation stay untouched. A 30° phase angle shows a gibbous Moon.
+export function sunlitCameraPosition(moonSun, distance) {
+  const sun = new Vector3(...moonToRender(moonSun)).normalize();
+  let side = new Vector3().crossVectors(new Vector3(0, 1, 0), sun);
+  if (side.lengthSq() < 1e-10) side = new Vector3(1, 0, 0);
+  return sun.multiplyScalar(Math.cos(Math.PI / 6))
+    .addScaledVector(side.normalize(), Math.sin(Math.PI / 6)).multiplyScalar(distance);
+}
 
 export function arcDirection(from, to, t) {
   const a = from.clone().normalize(), b = to.clone().normalize(), dot = Math.max(-1, Math.min(1, a.dot(b)));

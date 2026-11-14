@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../viewer.css">
+<title>FHLS viewer lifecycle test host</title>
+<style>
+  body{margin:0;background:#141414;color:#ECE9E2;font:14px 'IBM Plex Sans',sans-serif}
+  nav{display:flex;gap:20px;padding:12px 20px}
+  button{min-width:44px;min-height:44px;background:#1E1E1E;border:1px solid #2E2E2E;color:#ECE9E2}
+  #host{height:calc(100dvh - 68px);width:100%;min-height:240px}
+</style>
+<nav><button id="home">Home</button><button id="explore">Explore</button></nav>
+<main id="host"></main>
+<script type="module">
+import {createViewer} from '../index.js';
+import {loadCore} from '../../core/fhls-core.js';
+const core=loadCore(new URL('../../data',import.meta.url).href);
+let viewer,screen;
+function show(next){
+  viewer?.dispose();screen=next;
+  viewer=createViewer(document.getElementById('host'),{core,presentation:next==='landing'});
+  return viewer.ready;
+}
+window.viewerHomeTest={show,get viewer(){return viewer;},get screen(){return screen;}};
+document.getElementById('home').onclick=()=>show('landing');
+document.getElementById('explore').onclick=()=>show('site');
+show('landing');
+</script>
+</html>

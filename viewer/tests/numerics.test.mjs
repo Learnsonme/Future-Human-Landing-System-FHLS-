@@ -8,7 +8,7 @@ import { normalizeLongitude, locationToRender, renderToLocation, moonToRender, r
 import { decodePNG16 } from '../png16.js';
 import { decodeMoonTIFF } from '../globe.js';
 import { Terrain } from '../terrain.js';
-import { arcDirection, makeFlight, updateFlight } from '../navigation.js';
+import { arcDirection, makeFlight, updateFlight, sunlitCameraPosition, ease } from '../navigation.js';
 const near = (a, b, tolerance = 1e-8) => assert.ok(Math.abs(a - b) < tolerance, `${a} ≠ ${b}`);
 const data = new URL('../../data/', import.meta.url);
 const buffer = async url => { const b = await readFile(url); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
@@ -35,6 +35,18 @@ test('Fly-to arcs stay finite, unit length and stable for antipodal targets', ()
     for(let i=0;i<=100;i++){const v=arcDirection(new Vector3(1,0,0),b,i/100);near(v.length(),1);assert.ok(v.toArray().every(Number.isFinite));}
     assert.ok(arcDirection(new Vector3(1,0,0),b,1).distanceTo(b.normalize())<1e-6);
   }
+});
+test('Presentation camera sees the sunlit hemisphere without changing the Sun', () => {
+  for(const input of [[1,0,0],[0,1,0],[0,0,1],[0,0,-1],[.8,-.3,.1]]) {
+    const before=[...input],p=sunlitCameraPosition(input,5500);
+    near(p.length(),5500);
+    near(p.clone().normalize().dot(new Vector3(...moonToRender(input)).normalize()),Math.cos(Math.PI/6));
+    assert.deepEqual(input,before);
+  }
+});
+test('Flight easing follows the design cubic-bezier and stays monotonic', () => {
+  near(ease(0),0);near(ease(1),1);near(ease(.5),.7755613,1e-6);
+  for(let i=1;i<=100;i++)assert.ok(ease(i/100)>ease((i-1)/100));
 });
 test('Flights reach exact targets without crossing the lunar sphere', () => {
   const camera = new PerspectiveCamera(); camera.position.set(4600,1200,2900);

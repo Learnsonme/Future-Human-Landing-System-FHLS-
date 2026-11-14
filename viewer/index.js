@@ -4,7 +4,7 @@ import { loadCore } from '../core/fhls-core.js';
 import { R_KM, moonToRender, locationToRender, renderToLocation, validateLocation, parseTime } from './coordinates.js';
 import { createGlobe, createStars, decodeMoonTIFF } from './globe.js';
 import { Terrain, fetchOK } from './terrain.js';
-import { makeFlight, updateFlight } from './navigation.js';
+import { makeFlight, updateFlight, sunlitCameraPosition } from './navigation.js';
 
 const HERE = new URL('./', import.meta.url);
 const asset = name => new URL(`assets/${name}`, HERE);
@@ -84,14 +84,18 @@ export function createViewer(container, options = {}) {
     const location = renderToLocation(camera.position.toArray()), floor = R_KM + heightAt(location.lat, location.lon) / 1000 + 0.5;
     if (camera.position.length() < floor) camera.position.setLength(floor);
   }
+  function finishFlight() {
+    const complete = flight; flight = null;
+    controls.enabled = true; controls.minDistance = 0.8; controls.maxDistance = 11000;
+    controls.update(); complete.resolve({ cancelled: false });
+  }
   function animate(now) {
     if (disposed) return; raf = requestAnimationFrame(animate);
     const dt = Math.min(0.05, (now - (lastFrame || now)) / 1000); lastFrame = now;
     if (document.hidden || root.clientWidth === 0 || root.clientHeight === 0 || status.phase === 'context-lost') return;
     if (flight) {
       if (updateFlight(flight, camera, controls, now)) {
-        const complete = flight; flight = null; controls.enabled = true; controls.minDistance = 0.8; controls.maxDistance = 11000;
-        controls.update(); complete.resolve({ cancelled: false });
+        finishFlight();
       }
     } else controls.update(dt);
     safety(); renderer.render(scene, camera);
@@ -138,7 +142,11 @@ export function createViewer(container, options = {}) {
       : 'Global relief · lower precision terrain' });
     return new Promise(resolve => {
       flight = { ...makeFlight(camera, controls, location.lat, location.lon, heightAt(location.lat, location.lon),
-        location.lat <= -84 && !!terrain, reduced.matches ? 1 : 1100, performance.now()), resolve };
+        location.lat <= -84 && !!terrain, 1200, performance.now()), resolve };
+      if (reduced.matches) {
+        updateFlight(flight, camera, controls, flight.start + flight.duration);
+        finishFlight();
+      }
     });
   }
   function overview() {
@@ -161,7 +169,20 @@ export function createViewer(container, options = {}) {
       controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.enablePan = false;
       controls.minDistance = R_KM + 18; controls.maxDistance = 11000; controls.autoRotate = !started && !reduced.matches; controls.autoRotateSpeed = 1;
       controls.addEventListener('start', () => { cancelFlight(); start(); });
-      event(reduced, 'change', () => { controls.autoRotate = !started && !reduced.matches; });
+      event(reduced, 'change', () => {
+        controls.autoRotate = !started && !reduced.matches;
+        if (reduced.matches) {
+          // Drop the intro's stored damping delta without moving the camera.
+          // Otherwise it drifts for several frames after reduced motion is set.
+          const position = camera.position.clone(), target = controls.target.clone();
+          clearControlInertia(); camera.position.copy(position); controls.target.copy(target);
+          controls.update();
+        }
+        if (reduced.matches && flight) {
+          updateFlight(flight, camera, controls, flight.start + flight.duration);
+          finishFlight();
+        }
+      });
       light = new T.DirectionalLight('#ECE9E2', 3.2); light.shadow.mapSize.set(2048, 2048);
       light.shadow.bias = -0.00001; light.shadow.normalBias = 0.035; scene.add(light, light.target);
       scene.add(new T.AmbientLight('#ECE9E2', 0.035)); stars = createStars(); scene.add(stars);
@@ -188,6 +209,11 @@ export function createViewer(container, options = {}) {
       if (disposed) { for (const texture of looseTextures) texture.dispose(); terrain?.dispose(); return; }
       globe = createGlobe(texture, relief, terrain); looseTextures.clear(); scene.add(globe.mesh);
       if (terrain) { terrain.rebuild(terrainGroup, terrainMaterial); globe.setPolarDetail(true); }
+      if (!started && core) {
+        camera.position.copy(sunlitCameraPosition(core.sunDirection(utc), camera.position.length()));
+        const rotating = controls.autoRotate;
+        controls.autoRotate = false; controls.update(); controls.autoRotate = rotating;
+      }
       updateLight(); resize();
       const canvas = renderer.domElement, active = new Set();
       event(canvas, 'pointerdown', e => {
@@ -234,7 +260,8 @@ export function createViewer(container, options = {}) {
       lightDirection: light?.position.clone().sub(light.target.position).normalize().toArray(),
       shadows: light ? { enabled: light.castShadow, mapSize: light.shadow.mapSize.toArray(),
         extentKm: light.shadow.camera.right, nearKm: light.shadow.camera.near, farKm: light.shadow.camera.far } : null,
-      flying: !!flight, terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
+      flying: !!flight, flightDurationMs: flight?.duration || 0, renderFrames: renderer?.info.render.frame || 0,
+      disposed, terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
     setVerticalExaggeration(value) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
       if (terrain) {
