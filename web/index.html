@@ -165,6 +165,37 @@
         </p>
       </aside>
     </div>
+
+    <section class="hourtable" id="hour-table" hidden>
+      <div class="hourtable-head">
+        <div>
+          <h2 class="eyebrow">Hour by hour</h2>
+          <p class="hourtable-day num" id="hourtable-day">—</p>
+        </div>
+        <div class="hourtable-actions">
+          <button class="btn" id="csv-day" type="button">Download this day</button>
+          <button class="btn btn--primary" id="csv-all" type="button">Download 2027–2028</button>
+        </div>
+      </div>
+      <div class="hourtable-scroll">
+        <table id="hourtable-table">
+          <thead>
+            <tr>
+              <th scope="col">UTC</th>
+              <th scope="col">Sun az</th>
+              <th scope="col">Sun el</th>
+              <th scope="col">Earth az</th>
+              <th scope="col">Earth el</th>
+              <th scope="col">Sun disc</th>
+              <th scope="col">Power</th>
+              <th scope="col">Comms</th>
+            </tr>
+          </thead>
+          <tbody id="hourtable-body"></tbody>
+        </table>
+      </div>
+      <p class="pending" id="csv-note"></p>
+    </section>
   </div>
 </section>
 

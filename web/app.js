@@ -242,6 +242,7 @@ function renderResults() {
        gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
+  renderHourTable();
 }
 
 /* ---------- panel pieces ---------- */
@@ -505,6 +506,123 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(drawTimeline, 150);
 });
 
+/* ---------- hour-by-hour table + CSV (W6, Advanced) ---------- */
+
+const CSV_COLUMNS = [
+  "utc", "hour_index", "sun_az_deg", "sun_el_deg", "earth_az_deg", "earth_el_deg",
+  "sun_disc_fraction", "power", "comms",
+];
+
+function hourRow(r, i) {
+  const abs = r.start_index + i;
+  return {
+    utc: new Date(core.timeOf(abs)).toISOString().replace(".000Z", "Z"),
+    hour_index: abs,
+    sun_az_deg: r.sun_az[i],
+    sun_el_deg: r.sun_el[i],
+    earth_az_deg: r.earth_az[i],
+    earth_el_deg: r.earth_el[i],
+    sun_disc_fraction: r.sun_fraction[i],
+    power: r.power[i] ? 1 : 0,
+    comms: r.comms[i] ? 1 : 0,
+  };
+}
+
+// The 24 hours of the UTC day the slider is on.
+function dayRange(r) {
+  const dayStart = Math.floor(state.hour / 24) * 24;
+  const from = Math.max(0, dayStart - r.start_index);
+  const to = Math.min(r.sun_el.length, from + 24);
+  return { from, to };
+}
+
+function renderHourTable() {
+  const section = $("hour-table");
+  const r = state.result;
+  if (!r || state.mode !== "advanced") {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const { from, to } = dayRange(r);
+  const body = $("hourtable-body");
+  const rows = [];
+
+  for (let i = from; i < to; i++) {
+    const d = hourRow(r, i);
+    const tr = el("tr", null, d.hour_index === state.hour ? "is-now" : null);
+    tr.append(
+      el("td", d.utc.slice(11, 16)),
+      el("td", d.sun_az_deg.toFixed(2), "val-sun"),
+      el("td", d.sun_el_deg.toFixed(3), "val-sun"),
+      el("td", d.earth_az_deg.toFixed(2), "val-earth"),
+      el("td", d.earth_el_deg.toFixed(3), "val-earth"),
+      el("td", `${(d.sun_disc_fraction * 100).toFixed(0)}%`),
+      el("td", d.power ? "1" : "·", d.power ? "val-sun" : "val-off"),
+      el("td", d.comms ? "1" : "·", d.comms ? "val-earth" : "val-off"),
+    );
+    // clicking a row moves the whole app to that hour
+    tr.addEventListener("click", () => setHour(d.hour_index));
+    rows.push(tr);
+  }
+  body.replaceChildren(...rows);
+
+  const day = new Date(core.timeOf(state.hour)).toISOString().slice(0, 10);
+  $("hourtable-day").textContent = `${day} · ${rows.length} hours · click a row to jump`;
+  $("csv-note").textContent =
+    `CSV columns: ${CSV_COLUMNS.join(", ")}. Angles in degrees, power and comms are 1 or 0. ` +
+    "Lines starting with # record the site and the grid the terrain came from.";
+}
+
+function buildCsv(r, from, to) {
+  const site = state.site;
+  const gp = r.horizon?.point;
+  const lines = [
+    `# FHLS export · ${site.name || "picked point"}`,
+    `# click: ${site.lat.toFixed(5)}, ${site.lon.toFixed(5)}`,
+    gp ? `# terrain grid point: ${gp.lat.toFixed(5)}, ${gp.lon.toFixed(5)} (${distanceKm(site, gp).toFixed(3)} km away)` : "# terrain grid point: none",
+    `# grid: ${r.horizon?.grid_id || "none"} · precision: ${r.precision}`,
+    "# power = more than half the Sun's disc above the terrain; comms = centre of Earth above the terrain",
+    "# neither guarantees usable power or a radio link",
+    `# ephemeris: JPL SPICE DE440 via core/fhls-core.js · generated ${new Date().toISOString().slice(0, 19)}Z`,
+    CSV_COLUMNS.join(","),
+  ];
+  for (let i = from; i < to; i++) {
+    const d = hourRow(r, i);
+    lines.push([
+      d.utc, d.hour_index,
+      d.sun_az_deg.toFixed(4), d.sun_el_deg.toFixed(4),
+      d.earth_az_deg.toFixed(4), d.earth_el_deg.toFixed(4),
+      d.sun_disc_fraction.toFixed(4), d.power, d.comms,
+    ].join(","));
+  }
+  return lines.join("\n") + "\n";
+}
+
+function downloadCsv(scope) {
+  const r = state.result;
+  if (!r) return;
+  const { from, to } = scope === "day" ? dayRange(r) : { from: 0, to: r.sun_el.length };
+  const csv = buildCsv(r, from, to);
+
+  const slug = (state.site.name || "point").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const stamp = scope === "day"
+    ? new Date(core.timeOf(state.hour)).toISOString().slice(0, 10)
+    : "2027-2028";
+  const name = `fhls-${slug}-${stamp}.csv`;
+
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return name;
+}
+
 /* ---------- landing strip ---------- */
 
 function renderLanding() {
@@ -547,6 +665,9 @@ $("date").addEventListener("change", (e) => {
 
 $("time-slider").addEventListener("input", (e) => setHour(Number(e.target.value)));
 
+$("csv-day").addEventListener("click", () => downloadCsv("day"));
+$("csv-all").addEventListener("click", () => downloadCsv("all"));
+
 // Clicking or dragging on the strip jumps to that hour.
 for (const type of ["pointerdown", "pointermove"]) {
   $("timeline-canvas").addEventListener(type, (e) => {
@@ -569,4 +690,10 @@ window.FHLS = {
   setMode,
   show,
   get viewer() { return viewer; },
+  buildCsv: (scope = "all") => {
+    const r = state.result;
+    if (!r) return null;
+    const { from, to } = scope === "day" ? dayRange(r) : { from: 0, to: r.sun_el.length };
+    return buildCsv(r, from, to);
+  },
 };

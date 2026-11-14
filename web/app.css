@@ -430,3 +430,51 @@ body[data-screen="app"]     #screen-app     { display: block; }
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ---------- hour-by-hour table (W6) ---------- */
+.hourtable { margin: 8px 0 56px; }
+.hourtable[hidden] { display: none; }
+.hourtable-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.hourtable-day { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.hourtable-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.hourtable-actions .btn { padding: 10px 16px; font-size: 12px; }
+
+.hourtable-scroll { overflow-x: auto; }
+.hourtable table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font: 400 13px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.hourtable th {
+  text-align: right;
+  padding: 12px 10px;
+  font: 400 11px/1 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.hourtable th:first-child, .hourtable td:first-child { text-align: left; }
+.hourtable td {
+  text-align: right;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.hourtable tbody tr { cursor: pointer; }
+.hourtable tbody tr:hover td { background: var(--surface); }
+.hourtable tr.is-now td { background: var(--surface); }
+/* one marker for the row, not a bar per cell */
+.hourtable tr.is-now td:first-child { box-shadow: inset 2px 0 0 var(--text); }
+.val-off { color: var(--none); }
