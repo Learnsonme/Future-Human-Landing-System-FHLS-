@@ -35,7 +35,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] W6 · T2 · Advanced: hour table + CSV export
 - [x] W7 · T2 · Deployed — live on Netlify: https://futurehumanlandingsystem.netlify.app/web/
 - [x] W8 · T2 · "Lower precision" label outside the south polar region
-- [~] W9 · T2 · Atmosphere pass: animated starfield, star page transition, shooting stars, micro-interactions. Within `design/style.md` tokens only — density and brightness change per mode, not hue. Reduced-motion respected, no cost to the viewer's framerate. (claimed by T2, 12:40)
+- [x] W9 · T2 · Atmosphere pass: starfield, star page transition, shooting stars, micro-interactions — all within `design/style.md` tokens
 
 ### Design & pitch (T3 + Claude)
 - [x] D0 · T3 · `design/style.md`

@@ -4,6 +4,8 @@ import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
 import { createViewer } from "../viewer/index.js";
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
+import { createStarfield } from "./components/starfield.js";
+import { createStarTransition } from "./components/star-transition.js";
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -33,6 +35,9 @@ let sites = [];
 let viewer = null;
 let landingViewer = null;
 let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.json
+let sky = null;
+let transition = null;
+let revealObserver = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -77,7 +82,7 @@ function distanceKm(a, b) {
 
 /* ---------- screens ---------- */
 
-function show(screen) {
+function applyScreen(screen) {
   state.screen = screen;
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
@@ -85,6 +90,16 @@ function show(screen) {
   if (screen === "landing") mountLandingViewer();
   else { landingViewer?.dispose(); landingViewer = null; }
   if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
+
+  document.body.classList.add("is-arriving");
+  setTimeout(() => document.body.classList.remove("is-arriving"), 500);
+  observeReveals();
+}
+
+function show(screen) {
+  if (screen === state.screen) return;        // no transition when nothing changes
+  if (transition) transition.play(() => applyScreen(screen));
+  else applyScreen(screen);
 }
 
 /* ---------- mode ---------- */
@@ -104,6 +119,7 @@ function setMode(mode) {
   try { localStorage.setItem("fhls.mode", mode); } catch { /* not essential */ }
   $("mode-chip").textContent = MODES[mode].label;
   document.body.dataset.mode = mode;
+  sky?.setDensity(mode);
 }
 
 /* ---------- startup ---------- */
@@ -286,6 +302,49 @@ function renderResults() {
   renderHourTable();
 }
 
+/* ---------- atmosphere (W9) ---------- */
+
+function startAtmosphere() {
+  try {
+    sky = createStarfield($("sky"), { density: state.mode });
+  } catch (err) {
+    console.warn("starfield unavailable", err);
+  }
+  try {
+    transition = createStarTransition($("transition"));
+  } catch (err) {
+    console.warn("transition unavailable", err);
+  }
+
+  if ("IntersectionObserver" in window) {
+    revealObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add("is-in");
+        revealObserver.unobserve(entry.target);   // once only
+      }
+    }, { rootMargin: "0px 0px -8% 0px" });
+  }
+
+  observeReveals();
+
+  window.addEventListener("pagehide", () => {
+    sky?.destroy();
+    transition?.destroy();
+    revealObserver?.disconnect();
+    viewer?.dispose?.();
+  }, { once: true });
+}
+
+function observeReveals() {
+  if (!revealObserver) return;
+  for (const node of document.querySelectorAll(".compare, .panorama, .hourtable, .sites, .strip")) {
+    if (node.hidden || node.classList.contains("is-in")) continue;
+    node.classList.add("reveal");
+    revealObserver.observe(node);
+  }
+}
+
 /* ---------- pinned sites (O1) ---------- */
 // Only the summary is kept, not the hour arrays: three analyses would be a
 // few megabytes of typed arrays for numbers nobody reads again.
@@ -357,6 +416,7 @@ function renderPins() {
     return;
   }
   section.hidden = false;
+  observeReveals();
   $("compare-sub").textContent =
     `${state.pins.length} of ${MAX_PINS} · figures are for all of 2027–2028`;
 
@@ -910,6 +970,7 @@ for (const type of ["pointerdown", "pointermove"]) {
   });
 }
 
+startAtmosphere();     // before init(): the sky must not wait on the data load
 setMode(state.mode);
 init();
 
@@ -928,6 +989,7 @@ window.FHLS = {
   setSite(lat, lon, name) { return selectSite({ lat, lon, name }); },
   setMode,
   show,
+  get sky() { return sky; },
   pin: pinCurrent,
   get pins() { return state.pins.map((p) => ({ ...p })); },
   get viewer() { return viewer; },
