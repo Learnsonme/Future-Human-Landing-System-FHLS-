@@ -43,11 +43,8 @@ let explorerReturnFocus = "home-from-app";
 let visitedExplorer = false;
 let navigation = 0;
 let arrivalTimer = 0;
-let lastPointer = null;   // where the blast starts: the control you clicked
 let lastPointer = null;    // where the Start star rises: the control you clicked
 let startStarUsed = false; // D5: the star plays once per visit, on Start only
-let modesOpenedFrom = "landing";   // where Back in the mode picker returns to
-let returnFocusId = null;          // the control that left the explorer
 
 const $ = (id) => document.getElementById(id);
 
@@ -110,21 +107,7 @@ function applyScreen(screen) {
   document.body.classList.add("is-arriving");
   clearTimeout(arrivalTimer);
   arrivalTimer = setTimeout(() => document.body.classList.remove("is-arriving", "home-return"), 620);
-  moveFocusTo(screen);
   observeReveals();
-}
-
-// C2: announce the new screen. C3: returning to the explorer restores the
-// control that left it. Programmatic focus must not paint a ring.
-function moveFocusTo(screen) {
-  let target = null;
-  if (screen === "app") target = (returnFocusId && $(returnFocusId)) || $("app-heading");
-  else if (screen === "modes") target = $("modes-heading");
-  else target = $("landing-heading");
-  if (!target) return;
-  target.classList.add("focus-quiet");
-  target.focus({ preventScroll: true });
-  target.addEventListener("blur", () => target.classList.remove("focus-quiet"), { once: true });
 }
 
 // The star rises at the control that was used. A keyboard activation leaves
@@ -159,29 +142,19 @@ function show(screen) {
     try { transition = createStarTransition($("transition")); }
     catch { transition = null; }
   }
-  document.body.classList.remove("is-leaving", "home-return");
-  if (screen === "landing") {
-    document.body.classList.add("home-return");
-    renderLanding(); applyScreen(screen); return;
-  }
-  if (!transition) { applyScreen(screen); return; }
+  if (!transition) { if (screen === "landing") renderLanding(); applyScreen(screen); return; }
+  if (screen === "landing") renderLanding();
 
-  // the outgoing screen is swept aside while the star collapses
-  document.body.classList.add("is-leaving");
-  transition.play(() => {
-    if (token !== navigation) return;
-    document.body.classList.remove("is-leaving");
-    applyScreen(screen);
-  }, blastOrigin());
-  if (state.screen === "app") returnFocusId = document.activeElement?.id || null;
-  if (!transition) { applyScreen(screen); return; }
-
-  // D5: the one star of the visit is the first Start; everything else crossfades
+  // D5: the one star of the visit is the first Start; everything else is a
+  // plain crossfade, which the transition component owns.
   const isFirstStart = screen === "modes" && state.screen === "landing" && !startStarUsed;
   const options = isFirstStart ? { ...(pointerOrigin() || {}), star: true } : {};
   if (isFirstStart) startStarUsed = true;
 
-  transition.play(() => applyScreen(screen), options);
+  transition.play(() => {
+    if (token !== navigation) return;     // a newer navigation won
+    applyScreen(screen);
+  }, options);
 }
 
 function goHome() {
@@ -1035,23 +1008,10 @@ $("skip-to-modes").addEventListener("click", () => show("modes"));
 $("back-to-landing").addEventListener("click", () => show(pickerOrigin));
 for (const button of document.querySelectorAll("[data-home]")) button.addEventListener("click", goHome);
 $("change-mode").addEventListener("click", () => show("modes"));
-$("start").addEventListener("click", () => { modesOpenedFrom = "landing"; show("modes"); });
-$("skip-to-modes").addEventListener("click", () => { modesOpenedFrom = "landing"; show("modes"); });
-$("change-mode").addEventListener("click", () => { modesOpenedFrom = "app"; show("modes"); });
-
-// Back goes to whichever screen opened the picker; Home always goes home.
-$("back-to-landing").addEventListener("click", () => show(modesOpenedFrom));
-for (const id of ["home-app", "home-modes"]) {
-  $(id).addEventListener("click", () => {
-    viewer?.overview?.();          // H1: cancel any flight before leaving
-    show("landing");
-  });
-}
 
 for (const btn of document.querySelectorAll(".mode")) {
   btn.addEventListener("click", () => {
     setMode(btn.dataset.mode);
-    modesOpenedFrom = "app";
     show("app");
     renderResults();
   });

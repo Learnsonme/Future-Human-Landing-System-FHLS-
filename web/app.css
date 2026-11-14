@@ -185,8 +185,6 @@ body[data-screen="app"]     #screen-app     { display: block; }
 .appbar .app-home { border-right: 1px solid var(--line); padding-right: 16px; }
 .mode-home { position: sticky; top: 0; z-index: 5; background: var(--bg); margin-bottom: 20px; }
 [tabindex="-1"]:focus { outline: none; }
-body.home-return.is-arriving .screen { animation: home-return 500ms var(--ease) both; }
-@keyframes home-return { from { opacity: 0; } to { opacity: 1; } }
 .appbar .brand { font: 600 14px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; }
 .appbar .spacer { flex: 1; }
 .appbar .mode-chip {
@@ -689,23 +687,9 @@ body.is-crossfading .screen { animation: screen-fade 520ms var(--ease) both; }
 .focus-quiet:focus { outline: none; }
 
 /* ---------- H3 · Home ---------- */
-.home { font-size: 12px; letter-spacing: .1em; }
-.appbar .home,
-.modes-top .home {
-  /* 44 x 44 touch target without enlarging the text */
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 10px;
-  display: inline-flex;
-  align-items: center;
-}
-.appbar-divider {
-  width: 1px;
-  align-self: stretch;
-  min-height: 20px;
-  background: var(--line);
-}
-.modes-top { margin-bottom: 18px; margin-left: -10px; }
+/* The button itself is T1's .home-button / .app-home (their tests drive those
+   ids). Only the quiet-button sizing is shared from .btn--quiet. */
+.home-button { display: inline-flex; align-items: center; justify-content: center; }
 
 /* ---------- F3 · stars belong in the margins, not behind the data ---------- */
 body[data-screen="app"] .app-grid,
@@ -731,8 +715,7 @@ body[data-screen="app"] .app-grid { padding-bottom: 64px; }
 @media (max-width: 600px) {
   /* A3 · HOME stays in the first row of the app bar, never wrapped */
   .appbar { flex-wrap: wrap; }
-  .appbar .home { order: -2; }
-  .appbar-divider { order: -1; }
+  .appbar .app-home { order: -2; }
   .appbar .brand { order: 0; }
   .appbar label[for="date"] { display: block; width: 100%; margin-bottom: -6px; }
   .appbar input[type="date"] { width: 100%; }
