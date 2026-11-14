@@ -4,7 +4,7 @@ Paste everything below the line into your AI.
 
 ---
 
-Go to ~/Documents/nasa_space_app and run `git pull --rebase origin main`. Read AGENTS.md, design/style.md, and the analyze() / windows() functions in core/fhls-core.js. Add to TASKS.md and claim: `- [~] S20 · T3 · Best landing dates for the selected site (claimed by T3, HH:MM)`, commit, push, then build.
+Go to ~/Documents/nasa_space_app and run `git pull --rebase origin main`. Read AGENTS.md, design/style.md, and the analyze() / windows() functions in core/fhls-core.js. Add to TASKS.md and claim: `- [~] S20 · T1 · Best landing dates for the selected site (claimed by T1, HH:MM)` (update the existing S20 line), commit, push, then build.
 
 ## Goal
 The challenge asks users to "compare landing sites **and dates** quickly". Today the timeline shows windows but gives no one-glance answer. Add a **"Best landing dates"** card to the results panel that answers: *when should a lander arrive at this spot?*
