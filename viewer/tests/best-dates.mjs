@@ -59,7 +59,7 @@ try {
   assert.deepEqual(await p.evaluate(() => Object.keys(FHLS.pins[0].bestDates.window)),['start','end','hours']);
   await mode('advanced'); await ranking(far,3);
   assert.match(await p.locator('#best-dates .best-window').first().innerText(), /\d{2}:00 UTC/);
-  assert.match(await p.locator('#best-dates').innerText(), /End times are excluded/);
+  assert.match(await p.locator('#best-dates').innerText(), /End times are exclusive/);
   const pendingDownload = p.waitForEvent('download');
   await p.locator('#best-dates').getByRole('button',{name:'Download windows CSV'}).click();
   const download = await pendingDownload, csv = await readFile(await download.path(),'utf8');

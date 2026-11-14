@@ -372,14 +372,26 @@ body[data-screen="app"]     #screen-app     { display: block; }
 
 /* ---------- date slider + timeline strip (W4) ---------- */
 .timebar { margin: var(--gap) 0 0; }
-.exact-time { margin: 12px 0 0; }
-.exact-time-fields, .time-steps { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 16px; }
-.exact-time-fields label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-.exact-time input { min-height: 44px; min-width: 0; max-width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-variant-numeric: tabular-nums; }
+/* S21: one compact row under the slider (date · hour · UTC · Go | −1d −1h +1h +1d Start) */
+.exact-time { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 10px 0 0; }
+.exact-time-fields, .time-steps { display: flex; align-items: center; gap: 2px; }
+.exact-time input { height: 32px; min-width: 0; box-sizing: border-box; padding: 0 6px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; }
+.exact-time input + .sr-only + input { margin-left: 4px; }
 .exact-time input:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
-.exact-time .btn { min-height: 44px; padding: 8px; }
-.time-steps { margin-top: 4px; gap: 4px 12px; }
-.time-hint { min-height: 18px; margin: 4px 0; color: var(--muted); font-size: 12px; }
+.utc-tag { margin: 0 2px 0 6px; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+.time-step { height: 32px; min-width: 32px; padding: 0 7px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.time-step:hover { color: var(--text); }
+.time-step:focus-visible { outline: 2px solid var(--sun); outline-offset: 0; color: var(--text); }
+.time-hint { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; }
+.time-hint:empty { display: none; }
+/* S20: the best window, right under the slider so it is seen without scrolling */
+.best-chip { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.best-chip button { padding: 2px 0; border: 0; background: transparent; font: inherit; font-variant-numeric: tabular-nums; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.best-chip button:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+@media (max-width: 600px), (pointer: coarse) {
+  .exact-time input, .time-step { height: 44px; }
+  .time-step { min-width: 40px; }
+}
 .best-dates { margin: 20px 0; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .best-dates h4 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
 .best-dates p { margin: 8px 0; }

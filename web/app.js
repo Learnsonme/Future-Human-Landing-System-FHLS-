@@ -3,7 +3,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261114-best-dates";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261114-time-row";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -451,7 +451,21 @@ let bestCardResult = null, bestCardMode = null;
 function clearBestDates() {
   $("best-dates").hidden = true;
   $("best-dates").replaceChildren();
+  $("best-chip").hidden = true;
+  $("best-chip").replaceChildren();
   bestCardResult = null; bestCardMode = null;
+}
+// One line under the slider, so the answer is visible without scrolling to the panel.
+function renderBestChip(s) {
+  const chip = $("best-chip"), best = s.ranked[0];
+  chip.hidden = false;
+  if (s.neverSunlit) { chip.replaceChildren("This spot never gets sunlight in 2027–2028."); return; }
+  if (!best) { chip.replaceChildren("No overlapping sunlight and Earth-contact window in 2027–2028."); return; }
+  const button = el("button", windowLabel(best, h => core.timeOf(h)), s.noEarth ? "val-sun" : "val-both");
+  button.type = "button";
+  button.title = "Jump to the start of this window";
+  button.addEventListener("click", () => { timePlayer?.stop(); setHour(best.start); });
+  chip.replaceChildren(s.noEarth ? "Best sunlight window (no Earth contact): " : "Best landing window here: ", button);
 }
 function dateSummary(r) {
   if (!dateSummaries.has(r)) dateSummaries.set(r, bestWindows(r));
@@ -466,8 +480,10 @@ function renderBestDates(r) {
   bestCardResult = r; bestCardMode = state.mode;
   const s = dateSummary(r), exact = state.mode === "advanced";
   const timeOf = h => core.timeOf(h);
+  renderBestChip(s);
   card.replaceChildren(el("h4", "Best landing dates"), el("p",
-    "A good window is a continuous run with both sunlight and Earth in view. These are the longest in 2027–2028.", "best-note"));
+    "Longest continuous runs with both sunlight and Earth in view, 2027–2028 (UTC). Select one to jump to its start."
+    + (exact ? " End times are exclusive." : ""), "best-note"));
   if (s.noEarth) card.append(el("p", "No direct line to Earth from here in 2027–2028"));
   if (s.neverSunlit) card.append(el("p", "This spot never gets sunlight in 2027–2028."));
   else {
@@ -486,13 +502,11 @@ function renderBestDates(r) {
     }
     card.append(list);
     if (!s.ranked.length) card.append(el("p", "No overlapping sunlight and Earth-contact windows in 2027–2028."));
-    else card.append(el("p", "Select a window to jump to its start.", "best-note"));
   }
   const dark = s.blackout;
   card.append(el("p", dark
     ? `Longest blackout: ${windowLabel(dark, timeOf, exact)} without sunlight.`
     : "No blackout in this period.", "best-blackout"));
-  card.append(el("p", "Dates are UTC. End times are excluded; windows are limited to the 2027–2028 data period.", "best-note"));
   if (exact && s.ranked.length) {
     const csv = el("button", "Download windows CSV", "btn btn--quiet"); csv.type = "button";
     csv.addEventListener("click", () => {

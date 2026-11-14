@@ -65,7 +65,8 @@ try {
     }
     await p.locator('#exact-time').scrollIntoViewIfNeeded();
     assert.equal(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width} ${theme} overflow`);
-    for (const id of ['exact-date', 'exact-hour']) assert.ok((await p.locator('#' + id).boundingBox()).height >= 44);
+    // Touch targets on phones; the desktop row is compact (32 px) on purpose.
+    if (width <= 600) for (const id of ['exact-date', 'exact-hour']) assert.ok((await p.locator('#' + id).boundingBox()).height >= 44);
     await p.screenshot({ path: `/private/tmp/fhls-viewer-tests/exact-time-${width}-${theme}.png` });
   }
   assert.deepEqual(errors, []); assert.deepEqual(bad, []); assert.deepEqual(external, []);

@@ -17,8 +17,8 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../design/logo/favicon-32.png">
 <link rel="apple-touch-icon" href="../design/logo/apple-touch-icon-180.png">
 <!-- P14: let the inline intro paint while the main stylesheet downloads. -->
-<link id="app-styles" rel="preload" as="style" href="app.css" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="app.css"></noscript>
+<link id="app-styles" rel="preload" as="style" href="app.css?v=20261114-time-row" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="app.css?v=20261114-time-row"></noscript>
 <style>
 html{background:#141414}body{margin:0}
 html.fhls-is-loading{overflow:hidden}
@@ -235,8 +235,8 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
       <span class="mode-chip" id="mode-chip">Beginner</span>
       <button class="btn btn--quiet" id="change-mode">Change</button>
       <span class="spacer"></span>
-      <label for="date">Date</label>
-      <input type="date" id="date" min="2027-01-01" max="2028-12-31" value="2027-01-15">
+      <!-- S21: the exact date + hour fields under the slider replace this; kept hidden for scripts that set it -->
+      <input type="date" id="date" min="2027-01-01" max="2028-12-31" value="2027-01-15" hidden aria-hidden="true" tabindex="-1">
     </header>
 
     <p class="notice" id="data-notice" hidden></p>
@@ -249,24 +249,24 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
       <input type="range" id="time-slider" min="0" max="17543" step="1" value="348"
              aria-label="Hour within 2027–2028">
       <form class="exact-time" id="exact-time" novalidate aria-label="Set an exact UTC hour">
-        <div class="exact-time-fields">
-          <label for="exact-date">Date (UTC)
-            <input type="date" id="exact-date" min="2027-01-01" max="2028-12-31" value="2027-01-15" aria-describedby="time-hint">
-          </label>
-          <label for="exact-hour">Hour (UTC)
-            <input type="time" id="exact-hour" step="3600" value="12:00" aria-describedby="time-hint">
-          </label>
-          <button class="btn btn--quiet" type="submit">Go</button>
-        </div>
-        <div class="time-steps" role="group" aria-label="Step through UTC hours">
-          <button class="btn btn--quiet" type="button" data-time-step="-24">−1 day</button>
-          <button class="btn btn--quiet" type="button" data-time-step="-1">−1 h</button>
-          <button class="btn btn--quiet" type="button" data-time-step="1">+1 h</button>
-          <button class="btn btn--quiet" type="button" data-time-step="24">+1 day</button>
-          <button class="btn btn--quiet" type="button" id="time-reset">Start</button>
-        </div>
+        <span class="exact-time-fields">
+          <label class="sr-only" for="exact-date">Date (UTC)</label>
+          <input type="date" id="exact-date" min="2027-01-01" max="2028-12-31" value="2027-01-15" aria-describedby="time-hint">
+          <label class="sr-only" for="exact-hour">Hour (UTC)</label>
+          <input type="time" id="exact-hour" step="3600" value="12:00" aria-describedby="time-hint">
+          <span class="utc-tag" aria-hidden="true">UTC</span>
+          <button class="time-step" type="submit">Go</button>
+        </span>
+        <span class="time-steps" role="group" aria-label="Step through UTC hours">
+          <button class="time-step" type="button" data-time-step="-24" aria-label="Back 1 day">−1d</button>
+          <button class="time-step" type="button" data-time-step="-1" aria-label="Back 1 hour">−1h</button>
+          <button class="time-step" type="button" data-time-step="1" aria-label="Forward 1 hour">+1h</button>
+          <button class="time-step" type="button" data-time-step="24" aria-label="Forward 1 day">+1d</button>
+          <button class="time-step" type="button" id="time-reset" aria-label="Back to 1 Jan 2027 00:00 UTC">Start</button>
+        </span>
         <p class="time-hint" id="time-hint" role="status" aria-live="polite"></p>
       </form>
+      <p class="best-chip" id="best-chip" hidden></p>
       <figure class="timeline" id="timeline">
         <div class="timeline-keys" aria-hidden="true">
           <span class="tl-key val-sun">Sunlight</span>
@@ -391,7 +391,7 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
 </div><!-- fhls-content: released after the loading intro -->
 
 <!-- version tag: bump it when viewer/ or app.js change, so browsers never mix old and new modules -->
-<script type="module" src="app.js?v=20261114-best-dates"></script>
+<script type="module" src="app.js?v=20261114-time-row"></script>
 <!-- S12 (T3): scroll-down sections below the landing -->
 <script type="module" src="sections/sections.js"></script>
 <script type="module" src="components/stats-ticker.js"></script>
