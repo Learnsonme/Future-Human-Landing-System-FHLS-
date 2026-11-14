@@ -1,6 +1,6 @@
 // FHLS web shell. Screens and mode (W1); site selection → core → results panel (W2).
 // All astronomy comes from core/fhls-core.js — never recomputed here.
-import { loadCore, R_KM } from "../core/fhls-core.js";
+import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -191,41 +191,161 @@ function renderResults() {
   const site = state.site;
 
   $("r-sub").textContent = formatLatLon(site.lat, site.lon);
-  $("r-body").hidden = false;
+  const body = $("r-body");
+  body.hidden = false;
 
-  // Precision, and the grid point the terrain actually came from (T3's request).
-  const low = r.precision !== "high";
-  const badge = $("r-precision");
-  badge.textContent = low
-    ? "Lower precision · coarse terrain outside the south polar region"
-    : "Full terrain precision";
-  badge.classList.toggle("badge--low", low);
-
-  const gp = r.horizon?.point;
-  $("r-computed-for").textContent = gp
-    ? `Terrain taken from the nearest grid point, ${formatLatLon(gp.lat, gp.lon)}, ` +
-      `${distanceKm(site, gp).toFixed(2)} km away` + (r.horizon.grid_id ? ` · grid ${r.horizon.grid_id}` : "")
-    : "";
-
-  // Values at the selected hour.
   const i = core.indexOf(`${state.date}T12:00:00Z`) - r.start_index;
-  const inRange = i >= 0 && i < r.sun_el.length;
+  const hour = (i >= 0 && i < r.sun_el.length) ? i : null;
 
-  if (inRange) {
-    $("r-sun").textContent = formatAzEl({ az: r.sun_az[i], el: r.sun_el[i] });
-    $("r-earth").textContent = formatAzEl({ az: r.earth_az[i], el: r.earth_el[i] });
-    $("r-now-power").textContent = r.power[i] ? "Yes" : "No";
-    $("r-now-comms").textContent = r.comms[i] ? "Yes" : "No";
-  } else {
-    for (const id of ["r-sun", "r-earth", "r-now-power", "r-now-comms"]) $(id).textContent = "—";
+  const parts = [precisionBadge(r)];
+  if (state.mode === "beginner")     parts.push(...beginnerPanel(r, hour));
+  if (state.mode === "intermediate") parts.push(...intermediatePanel(r, hour));
+  if (state.mode === "advanced")     parts.push(...advancedPanel(r, hour));
+  parts.push(gridNote(r, site));
+
+  body.replaceChildren(...parts.filter(Boolean));
+}
+
+/* ---------- panel pieces ---------- */
+
+function precisionBadge(r) {
+  const low = r.precision !== "high";
+  const node = el("p",
+    low ? "Lower precision · coarse terrain outside the south polar region"
+        : "Full terrain precision",
+    low ? "badge badge--low" : "badge");
+  return node;
+}
+
+function gridNote(r, site) {
+  const gp = r.horizon?.point;
+  if (!gp) return null;
+  const txt = `Terrain taken from the nearest grid point, ${formatLatLon(gp.lat, gp.lon)}, ` +
+    `${distanceKm(site, gp).toFixed(2)} km away` +
+    (r.horizon.grid_id ? ` · grid ${r.horizon.grid_id}` : "");
+  return el("p", txt, "pending");
+}
+
+function heading(text) {
+  return el("h4", text, "r-head");
+}
+
+// rows: [[label, value, valueClass?], ...]
+function defList(rows) {
+  const dl = el("dl");
+  for (const [label, value, cls] of rows) {
+    dl.append(el("dt", label), el("dd", value, cls));
   }
+  return dl;
+}
+
+function hoursOrDays(h) {
+  if (h == null) return "—";
+  return h >= 48 ? `${(h / 24).toFixed(1)} days` : `${h} hours`;
+}
+
+/* ---------- Beginner: yes / no, then one sentence ---------- */
+// Wording is deliberately plain. D1 (T3) may replace the sentence.
+
+function beginnerPanel(r, hour) {
+  const out = [];
+  const sunlit = hour != null && !!r.power[hour];
+  const earth  = hour != null && !!r.comms[hour];
+
+  const verdicts = el("div", null, "verdicts");
+  verdicts.append(
+    verdict("Sunlight", sunlit, "val-sun"),
+    verdict("Earth in view", earth, "val-earth"),
+  );
+  out.push(verdicts);
 
   const s = r.summary;
-  $("r-pct-sun").textContent = `${s.pct_sunlit.toFixed(1)} %`;
-  $("r-pct-earth").textContent = `${s.pct_earth.toFixed(1)} %`;
-  $("r-pct-both").textContent = `${s.pct_both.toFixed(1)} %`;
-  $("r-dark").textContent = formatHours(s.longest_dark_hours);
-  $("r-nocomms").textContent = formatHours(s.longest_no_comms_hours);
+  const dark = s.longest_dark_hours;
+  out.push(el("p",
+    `Over 2027 and 2028 this spot is sunlit about ${Math.round(s.pct_sunlit)}% of the time and ` +
+    `can see Earth about ${Math.round(s.pct_earth)}% of the time, with both together about ` +
+    `${Math.round(s.pct_both)}% of the time; the longest unbroken stretch without sunlight is ` +
+    `${hoursOrDays(dark)}.`,
+    "r-sentence"));
+
+  return out;
+}
+
+function verdict(label, yes, cls) {
+  const box = el("div", null, `verdict${yes ? " verdict--yes" : ""}`);
+  box.append(
+    el("span", label, "verdict-label"),
+    el("span", yes ? "Yes" : "No", `verdict-value ${yes ? cls : ""}`),
+  );
+  return box;
+}
+
+/* ---------- Intermediate: angles and percentages ---------- */
+
+function intermediatePanel(r, hour) {
+  const s = r.summary;
+  return [
+    heading("At the selected hour"),
+    defList(hour == null ? [["Outside 2027–2028", "—"]] : [
+      ["Sun", formatAzEl({ az: r.sun_az[hour], el: r.sun_el[hour] }), "val-sun"],
+      ["Earth", formatAzEl({ az: r.earth_az[hour], el: r.earth_el[hour] }), "val-earth"],
+      ["Sunlight", r.power[hour] ? "Yes" : "No"],
+      ["Earth in view", r.comms[hour] ? "Yes" : "No"],
+    ]),
+    heading("Across 2027–2028"),
+    defList([
+      ["Time with sunlight", `${s.pct_sunlit.toFixed(1)} %`, "val-sun"],
+      ["Time with Earth contact", `${s.pct_earth.toFixed(1)} %`, "val-earth"],
+      ["Time with both", `${s.pct_both.toFixed(1)} %`, "val-both"],
+      ["Longest dark period", hoursOrDays(s.longest_dark_hours)],
+      ["Longest gap in contact", hoursOrDays(s.longest_no_comms_hours)],
+    ]),
+  ];
+}
+
+/* ---------- Advanced: exact numbers ---------- */
+// The hour-by-hour table and the CSV download are W6.
+
+function advancedPanel(r, hour) {
+  const s = r.summary;
+  const out = [heading("At the selected hour")];
+
+  if (hour == null) {
+    out.push(defList([["Outside 2027–2028", "—"]]));
+  } else {
+    const sunAz = r.sun_az[hour];
+    const hz = horizonAt(r.horizon.values, sunAz);
+    out.push(defList([
+      ["Hour index", String(r.start_index + hour)],
+      ["UTC", new Date(core.timeOf(r.start_index + hour)).toISOString().replace(".000Z", "Z")],
+      ["Sun azimuth", `${sunAz.toFixed(4)}°`, "val-sun"],
+      ["Sun elevation", `${r.sun_el[hour].toFixed(4)}°`, "val-sun"],
+      ["Earth azimuth", `${r.earth_az[hour].toFixed(4)}°`, "val-earth"],
+      ["Earth elevation", `${r.earth_el[hour].toFixed(4)}°`, "val-earth"],
+      ["Sun disc above terrain", `${(r.sun_fraction[hour] * 100).toFixed(1)} %`],
+      ...(hz == null ? [] : [["Horizon at Sun azimuth", `${hz.toFixed(4)}°`, "val-terrain"]]),
+      ["Power flag", r.power[hour] ? "1" : "0"],
+      ["Comms flag", r.comms[hour] ? "1" : "0"],
+    ]));
+  }
+
+  out.push(
+    heading("Across 2027–2028"),
+    defList([
+      ["Hours analysed", r.hours.toLocaleString("en-GB")],
+      ["Sunlit", `${s.pct_sunlit.toFixed(2)} %`, "val-sun"],
+      ["Earth contact", `${s.pct_earth.toFixed(2)} %`, "val-earth"],
+      ["Both", `${s.pct_both.toFixed(2)} %`, "val-both"],
+      ["Longest dark", `${s.longest_dark_hours} h`],
+      ["Longest no contact", `${s.longest_no_comms_hours} h`],
+      ["Power windows", String(r.windows.power.length)],
+      ["Comms windows", String(r.windows.comms.length)],
+      ["Windows with both", String(r.windows.both.length)],
+      ["Horizon bins", `${r.horizon.values.length} × ${r.horizon.az_step_deg}°`],
+    ]),
+    el("p", "Hour-by-hour table and CSV download arrive with W6.", "pending"),
+  );
+  return out;
 }
 
 /* ---------- landing strip ---------- */
@@ -259,6 +379,7 @@ for (const btn of document.querySelectorAll(".mode")) {
   btn.addEventListener("click", () => {
     setMode(btn.dataset.mode);
     show("app");
+    renderResults();
   });
 }
 

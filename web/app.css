@@ -317,3 +317,24 @@ body[data-screen="app"]     #screen-app     { display: block; }
 
 #results .pending code { font-size: 11px; }
 .val-both { color: var(--both); }
+
+/* ---------- Beginner verdicts (W3) ---------- */
+.verdicts { margin-top: 18px; border-top: 1px solid var(--line); }
+.verdict {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.verdict-label { font-size: 14px; color: var(--muted); }
+.verdict--yes .verdict-label { color: var(--text); }
+.verdict-value {
+  font: 500 20px/1 var(--mono);
+  letter-spacing: .02em;
+  color: var(--none);
+}
+.verdict--yes .verdict-value { color: var(--text); }
+.r-sentence { margin: 18px 0 0; font-size: 13px; line-height: 1.6; }
+.val-terrain { color: var(--terrain); }
