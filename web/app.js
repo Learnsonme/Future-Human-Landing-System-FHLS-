@@ -2,7 +2,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261115-s17";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261114-m7-m14";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -10,6 +10,11 @@ import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 
 import { createTimePlayer } from "./components/time-player.js";            // S9 (T3)
 import { createPanoramaSlider } from "./components/panorama-slider.js";    // S11 (T3)
 import { mountCameraToolbar } from "./components/camera-toolbar.js";        // P12 (T3)
+
+import { createThemeToggle } from "./components/theme.js";
+
+import { createTextEntrances } from "./components/text-entrance.js";
+const textEntrances = createTextEntrances();
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -30,6 +35,8 @@ const state = {
 };
 
 const MAX_PINS = 3;
+let nextPinId = 0;
+const markerOwners = new WeakMap(); // M8: IDs mounted into each explorer instance.
 
 const LAST_HOUR = 17543;
 
@@ -116,7 +123,14 @@ function applyScreen(screen) {
   clearTimeout(arrivalTimer);
   arrivalTimer = setTimeout(() => document.body.classList.remove("is-arriving", "home-return"), 620);
   observeReveals();
+  enterScreenText(screen);
 }
+
+function enterScreenText(screen) {
+  textEntrances.enter($(`screen-${screen}`));
+  if (screen === 'app' && state.result) textEntrances.enter($('r-body'), state.mode);
+}
+window.addEventListener('fhls:loaded', () => enterScreenText(state.screen), { once: true });
 
 // The star rises at the control that was used. A keyboard activation leaves
 // no pointer, so fall back to the focused element, then to the centre.
@@ -275,6 +289,7 @@ function mountViewer() {
   }
 
   const instance = viewer;
+  syncPinMarkers();
   mountTimePlayer();   // S9 (T3)
   heatControl ||= mountHeatmapControl($("viewer-slot"), { dataBase: "../data", mode: state.mode });   // S10 (T3)
   camBar ||= mountCameraToolbar($("viewer-slot").parentElement, $("viewer-slot"), { onClear: clearSelection, onStart: goHome });   // P12 (T3)
@@ -352,6 +367,7 @@ async function selectSite(site, { fly = true } = {}) {
   const seq = ++selectSeq;   // P12 (T3)
   if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
+  syncPinMarkers();
   try { viewer?.showLander?.(state.site.lat, state.site.lon, state.site.name); } catch { /* viewer gone */ }   // S16 (T3)
   panoHour = state.hour;   // S11 (T3): the panorama starts at the timeline's hour for a new site
 
@@ -382,6 +398,7 @@ function clearSelection() {
   if (!state.site && !state.result) return;
   selectSeq++;
   state.site = null; state.result = null; panoHour = null;
+  syncPinMarkers();
   for (const b of document.querySelectorAll(".site")) { b.classList.remove("is-on"); b.removeAttribute("aria-current"); }
   $("r-title").textContent = "No site selected";
   $("r-sub").textContent = "Pick one of the candidate sites, or click anywhere on the Moon.";
@@ -410,6 +427,7 @@ function renderResults() {
        gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
+  textEntrances.enter(body, state.mode);
   renderPinControl();
   renderPanorama();
   renderHourTable();
@@ -500,6 +518,7 @@ function pinCurrent() {
   if (state.pins.length >= MAX_PINS) return;
 
   state.pins.push({
+    id: `pin-${++nextPinId}`,
     site: { ...state.site },
     summary: { ...r.summary },
     precision: r.precision,
@@ -542,9 +561,11 @@ function bestIndex(row) {
 }
 
 function renderPins() {
+  syncPinMarkers();
   const section = $("compare");
   if (!state.pins.length) {
     section.hidden = true;
+    $("compare-grid").replaceChildren();
     return;
   }
   section.hidden = false;
@@ -555,16 +576,19 @@ function renderPins() {
   const marks = new Map(COMPARE_ROWS.map((row) => [row.key, bestIndex(row)]));
   const cards = state.pins.map((pin, i) => {
     const card = el("article", null, "pin-card");
+    card.dataset.pinId = pin.id;
 
     const head = el("header", null, "pin-head");
     const name = el("button", pin.site.name || "Picked point", "pin-name");
     name.type = "button";
+    name.setAttribute('aria-label', `Show pin ${i + 1}: ${pin.site.name || 'Picked point'}`);
     name.title = "Show this site again";
     name.addEventListener("click", () => selectSite(pin.site));
     const remove = el("button", "Remove", "btn btn--quiet pin-remove");
     remove.type = "button";
+    remove.setAttribute('aria-label', `Remove pin ${i + 1}: ${pin.site.name || 'Picked point'}`);
     remove.addEventListener("click", () => unpin(i));
-    head.append(name, remove);
+    head.append(el('span', String(i + 1), 'pin-number'), name, remove);
 
     const meta = el("p", formatLatLon(pin.site.lat, pin.site.lon), "pin-coord");
     const prec = el("p", pin.precision === "high" ? "Full precision" : "Lower precision",
@@ -586,6 +610,19 @@ function renderPins() {
   });
 
   $("compare-grid").replaceChildren(...cards);
+  textEntrances.enter(section);
+}
+
+// M8: the pin list is the source of truth. Recreate markers after Home/mode
+// disposal; update labels on unpin without changing the remaining pin IDs.
+function syncPinMarkers() {
+  if (!viewer) return;
+  const ids = new Set(state.pins.map(pin => pin.id));
+  for (const id of markerOwners.get(viewer) || []) if (!ids.has(id)) viewer.removeMarker(id);
+  for (const [index, pin] of state.pins.entries()) viewer.addMarker(pin.id, pin.site.lat, pin.site.lon, index + 1);
+  const active = state.pins.find(pin => state.site && samePlace(pin.site, state.site));
+  viewer.setActiveMarker(active?.id || null);
+  markerOwners.set(viewer, ids);
 }
 
 /* ---------- precision wording (W8) ---------- */
@@ -827,9 +864,9 @@ function drawTimeline() {
 
   const none = cssVar("--none");
   const bands = [
-    { flags: r?.power, colour: cssVar("--sun") },
-    { flags: r?.comms, colour: cssVar("--earth") },
-    { flags: r?.both,  colour: cssVar("--both") },
+    { flags: r?.power, colour: cssVar("--sun-fill") },
+    { flags: r?.comms, colour: cssVar("--earth-fill") },
+    { flags: r?.both,  colour: cssVar("--both-fill") },
   ];
 
   bands.forEach((band, row) => {
@@ -880,6 +917,32 @@ window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => { drawTimeline(); renderPanorama(); }, 150);
 });
+
+// M13: charts need explicit redraws when tokens change. Fade a bitmap of the
+// old chart over the new one, without allocating extra canvas elements.
+let chartSnapshots = [];
+function clearChartSnapshots() { for (const image of chartSnapshots) image.remove(); chartSnapshots = []; }
+window.addEventListener('fhls:themebeforechange', () => {
+  clearChartSnapshots();
+  for (const id of ['timeline-canvas', 'panorama-canvas']) {
+    const canvas = $(id); if (!canvas?.clientWidth || !canvas.clientHeight) continue;
+    const parent = canvas.parentElement;
+    if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+    const image = document.createElement('img'); image.className = 'theme-chart-snapshot';
+    image.alt = ''; image.setAttribute('aria-hidden', 'true'); image.src = canvas.toDataURL();
+    Object.assign(image.style, { left: canvas.offsetLeft + 'px', top: canvas.offsetTop + 'px',
+      width: canvas.clientWidth + 'px', height: canvas.clientHeight + 'px', backgroundColor: getComputedStyle(canvas).backgroundColor });
+    parent.append(image); chartSnapshots.push(image);
+  }
+});
+window.addEventListener('fhls:themechange', () => {
+  drawTimeline(); renderPanorama();
+  for (const image of chartSnapshots) {
+    requestAnimationFrame(() => { image.style.opacity = '0'; });
+    setTimeout(() => { image.remove(); chartSnapshots = chartSnapshots.filter(n => n !== image); }, 350);
+  }
+});
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', e => { if (e.matches) clearChartSnapshots(); });
 
 /* ---------- horizon panorama (W5, Intermediate) ---------- */
 
@@ -952,6 +1015,7 @@ function renderPanorama() {
     : `${p.short} · skyline from ${r.horizon.values.length} directions · fading trail = last 2 days · ` +
       `grey = ${Math.round(MONTH_HOURS / 24)} days either side · dimmed + dashed = behind terrain`;
   $("panorama-sub").classList.toggle("is-low", p.low);
+  textEntrances.enter(section);
 }
 
 /* ---------- hour-by-hour table + CSV (W6, Advanced) ---------- */
@@ -1024,6 +1088,7 @@ function renderHourTable() {
   $("csv-note").textContent =
     `CSV columns: ${CSV_COLUMNS.join(", ")}. Angles in degrees, power and comms are 1 or 0. ` +
     "Lines starting with # record the site, the grid the terrain came from and its precision.";
+  textEntrances.enter(section);
 }
 
 function buildCsv(r, from, to) {
@@ -1133,6 +1198,7 @@ for (const type of ["pointerdown", "pointermove"]) {
   });
 }
 
+createThemeToggle($("fhls-content"));
 startAtmosphere();     // before init(): the sky must not wait on the data load
 playEntrance();
 sky?.setDensity(state.screen === "landing" ? "landing" : state.mode);

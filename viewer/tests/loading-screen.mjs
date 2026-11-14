@@ -28,6 +28,7 @@ try{
  assert.equal(await p.evaluate(()=>!!window.FHLS),false);
  assert.equal(await p.locator('#fhls-loading').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(20, 20, 20)');
  assert.equal(await p.locator('#fhls-loading svg.fhls-loading-ship').count(),3);
+ await p.locator('.fhls-loading-ship').first().evaluate(n=>Promise.all(n.getAnimations().map(a=>a.ready)).then(()=>{}));
  const x=await p.locator('.fhls-loading-ship').first().evaluate(n=>new DOMMatrix(getComputedStyle(n).transform).m41);
  await p.waitForTimeout(250);
 

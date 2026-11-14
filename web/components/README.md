@@ -96,3 +96,33 @@ These options are optional and backward compatible:
 - **Starting point:** when a site is chosen, it starts at the timeline's hour.
 - **"Match timeline"** copies the timeline's hour into it, and is only shown when the two differ.
 - **Keyboard:** the arrow keys step it one hour at a time.
+
+## theme.js (M13)
+
+`createThemeToggle(host)` mounts the fixed 44 px touch target with a 32 px face.
+The inline theme bootstrap in `web/index.html` sets the initial tokens before
+CSS paints. The system preference stays live until a manual choice is saved as
+`fhls.theme`; storage failures are harmless. The component emits
+`fhls:themebeforechange` / `fhls:themechange` so `app.js` can crossfade old chart
+bitmaps and redraw using the new tokens without changing any data or allocating
+new canvases. Space, the loading intro and logo credits retain their dark tokens.
+The toggle avoids badge overlays, stays available in full screen, and the pin
+layout reserves room for it on narrower screens.
+
+## text-entrance.js (M14)
+
+`createTextEntrances().enter(root, key)` animates text only on the first visible
+entry of that root/key. The app uses a key per result mode so switching modes can
+introduce their different wording, while hour changes and chart redraws remain
+static. Six-pixel inward motion uses D5's easing; three 50 ms stagger groups keep
+the whole entrance within 480 ms. Numeric table cells and 3D content are excluded.
+Reduced motion skips/cancels effects and consumes the entry, avoiding a surprise
+animation when the preference changes back.
+
+## Pin synchronization (M8)
+
+`app.js` assigns stable IDs to pins, then reconciles `addMarker`, `removeMarker`
+and `setActiveMarker` with each new explorer. Removing a card renumbers the
+remaining markers/cards without changing their IDs. The retained pin list restores
+them after Home or a mode change. Clearing the current site preserves comparison
+pins; clearing the pin list removes both cards and markers.

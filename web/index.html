@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FHLS · Future Human Landing System</title>
 <meta name="description" content="Compare lunar landing sites and dates: Sun and Earth angles above the local horizon, power and direct-to-Earth communication windows, 2027–2028.">
+<!-- M13: apply the saved/system theme before CSS, without delaying the inline intro. -->
+<script>
+(() => {
+  let theme;
+  try { theme = localStorage.getItem('fhls.theme'); } catch { /* storage is optional */ }
+  if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+})();
+</script>
 <link rel="icon" type="image/png" sizes="32x32" href="../design/logo/favicon-32.png">
 <link rel="apple-touch-icon" href="../design/logo/apple-touch-icon-180.png">
 <!-- P14: let the inline intro paint while the main stylesheet downloads. -->
@@ -14,6 +23,8 @@
 html{background:#141414}body{margin:0}
 html.fhls-is-loading{overflow:hidden}
 #fhls-content{display:contents}
+/* Keep unstyled background content inside the viewport while CSS is pending. */
+html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow:hidden}
 #fhls-loading{--bg:#141414;--text:#ECE9E2;--muted:#9A978F;--sun:#F2B33D;position:fixed;inset:0;z-index:10000;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--text);opacity:1;transition:opacity .4s cubic-bezier(.4,0,.2,1);font:14px/1.5 'Open Sans',sans-serif}
 #fhls-loading.is-leaving{opacity:0}
 .fhls-loading-stars{position:absolute;inset:0;width:100%;height:100%;color:var(--muted);opacity:.3;pointer-events:none}
@@ -170,6 +181,12 @@ html.fhls-is-loading{overflow:hidden}
       </div>
     </dl>
   </div>
+  <!-- M7: official Space Apps credit and our team mark, unmodified on dark space. -->
+  <footer class="mission-credit wrap" aria-label="Project credits">
+    <img src="../design/logo/app_logo-64h.png" width="163" height="64" alt="NASA Space Apps Challenge" loading="lazy">
+    <span>Made for the NASA Space Apps Challenge 2026</span>
+    <span class="mission-team"><img src="../design/logo/fhls-mark-512.png" width="512" height="512" alt="Team FHLS" loading="lazy"><span>Team FHLS</span></span>
+  </footer>
 </section>
 
 <!-- ============ 2 · MODE PICKER ============ -->
@@ -355,7 +372,7 @@ html.fhls-is-loading{overflow:hidden}
 </div><!-- fhls-content: released after the loading intro -->
 
 <!-- version tag: bump it when viewer/ or app.js change, so browsers never mix old and new modules -->
-<script type="module" src="app.js?v=20261115-s17"></script>
+<script type="module" src="app.js?v=20261114-m7-m14"></script>
 <!-- S12 (T3): scroll-down sections below the landing -->
 <script type="module" src="sections/sections.js"></script>
 <script type="module" src="components/stats-ticker.js"></script>
