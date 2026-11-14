@@ -114,6 +114,13 @@ fly-to and time updates. The home screen mounts the same viewer as a rotating
 NASA-textured intro and disposes it when leaving for the mode picker. Integration
 checks cover home rotation, reduced motion, mobile layout, Back/remount, and the
 explorer's picking and time updates; see below.
+Home is available on the mode picker and in the explorer's sticky toolbar.
+Returning home disposes the explorer immediately, cancelling flights and terrain
+requests; returning through Start creates one new explorer and restores the site
+and time. Mode, site, hour and comparison pins stay in the app state. The mode
+picker's Back button returns to the screen that opened it. The integration check
+also covers five round trips, all three modes, keyboard focus, a 44 px mobile
+Home target and cancellation during an animated flight.
 
 ## Bundled assets
 

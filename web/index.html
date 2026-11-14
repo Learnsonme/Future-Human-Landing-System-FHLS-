@@ -17,7 +17,7 @@
   <div class="wrap landing-main">
     <div>
       <p class="eyebrow">NASA Space Apps Challenge 2026</p>
-      <h1 class="title"><span>Future Human</span><span>Landing System</span></h1>
+      <h1 class="title" id="landing-title" tabindex="-1"><span>Future Human</span><span>Landing System</span></h1>
       <p class="subtitle">
         Click anywhere on the Moon and get the numbers a mission planner needs: how high the Sun
         and Earth sit above that spot's own horizon, hour by hour, through 2027 and 2028.
@@ -61,8 +61,11 @@
 <!-- ============ 2 · MODE PICKER ============ -->
 <section class="screen" id="screen-modes">
   <div class="wrap modes">
+    <nav class="mode-home" aria-label="Home navigation">
+      <button class="btn btn--quiet home-button" id="home-from-modes" type="button" aria-label="Home: back to the start screen" data-home>Home</button>
+    </nav>
     <p class="eyebrow">Step 1 of 2</p>
-    <h2>How much detail?</h2>
+    <h2 id="modes-title" tabindex="-1">How much detail?</h2>
     <p class="lead">
       This changes how the results are written, not where you can go. You can explore the whole
       Moon in every mode, and you can switch mode at any time.
@@ -96,7 +99,8 @@
 <section class="screen" id="screen-app">
   <div class="wrap">
     <header class="appbar">
-      <span class="brand">FHLS</span>
+      <button class="btn btn--quiet home-button app-home" id="home-from-app" type="button" aria-label="Home: back to the start screen" data-home>Home</button>
+      <h2 class="brand" id="app-title" tabindex="-1">FHLS</h2>
       <span class="mode-chip" id="mode-chip">Beginner</span>
       <button class="btn btn--quiet" id="change-mode">Change</button>
       <span class="spacer"></span>

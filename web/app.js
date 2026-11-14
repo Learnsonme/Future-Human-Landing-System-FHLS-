@@ -38,6 +38,11 @@ let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.j
 let sky = null;
 let transition = null;
 let revealObserver = null;
+let pickerOrigin = "landing";
+let explorerReturnFocus = "home-from-app";
+let visitedExplorer = false;
+let navigation = 0;
+let arrivalTimer = 0;
 let lastPointer = null;   // where the blast starts: the control you clicked
 
 const $ = (id) => document.getElementById(id);
@@ -87,14 +92,20 @@ function applyScreen(screen) {
   state.screen = screen;
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
-  if (screen === "landing") $("start").focus({ preventScroll: true });
   sky?.setDensity(screen === "landing" ? "landing" : state.mode);
   if (screen === "landing") mountLandingViewer();
   else { landingViewer?.dispose(); landingViewer = null; }
   if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
 
+  const focusTarget = screen === "landing" ? "landing-title"
+    : screen === "modes" ? "modes-title"
+      : visitedExplorer ? explorerReturnFocus : "app-title";
+  $(focusTarget).focus({ preventScroll: true });
+  if (screen === "app") visitedExplorer = true;
+
   document.body.classList.add("is-arriving");
-  setTimeout(() => document.body.classList.remove("is-arriving"), 620);
+  clearTimeout(arrivalTimer);
+  arrivalTimer = setTimeout(() => document.body.classList.remove("is-arriving", "home-return"), 620);
   observeReveals();
 }
 
@@ -113,15 +124,42 @@ function blastOrigin() {
 }
 
 function show(screen) {
+  if (!["landing", "modes", "app"].includes(screen)) return;
   if (screen === state.screen) return;        // no transition when nothing changes
+  const token = ++navigation;
+  if (screen === "modes") {
+    pickerOrigin = state.screen;
+    if (state.screen === "app") explorerReturnFocus = "change-mode";
+  }
+  if (state.screen === "app" && screen !== "app") {
+    // Dispose immediately, before a screen animation: this cancels both active
+    // flights and terrain requests. Exploration state lives separately above.
+    const previous = viewer; viewer = null; previous?.dispose();
+  }
+  if (transition?.busy) {
+    transition.destroy();
+    try { transition = createStarTransition($("transition")); }
+    catch { transition = null; }
+  }
+  document.body.classList.remove("is-leaving", "home-return");
+  if (screen === "landing") {
+    document.body.classList.add("home-return");
+    renderLanding(); applyScreen(screen); return;
+  }
   if (!transition) { applyScreen(screen); return; }
 
   // the outgoing screen is swept aside while the star collapses
   document.body.classList.add("is-leaving");
   transition.play(() => {
+    if (token !== navigation) return;
     document.body.classList.remove("is-leaving");
     applyScreen(screen);
   }, blastOrigin());
+}
+
+function goHome() {
+  if (state.screen === "app") explorerReturnFocus = "home-from-app";
+  show("landing");
 }
 
 /* ---------- mode ---------- */
@@ -220,11 +258,15 @@ function mountViewer() {
     return;
   }
 
-  viewer.onPick((lat, lon) => selectSite({ lat, lon }, { fly: true }));
+  const instance = viewer;
+  instance.onPick((lat, lon) => {
+    if (viewer === instance && state.screen === "app") selectSite({ lat, lon }, { fly: true });
+  });
 
   // The viewer prints its own hint inside the canvas, so only the terrain
   // level is worth repeating here.
-  viewer.onStatus((status) => {
+  instance.onStatus((status) => {
+    if (viewer !== instance) return;
     const terrain = {
       "LOLA-120m": "Terrain · LOLA 120 m tiles",
       "LOLA-overview-480m": "Terrain · LOLA 480 m overview",
@@ -233,11 +275,13 @@ function mountViewer() {
     $("stage-status").textContent = terrain;
   });
 
-  viewer.ready.then(() => {
+  instance.ready.then(() => {
+    if (viewer !== instance || state.screen !== "app") return;
     $("stage-placeholder").hidden = true;
     pushTimeToViewer();
-    if (state.site) viewer.flyTo(state.site.lat, state.site.lon).catch(() => {});
+    if (state.site) instance.flyTo(state.site.lat, state.site.lon).catch(() => {});
   }).catch((err) => {
+    if (viewer !== instance) return;
     console.error("viewer failed to start", err);
     $("stage-placeholder").hidden = false;
     $("stage-status").textContent = `3D viewer unavailable: ${err.message}`;
@@ -962,7 +1006,8 @@ function renderLanding() {
 
 $("start").addEventListener("click", () => show("modes"));
 $("skip-to-modes").addEventListener("click", () => show("modes"));
-$("back-to-landing").addEventListener("click", () => show("landing"));
+$("back-to-landing").addEventListener("click", () => show(pickerOrigin));
+for (const button of document.querySelectorAll("[data-home]")) button.addEventListener("click", goHome);
 $("change-mode").addEventListener("click", () => show("modes"));
 
 for (const btn of document.querySelectorAll(".mode")) {
