@@ -40,4 +40,20 @@ Automated screenshots: `node design/review/walkthrough.mjs <outdir> [url]` walks
 ## Result
 | Date | Reviewer | Build (commit) | Failures (row → owner) |
 |---|---|---|---|
-| | | | |
+| 2026-11-14 | T3 (Claude), automated `design/review/check_home.mjs` + screenshots | main @ c65dacc | **none: 15/15 pass** |
+
+**What was checked automatically:**
+- **A1–A4:** HOME is first in the app bar in all 3 modes, before and after picking a site. It's on the mode picker, and has the correct accessible name. On a phone it's in the first row, at 50 × 44 px.
+- **B1:** HOME returns to the landing screen, and the Moon renders and rotates again (43% of its pixels change over 2.5 s).
+- **B2:** site and date are kept after a round trip.
+- **B5:** HOME during a fly-to lands cleanly, and the next fly-to works.
+- **B6:** after 5 round trips there are still 5 canvases, so no leaks.
+- **C2:** focus moves to the landing heading.
+- **D1:** with reduced motion the screen swap is instant (1 ms).
+- **Console:** no errors.
+
+**Not automated, check by hand once:**
+- C3: focus returns to the control that left the explorer.
+- C5: Escape inside the date field.
+- D2/D3: a static Moon and a fly-to cut under reduced motion.
+- A screen reader announcing the screen change.
