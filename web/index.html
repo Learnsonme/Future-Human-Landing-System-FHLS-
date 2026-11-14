@@ -98,7 +98,7 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
   }
   function onReduced() { if (reduced.matches && phase === 'leaving') remove(); }
   reduced.addEventListener('change', onReduced);
-  const watchdog = setTimeout(() => finish('timeout', 'Loading is taking longer than expected. The page can keep loading; reload if its controls do not respond.'), 12000);
+  const watchdog = setTimeout(() => finish('timeout', 'This is taking longer than usual. You can wait, or reload the page.'), 12000);
   const styleReady = new Promise((resolve, reject) => {
     const loaded = () => {
       if (!styles.sheet) return;
@@ -119,15 +119,15 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
     logo.decode()
   ]);
   // Handle an asset failure even when app.js never arrives.
-  assetsReady.catch(() => finish('error', 'Some page assets could not load. Please reload to try again.'));
+  assetsReady.catch(() => finish('error', 'Some files did not load. Reload the page to try again.'));
   window.FHLSLoading = {
     waitFor(ready) {
-      Promise.all([ready, assetsReady]).then(() => finish('ready'), error => finish('error', error.message || 'The Moon could not load. Please reload to try again.'));
+      Promise.all([ready, assetsReady]).then(() => finish('ready'), error => finish('error', error.message || 'The Moon could not load. Reload the page to try again.'));
     }
   };
 })();
 </script>
-<noscript><style>#fhls-loading{display:none}html.fhls-is-loading{overflow:auto}</style><p>FHLS needs JavaScript to show the Moon and calculate Sun and Earth angles.</p></noscript>
+<noscript><style>#fhls-loading{display:none}html.fhls-is-loading{overflow:auto}</style><p>FHLS needs JavaScript to draw the Moon and work out the Sun and Earth angles.</p></noscript>
 <div id="fhls-content" inert aria-busy="true">
 <p id="startup-error" role="alert" hidden></p>
 
@@ -145,8 +145,8 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
              alt="Future Human Landing System" width="1127" height="909" decoding="async">
       </h1>
       <p class="subtitle">
-        Click anywhere on the Moon and get the numbers a mission planner needs: how high the Sun
-        and Earth sit above that spot's own horizon, hour by hour, through 2027 and 2028.
+        Click any spot on the Moon. See when it gets sunlight and when it can see Earth,
+        hour by hour through 2027 and 2028, measured against that spot's own horizon.
       </p>
       <div class="landing-actions">
         <button class="btn btn--primary" id="start">Start</button>
@@ -155,7 +155,7 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
 
     <div class="globe">
       <div id="landing-moon" aria-hidden="true" inert></div>
-      <p class="globe-note">NASA LRO / LOLA · explore the whole Moon</p>
+      <p class="globe-note">Real terrain from NASA's LRO / LOLA · the whole Moon, drag to turn it</p>
     </div>
   </div>
 
@@ -196,27 +196,27 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
       <button class="btn btn--quiet home-button" id="home-from-modes" type="button" aria-label="Home: back to the start screen" data-home>Home</button>
     </nav>
     <p class="eyebrow">Step 1 of 2</p>
-    <h2 id="modes-title" tabindex="-1">How much detail?</h2>
+    <h2 id="modes-title" tabindex="-1">How much detail do you want?</h2>
     <p class="lead">
-      This changes how the results are written, not where you can go. You can explore the whole
-      Moon in every mode, and you can switch mode at any time.
+      Every mode gives the same answers for the same spot. Only the wording and the depth change.
+      You can go anywhere on the Moon in any mode, and switch at any time.
     </p>
 
     <div class="mode-list" role="group" aria-label="Detail level">
       <button class="mode" data-mode="beginner">
         <span class="mode-bar"></span>
         <span class="mode-name">Beginner</span>
-        <span class="mode-what">A plain yes or no on sunlight and Earth contact, with <b>one sentence</b> saying why.</span>
+        <span class="mode-what">A plain yes or no on sunlight and Earth contact, and <b>one sentence</b> that explains it.</span>
       </button>
       <button class="mode" data-mode="intermediate">
         <span class="mode-bar"></span>
         <span class="mode-name">Intermediate</span>
-        <span class="mode-what">Sun and Earth <b>angles</b>, percentages of time, a window timeline and the horizon panorama.</span>
+        <span class="mode-what">Sun and Earth <b>angles</b>, shares of time, a timeline of good windows and the skyline panorama.</span>
       </button>
       <button class="mode" data-mode="advanced">
         <span class="mode-bar"></span>
         <span class="mode-name">Advanced</span>
-        <span class="mode-what">Exact numbers, an <b>hour-by-hour table</b> and a CSV download.</span>
+        <span class="mode-what">Exact numbers, an <b>hour-by-hour table</b> and a CSV download for your own analysis.</span>
       </button>
     </div>
 
@@ -268,8 +268,8 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
         <div class="stage" id="viewer-slot">
           <div class="stage-placeholder" id="stage-placeholder">
             <p class="eyebrow">Loading the Moon…</p>
-            <p>If this stays, the 3D viewer could not start in this browser. The site list and the
-              results panel below still work.</p>
+            <p>If this message stays, this browser cannot run the 3D viewer. The site list and the
+              results panel still work.</p>
           </div>
         </div>
         <p class="stage-status" id="stage-status"></p>
@@ -282,8 +282,7 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
 
       <aside class="panel" id="results">
         <h3 id="r-title">No site selected</h3>
-        <p class="r-sub" id="r-sub">Pick one of the candidate sites, or call
-          <code>FHLS.setSite(lat, lon)</code>.</p>
+        <p class="r-sub" id="r-sub">Pick a candidate site below, or click anywhere on the Moon.</p>
 
         <div class="r-body" id="r-body" hidden></div>
 
@@ -293,8 +292,8 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
         </div>
 
         <p class="pending">
-          Sunlight above means more than half the Sun's disc clears the terrain; Earth in view means
-          the centre of Earth does. Neither guarantees usable power or a radio link.
+          "Sunlight" means more than half of the Sun's disc clears the terrain. "Earth in view" means
+          the centre of Earth does. Neither one guarantees usable power or a working radio link.
         </p>
       </aside>
     </div>
@@ -309,9 +308,9 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
       </div>
       <div class="compare-grid" id="compare-grid"></div>
       <p class="pending">
-        A dot marks the largest share or the shortest gap among the pinned sites. It compares
-        these sites only and is not a recommendation: a landing site is chosen on far more than
-        sunlight and a line of sight to Earth.
+        A dot marks the best value among the pinned sites: the largest share, or the shortest gap.
+        It compares these sites only. It is not a recommendation; real site selection weighs far more
+        than sunlight and a line of sight to Earth.
       </p>
     </section>
 
@@ -330,8 +329,8 @@ html.fhls-is-loading #fhls-content{display:block;position:fixed;inset:0;overflow
       <canvas id="panorama-canvas" role="img"
               aria-label="The skyline around the site, with the paths of the Sun and Earth across it"></canvas>
       <p class="pending">
-        Where a track runs below the skyline, that body is behind terrain. Azimuth is clockwise
-        from lunar north; elevation is degrees above the horizontal.
+        Where a track dips below the skyline, that body is hidden behind terrain. Azimuth runs
+        clockwise from lunar north; elevation is degrees above level.
       </p>
     </section>
 
