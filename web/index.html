@@ -118,25 +118,47 @@
 
     <div class="app-grid">
       <div class="stage" id="viewer-slot">
-        <div class="stage-placeholder">
+        <div class="stage-placeholder" id="stage-placeholder">
           <p class="eyebrow">Viewer slot</p>
           <p>
-            The 3D Moon mounts here (V1–V6, T1). Until it lands, pick a site from the list in the
-            panel — the maths and the results panel do not depend on the viewer.
+            The 3D Moon mounts here (V1–V6, T1). Until it does, pick a site below — the maths and
+            the results panel do not depend on the viewer.
           </p>
+          <ul class="site-list" id="site-list"></ul>
         </div>
       </div>
 
       <aside class="panel" id="results">
-        <h3>Site</h3>
-        <dl>
-          <dt>Latitude, longitude</dt><dd id="r-latlon">—</dd>
-          <dt>Sun elevation</dt><dd id="r-sun" class="val-sun">—</dd>
-          <dt>Earth elevation</dt><dd id="r-earth" class="val-earth">—</dd>
-        </dl>
+        <h3 id="r-title">No site selected</h3>
+        <p class="r-sub" id="r-sub">Pick one of the candidate sites, or call
+          <code>FHLS.setSite(lat, lon)</code>.</p>
+
+        <div class="r-body" id="r-body" hidden>
+          <p class="badge" id="r-precision"></p>
+
+          <h4 class="r-head">At the selected hour</h4>
+          <dl>
+            <dt>Sun</dt><dd id="r-sun" class="val-sun">—</dd>
+            <dt>Earth</dt><dd id="r-earth" class="val-earth">—</dd>
+            <dt>Sunlight</dt><dd id="r-now-power">—</dd>
+            <dt>Earth in view</dt><dd id="r-now-comms">—</dd>
+          </dl>
+
+          <h4 class="r-head">Across 2027–2028</h4>
+          <dl>
+            <dt>Time with sunlight</dt><dd id="r-pct-sun" class="val-sun">—</dd>
+            <dt>Time with Earth contact</dt><dd id="r-pct-earth" class="val-earth">—</dd>
+            <dt>Time with both</dt><dd id="r-pct-both" class="val-both">—</dd>
+            <dt>Longest dark period</dt><dd id="r-dark">—</dd>
+            <dt>Longest gap in contact</dt><dd id="r-nocomms">—</dd>
+          </dl>
+
+          <p class="pending" id="r-computed-for"></p>
+        </div>
+
         <p class="pending">
-          Full results — blocked by terrain, % sunlit, % Earth contact, longest dark period,
-          window timeline — arrive with W2–W4. Angles above are real, from core.
+          Sunlight above means more than half the Sun's disc clears the terrain; Earth in view means
+          the centre of Earth does. Neither guarantees usable power or a radio link.
         </p>
       </aside>
     </div>

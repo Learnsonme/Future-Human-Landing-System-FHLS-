@@ -26,7 +26,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 
 ### Web (T2 + Codex)
 - [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
-- [~] W2 · T2 · Embed viewer; on click call core and show results panel (claimed by T2, 09:24)
+- [x] W2 · T2 · Embed viewer; on click call core and show results panel
 - [ ] W3 · T2 · Results panel per mode (use synthetic data until real data lands)
 - [ ] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)
 - [ ] W5 · T2 · Horizon panorama chart (Intermediate) (open to T1): standalone component, input = horizon array + Sun/Earth tracks
