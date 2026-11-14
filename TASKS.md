@@ -88,6 +88,8 @@ P1 touches `web/`: allowed for T1 by agreement. Build it as `web/components/stat
 
 - [ ] P8 · T1 · **Faint shooting stars on the landing background.** Tune the existing shooting stars (W9, `web/components/starfield.js`) or add them if missing: very faint, thin short trail, rare (one about every 20–40 s at a random spot and angle), never over text, landing screen only. `prefers-reduced-motion` → none. Tell @T2 in LOG.md, since it's their component.
 
+- [ ] P9 · T1 · **Overlay hook for the heat map (small, before leaving).** Add `viewer.setOverlay(imageOrCanvas, {projection, x0_km, y0_km, size_km, opacity})` and `viewer.clearOverlay()`, which drape a semi-transparent image over the south polar terrain. Document it in `viewer/README.md`. T3 builds the heat map on top of it.
+
 ### T2 · web/
 - [x] M5 · T2 · **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
 - [ ] M6 · T2 · **Simplify the landing actions and add background depth.** Remove "CHOOSE A MODE", because Start does the same. Add the background visual effects allowed by M11 (e.g. depth layers of stars drifting slowly at different speeds), on the landing screen only, palette tokens only.
@@ -109,6 +111,14 @@ Below the landing screen, the page scrolls into these sections. Built by T3 in `
 - [ ] S6 · T3 · **Team.** Three members, names and roles.
 - [ ] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo.
 - [ ] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps.
+
+- [ ] S9 · T3 · **Moving Sun and Earth in the sky panorama (Option A).** In the horizon panorama (`web/components/horizon-panorama.js`, coordinate with @T2), draw the Sun and Earth at their positions for the current hour over the real skyline. **Linked to the timeline:** dragging the date slider or timeline moves them to that hour instantly; a ▶ Play / ⏸ Pause button animates time at 1 day per second (options: 1 h/s, 1 day/s, 1 week/s). When either is behind terrain it dims to 35% and its marker gets a dashed outline. Short fading trail of the last ~2 days. Reduced motion → no autoplay, scrubbing still works. All modes; Beginner shows just the Sun/Earth icons with "visible / blocked" labels.
+- [ ] E13 · T3 · **Heat-map data.** In the engine, for every point of the south polar grids: `pct_sunlit`, `pct_earth`, `pct_both`, `longest_dark_hours` over 2027–2028 (and per month). Save as small PNG/bin layers in `data/heatmap/` with a legend file. Precomputed, never in the browser.
+- [ ] S10 · T3 · **Heat-map toggle in every mode** (uses P9 overlay). A "Map" control over the 3D view:
+  - **Beginner:** one switch "Sunlight map" (dark → bright amber, legend "rarely lit … often lit").
+  - **Intermediate:** choose Sunlight / Earth contact / Both, with a numeric legend in %.
+  - **Advanced:** also "Longest blackout" and a month selector; clicking the map shows the exact value.
+  Overlay opacity about 60%, colours from `--sun-fill` / `--earth-fill` / `--both-fill` ramps only, south polar region only (label "south pole only"). Off by default.
 
 ### T3 · engine/, design/, plus reassigned viewer/ work
 The user reassigned unfinished T1 work to T3. T3 is authorized to edit `viewer/` for V8, O2 and M1–M3; claim these before continuing. M4 is complete and pushed.
