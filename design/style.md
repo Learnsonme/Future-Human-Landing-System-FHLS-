@@ -17,6 +17,35 @@ Goal: look like a **mission tool built by people who care**, not a generic AI te
 
 Only use these colours. The Sun/Earth/both/none colours mean the same thing on every screen.
 
+## Light mode (D7, for M13)
+Feel: **a technical drawing on warm paper**, not a white app. Same structure, same meanings, only the tokens change.
+Apply under `:root[data-theme="light"]`. Dark stays the default when the system has no preference.
+
+| Token | Dark | Light | Light contrast on `--bg` |
+|---|---|---|---|
+| `--bg` | `#141414` | `#F4F2ED` (warm paper) | – |
+| `--surface` | `#1E1E1E` | `#FBFAF7` | – |
+| `--line` | `#2E2E2E` | `#D9D5CC` | decorative only |
+| `--text` | `#ECE9E2` | `#1C1B19` | 15.4 : 1 |
+| `--muted` | `#9A978F` | `#635F57` | 5.7 : 1 |
+| `--sun` | `#F2B33D` | `#8A5A00` | 5.3 : 1 |
+| `--earth` | `#4C9BE8` | `#1C64A8` | 5.5 : 1 |
+| `--both` | `#5BC08A` | `#22774A` | 4.9 : 1 |
+| `--none` | `#3A3A3A` | `#CFCBC2` | fill only |
+| `--terrain` | `#6B6760` | `#8C877D` | fill/stroke only |
+
+**Fill tokens (new, same value in both modes)** for timeline bands, chart areas and status chips, where colour sits behind or beside a text label, never as the text itself:
+`--sun-fill: #F2B33D` · `--earth-fill: #4C9BE8` · `--both-fill: #5BC08A`.
+In light mode, text and thin strokes use `--sun` / `--earth` / `--both`; areas use the `-fill` versions. In dark mode both look the same, so nothing changes there.
+
+**Rules**
+- **Space stays dark in both modes:** the 3D Moon, terrain view, starfield and landing sky keep the dark palette. Only panels, text, cards, tables and charts switch. Where a light panel meets the dark space view, use a 1 px `--line` edge, no shadow.
+- **Stars and shooting stars:** only on dark areas. None on light panels.
+- **No pure white (`#FFFFFF`) or pure black anywhere.**
+- **Switching:** colours cross-fade in 300 ms with `--ease`; no layout movement. Reduced motion → instant switch.
+- **The toggle (M13):** 32 px round button, bottom-right, 16 px from the edges, `--surface` background, 1 px `--line` border, icon in `--muted` (`--text` on hover). Icon shows the mode you will switch **to** (moon in light mode, sun in dark mode). `aria-label` "Switch to light mode" / "Switch to dark mode". Shared focus ring.
+- **Check:** every screen in both modes on laptop and phone; no text below 4.5 : 1.
+
 ## Type
 - Logo font: **Sugo Display**, used in the Canva logo. Don't embed it as a web font, because its web licence is unconfirmed and the app must stay offline with self-hosted fonts. Where the wordmark is needed, use the logo image `design/logo/fhls-logo-transparent.png`. Other titles use IBM Plex Sans SemiBold, UPPERCASE, used sparingly.
 - Body: **IBM Plex Sans**. Numbers and data: **IBM Plex Mono** (gives a real mission-control feel).
@@ -43,7 +72,8 @@ Only use these colours. The Sun/Earth/both/none colours mean the same thing on e
 | Screen change (any screen to any screen) | 400–700 ms | `--ease` | Crossfade, with an optional ≤ 8 px rise. |
 | **Start** (landing → mode picker), first time per visit | ≤ 800 ms | `--ease` | The single "moment" the app gets. See the transition rules below. |
 | Hover / press feedback | ≤ 150 ms | `--ease` | Colour, opacity, or ≤ 2 px translate. |
-| Section reveal on scroll | ≤ 400 ms, **once** | `--ease` | Opacity only. |
+| Section reveal on scroll (S1) | ≤ 500 ms, **once** | `--ease` | Opacity plus ≤ 8 px rise. |
+| Text entrance, inwards (M14) | 400–500 ms total, **once per screen/panel** | `--ease` | Opacity plus ≤ 8 px inward slide; lines staggered 40–60 ms. Never on live value updates. |
 | "Best figure" marker pulse | once, ≤ 600 ms | `--ease` | Never loop it. |
 
 ### Not allowed
