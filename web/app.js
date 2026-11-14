@@ -876,7 +876,8 @@ function renderPanorama() {
   const i = state.hour - r.start_index;
   const inRange = i >= 0 && i < r.sun_el.length;
   const beginner = state.mode === "beginner";
-  const label = (name, ok) => (beginner ? `${name} · ${ok ? "visible" : "blocked"}` : undefined);
+  // every mode labels the two bodies; Beginner adds plain visible / blocked
+  const label = (name, ok) => (beginner ? `${name} · ${ok ? "visible" : "blocked"}` : `${name}${ok ? "" : " (blocked)"}`);
 
   const ok = drawHorizonPanorama($("panorama-canvas"), {
     horizon: r.horizon,

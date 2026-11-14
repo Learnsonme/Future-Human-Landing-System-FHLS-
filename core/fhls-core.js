@@ -259,6 +259,12 @@ export function createCore({ ephemerisMeta, ephemerisBin, horizonIndex = { grids
    * stereographic axes of the data/terrain tiles of that hemisphere (south tiles for lat < 0,
    * north tiles for lat ≥ 0), z = local up. Use this to light the terrain mesh.
    */
+  /** Sun and Earth positions from the Moon's centre, MOON_ME km (for drawing them in a 3D sky). */
+  function bodyPositions(t) {
+    const i = typeof t === "number" && Number.isInteger(t) && t < count ? t : indexOf(t);
+    return { sun: sunVec(i), earth: earthVec(i) };
+  }
+
   function sunDirectionPolar(lat, lon, t) {
     const { sun } = at(lat, lon, t);
     const ce = Math.cos(sun.el * DEG);
@@ -279,7 +285,7 @@ export function createCore({ ephemerisMeta, ephemerisBin, horizonIndex = { grids
 
   return {
     count, startTime: timeOf(0), endTime: timeOf(count - 1),
-    indexOf, timeOf, at, analyze, getHorizon, sunDirection, sunDirectionPolar,
+    indexOf, timeOf, at, analyze, getHorizon, sunDirection, sunDirectionPolar, bodyPositions,
     synthetic: !!ephemerisMeta.synthetic,
   };
 }

@@ -22,3 +22,13 @@
 .fhls-viewer--transparent.is-live canvas{opacity:1}
 .fhls-viewer.is-live .fhls-viewer-poster{opacity:0}
 @media (prefers-reduced-motion:reduce){.fhls-viewer-poster,.fhls-viewer--transparent canvas{transition:none}}
+
+/* Real Sun and Earth in the explorer sky: labels and "look at" buttons */
+.fhls-sky-label{position:absolute;transform:translate(10px,-50%);pointer-events:none;font:11px 'IBM Plex Mono',monospace;color:#ECE9E2;text-shadow:0 1px 2px #141414;white-space:nowrap}
+.fhls-sky-label.is-blocked{color:#9A978F}
+.fhls-sky-label[hidden],.fhls-sky-look[hidden]{display:none}
+.fhls-sky-look{position:absolute;top:12px;right:12px;display:flex;gap:4px;z-index:4}
+.fhls-sky-look button{font:12px 'IBM Plex Sans',sans-serif;color:#9A978F;background:#1E1E1E;border:1px solid #2E2E2E;padding:6px 8px;min-height:28px;cursor:pointer}
+.fhls-sky-look button:hover{color:#ECE9E2}
+.fhls-sky-look button:focus-visible{outline:2px solid #F2B33D;outline-offset:2px}
+@media (max-width:600px){.fhls-sky-look{top:auto;bottom:40px;right:8px}.fhls-sky-look button{min-height:36px}}

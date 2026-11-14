@@ -232,6 +232,22 @@ committed T2 app integration check passed on 14 November 2026. Desktop,
 390 px mobile viewport, touch input and reduced-motion paths were exercised;
 real-data demo and integration runs made no external network requests.
 
+### The real Sun and Earth in the sky (explorer)
+
+**How they're drawn**
+- With `presentation: false`, the viewer draws the Sun and Earth at their true directions from the camera, for the current `setTime` hour, using `core.bodyPositions(t)`.
+- They are true to size: the Sun is 0.53° across and Earth about 1.9°. They sit just inside the far plane, so terrain and the Moon's limb hide them correctly.
+- Earth is a sphere lit by the scene's Sun, so it shows its real phase.
+
+**Labels**
+- Small labels read "Sun" and "Earth".
+- A label reads "· behind terrain" when the selected site's skyline, from `core.getHorizon`, hides the body.
+
+**Look-at buttons**
+- "Look at Sun" and "Look at Earth" appear at the top right once a site is selected. They swing the camera in 0.9 s, or instantly under reduced motion, to face that body from 20 km behind the site and 4 km up.
+- For a low polar Sun or Earth, the site's skyline fills the lower half of the view.
+- The same action is available as `viewer.lookAt('sun' | 'earth')`.
+
 ### Heat-map overlay (P9)
 
 `viewer.setOverlay(imageOrCanvas, { projection: 'polar_stereographic_south', x0_km, y0_km, size_km, opacity = 0.6 })` drapes an image over the south polar terrain. `size_km` is a number, or `[width, height]`.

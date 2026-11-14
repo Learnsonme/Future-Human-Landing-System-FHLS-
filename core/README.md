@@ -13,6 +13,7 @@ const core = await loadCore("../data");            // URL of the data/ folder
 | `await core.analyze(lat, lon, {start, end})` | Per-hour typed arrays `sun_az, sun_el, earth_az, earth_el, sun_fraction, power, comms, both`, plus `summary`, `windows`, `precision` and `horizon`. The default range is all of 2027–2028. Takes about 10 ms. |
 | `await core.getHorizon(lat, lon)` | `{ values (deg per azimuth bin), az_step_deg, precision, grid_id, point }`. Use this for the horizon panorama. |
 | `core.sunDirection(t)` | A unit Sun vector in MOON_ME. Use it to light the globe. |
+| `core.bodyPositions(t)` | `{ sun, earth }`: positions from the Moon's centre in MOON_ME km. Use them to draw the Sun and Earth in a 3D sky; subtract the observer's position for exact parallax. |
 | `core.sunDirectionPolar(lat, lon, t)` | A unit Sun vector in the **terrain tile frame** (x, y = polar stereographic axes; z = up). Use it to light the terrain mesh. South tiles are used for lat < 0 and north tiles for lat ≥ 0. |
 | `core.indexOf(t)` / `core.timeOf(i)` | Converts between a time and an hour index. `t` can be a `Date`, an ISO string, a millisecond value or an hour index. |
 | `latLonToPolar(lat, lon, pole)`, `polarToLatLon(x, y, pole)` | Polar stereographic x and y in km. `pole` is `"south"` (the default) or `"north"`. This is the same projection as the `data/terrain` and `data/horizon` files. |

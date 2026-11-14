@@ -52,7 +52,7 @@ export function horizonAtAzimuth(values, azStep, az) {
 }
 
 /** The elevation window to draw, from the data, rounded outwards. */
-function elevationRange(horizon, tracks) {
+function elevationRange(horizon, tracks, markers = []) {
   let lo = 0, hi = 2;
   if (horizon?.values?.length) {
     for (const v of horizon.values) { if (v < lo) lo = v; if (v > hi) hi = v; }
@@ -60,6 +60,8 @@ function elevationRange(horizon, tracks) {
   for (const t of tracks || []) {
     for (const p of t.points) { if (p.el < lo) lo = p.el; if (p.el > hi) hi = p.el; }
   }
+  // S9 fix (T3): the current Sun/Earth must always be inside the chart, never clipped off it
+  for (const m of markers || []) { if (m.el < lo) lo = m.el; if (m.el > hi) hi = m.el; }
   const pad = Math.max(1, (hi - lo) * 0.12);
   return { lo: Math.floor(lo - pad), hi: Math.ceil(hi + pad) };
 }
@@ -90,7 +92,7 @@ export function drawHorizonPanorama(canvas, data = {}) {
   };
   if (plot.w <= 0 || plot.h <= 0) return false;
 
-  const { lo, hi } = elevationRange(horizon, tracks);
+  const { lo, hi } = elevationRange(horizon, tracks, markers);
   const xOf = (az) => plot.x + ((((az % 360) + 360) % 360) / 360) * plot.w;
   const yOf = (el) => plot.y + plot.h - ((el - lo) / (hi - lo)) * plot.h;
 
@@ -163,11 +165,11 @@ export function drawHorizonPanorama(canvas, data = {}) {
     ctx.globalAlpha = m.blocked ? 0.35 : 1;          // S9: behind terrain → dimmed, dashed
     ctx.setLineDash(m.blocked ? [2, 2] : []);
     ctx.beginPath();
-    ctx.arc(x, y, m.label ? 6 : 4, 0, Math.PI * 2);
+    ctx.arc(x, y, m.label ? 7 : 4, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.arc(x, y, m.label ? 2.5 : 1.5, 0, Math.PI * 2);
+    ctx.arc(x, y, m.label ? 4 : 1.5, 0, Math.PI * 2);
     ctx.fill();
     if (m.label) {
       ctx.globalAlpha = 1;

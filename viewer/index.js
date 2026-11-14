@@ -22,6 +22,7 @@ export function createViewer(container, options = {}) {
   const startButton = document.createElement('button'); startButton.className = 'fhls-viewer-start'; startButton.textContent = 'Start exploration';
   startButton.disabled = true; root.append(css, message, startButton); container.append(root);
   let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, detailMaterial, finestMaterial, stars, core;
+  let sky = null, siteHorizon = null;   // real Sun and Earth in the 3D sky (explorer only)
   let terrainReady = Promise.resolve(null), extrasReady = null, fade = null, firstFrame = false;
   const presentation = options.presentation !== false;
   // P9: one shared overlay (heat map) draped over the south polar terrain by the terrain shaders.
@@ -139,6 +140,81 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     notify({ time: utc, lighting: core ? (core.synthetic ? 'synthetic' : 'ephemeris') : 'fixed-development' });
   }
   function setTime(value) { checkAlive(); utc = parseTime(value); notify({time:utc}); updateLight(); return utc; }
+
+  // ── The real Sun and Earth in the sky (explorer only) ───────────────────────────────────────
+  // Drawn "at infinity" (just inside the far plane) along their true directions from the camera,
+  // at true angular size (Sun 0.53°, Earth ≈ 1.9°), so terrain and the Moon hide them exactly as
+  // they would. Earth is a sphere lit by the scene's Sun, so it shows its real phase.
+  const SUN_R_KM = 696000, EARTH_R_KM = 6371;
+  function createSky() {
+    const sun = new T.Mesh(new T.SphereGeometry(1, 32, 16), new T.MeshBasicMaterial({ color: '#F2B33D' }));
+    const earth = new T.Mesh(new T.SphereGeometry(1, 48, 24), new T.MeshStandardMaterial({ color: '#4C9BE8', roughness: 0.9, metalness: 0 }));
+    for (const m of [sun, earth]) { m.frustumCulled = false; m.renderOrder = -1; scene.add(m); }
+    const label = text => { const n = document.createElement('span'); n.className = 'fhls-sky-label'; n.textContent = text; n.hidden = true; root.append(n); return n; };
+    const bar = document.createElement('div'); bar.className = 'fhls-sky-look'; bar.hidden = true;
+    const look = (text, body) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text;
+      b.addEventListener('click', () => lookAt(body)); bar.append(b); return b; };
+    look('Look at Sun', 'sun'); look('Look at Earth', 'earth'); root.append(bar);
+    return { sun, earth, labels: { sun: label('Sun'), earth: label('Earth') }, bar };
+  }
+  function bodyRender(name) {
+    const p = core?.bodyPositions?.(utc); if (!p) return null;
+    return new T.Vector3(...moonToRender(p[name]));
+  }
+  function horizonBlocked(name) {
+    if (!selection || !siteHorizon || !core) return null;
+    const a = core.at(selection.lat, selection.lon, utc)[name];
+    const n = siteHorizon.values.length, f = ((a.az % 360) + 360) % 360 / (360 / n), i = Math.floor(f) % n, t = f - Math.floor(f);
+    const h = siteHorizon.values[i] * (1 - t) + siteHorizon.values[(i + 1) % n] * t;
+    return a.el <= h;
+  }
+  function updateSky() {
+    if (!sky) return;
+    const D = camera.far * 0.9, w = root.clientWidth, h = root.clientHeight;
+    for (const [name, mesh, radius] of [['sun', sky.sun, SUN_R_KM], ['earth', sky.earth, EARTH_R_KM]]) {
+      const P = bodyRender(name), node = sky.labels[name];
+      if (!P) { mesh.visible = false; node.hidden = true; continue; }
+      const dir = P.clone().sub(camera.position), dist = dir.length(); dir.normalize();
+      mesh.visible = true;
+      mesh.position.copy(camera.position).addScaledVector(dir, D);
+      mesh.scale.setScalar(D * Math.tan(Math.asin(Math.min(1, radius / dist))));
+      // label: on screen, in front, not behind the Moon's limb; dimmed when the site's skyline hides it
+      const screen = mesh.position.clone().project(camera);
+      const camToCentre = camera.position.clone().negate(), along = camToCentre.dot(dir);
+      const behindMoon = along > 0 && camToCentre.lengthSq() - along * along < R_KM * R_KM;
+      const show = screen.z < 1 && Math.abs(screen.x) <= 1 && Math.abs(screen.y) <= 1 && !behindMoon;
+      node.hidden = !show;
+      if (show) {
+        const blocked = horizonBlocked(name);
+        node.textContent = `${name === 'sun' ? 'Sun' : 'Earth'}${blocked ? ' · behind terrain' : ''}`;
+        node.classList.toggle('is-blocked', !!blocked);
+        node.style.left = `${(screen.x + 1) * w / 2}px`; node.style.top = `${(1 - screen.y) * h / 2}px`;
+      }
+    }
+    sky.bar.hidden = !selection || !core;
+  }
+  /** Swing the camera to face the Sun or Earth over the selected site's skyline. */
+  function lookAt(name) {
+    if (!selection || !core || disposed) return;
+    const P = bodyRender(name); if (!P) return;
+    cancelFlight(); clearControlInertia();
+    const site = new T.Vector3(...locationToRender(selection.lat, selection.lon, heightAt(selection.lat, selection.lon)));
+    const up = site.clone().normalize(), v = P.clone().sub(site).normalize();
+    let hzn = v.clone().addScaledVector(up, -v.dot(up)); if (hzn.lengthSq() < 1e-8) hzn = new T.Vector3(1, 0, 0); hzn.normalize();
+    // stand 20 km back from the site, 4 km up, and aim straight at the body: it sits in the middle of
+    // the view, and for a low (polar) Sun or Earth the site and its skyline fill the lower half
+    const position = site.clone().addScaledVector(hzn, -20).addScaledVector(up, 4);
+    const target = position.clone().addScaledVector(v, 30);
+    const matrix = new T.Matrix4().lookAt(position, target, up);
+    controls.enabled = false;
+    const done = new Promise(resolve => {
+      flight = { start: performance.now(), duration: reduced.matches ? 0.001 : 900, fromPosition: camera.position.clone(), position,
+        fromTarget: controls.target.clone(), target, fromQ: camera.quaternion.clone(),
+        toQ: new T.Quaternion().setFromRotationMatrix(matrix), up, resolve };
+      if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + 1); finishFlight(); }
+    });
+    return done;
+  }
   function resize() {
     if (!renderer || disposed) return;
     const { width, height } = root.getBoundingClientRect(); if (!width || !height) return;
@@ -164,7 +240,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
         finishFlight();
       }
     } else controls.update(dt);
-    safety(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
+    safety(); updateSky(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
     if (!firstFrame) {
       firstFrame = true; root.classList.add('is-live');
       if (poster) setTimeout(() => { poster?.remove(); poster = null; }, reduced.matches ? 0 : 400);
@@ -192,7 +268,8 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     const token = generation;
     try{await ready;}catch(error){if(disposed)return {cancelled:true};throw error;}
     if (disposed || token !== generation) return { cancelled: true };
-    clearControlInertia(); selection = location;
+    clearControlInertia(); selection = location; siteHorizon = null;
+    core?.getHorizon?.(location.lat, location.lon).then(h => { if (selection === location) siteHorizon = h; }).catch(() => {});
     controls.autoRotate = false; controls.enabled = false;
     // M1: the flight starts immediately; nearby LOLA tiles load meanwhile and fade in (FADE_MS)
     // from 35 % of the flight, or as soon as they arrive if that is later.
@@ -239,7 +316,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     return arrival;
   }
   function overview() {
-    checkAlive(); start(); cancelFlight(); selection = null;
+    checkAlive(); start(); cancelFlight(); selection = null; siteHorizon = null;
     if (!camera) return;
     clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
@@ -277,7 +354,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       light = new T.DirectionalLight('#ECE9E2', 3.2); light.shadow.mapSize.set(2048, 2048);
       light.shadow.bias = -0.00001; light.shadow.normalBias = 0.035; scene.add(light, light.target);
       scene.add(new T.AmbientLight('#ECE9E2', 0.035));
-      if (!presentation) { stars = createStars(); scene.add(stars); }
+      if (!presentation) { stars = createStars(); scene.add(stars); sky = createSky(); }
       terrainGroup = new T.Group(); scene.add(terrainGroup);
       terrainMaterial = new T.MeshStandardMaterial({ color: '#9A978F', roughness: 1, metalness: 0 });
       detailMaterial = terrainMaterial.clone();
@@ -377,6 +454,8 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       overlay.uOverlayOpacity.value = Math.max(0, Math.min(1, opacity)); overlay.uOverlayOn.value = 1;
       if (old && old !== texture) old.dispose();
     },
+    /** Swing the camera to face 'sun' or 'earth' over the selected site's skyline. */
+    lookAt(body) { checkAlive(); if (body !== 'sun' && body !== 'earth') throw new RangeError("lookAt('sun' | 'earth')"); return lookAt(body); },
     clearOverlay() {
       checkAlive(); overlay.uOverlayOn.value = 0;
       overlay.uOverlay.value?.dispose(); overlay.uOverlay.value = null;
