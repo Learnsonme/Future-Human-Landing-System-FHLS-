@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>FHLS viewer polish checks</title>
+<style>body{margin:0;background:#141414}#host{width:100%;height:80dvh;min-height:240px}</style>
+<div id="host"></div>
+<script type="module">
+import {createViewer} from '../index.js';
+window.polishPicks=[];
+window.polishViewer=createViewer(document.getElementById('host'),{presentation:false});
+polishViewer.onPick((lat,lon)=>{polishPicks.push({lat,lon});window.pickedFlight=polishViewer.flyTo(lat,lon);});
+</script></html>

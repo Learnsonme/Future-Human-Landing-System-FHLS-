@@ -8,6 +8,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="../design/logo/favicon-32.png">
 <link rel="apple-touch-icon" href="../design/logo/apple-touch-icon-180.png">
 <link rel="stylesheet" href="app.css">
+<!-- P2 (T1): visible before the viewer module and full imagery finish loading. -->
+<link rel="preload" as="image" href="../viewer/assets/moon-poster.webp" fetchpriority="high">
+<style>
+#landing-moon{background:url(../viewer/assets/moon-poster.webp) center / contain no-repeat}
+#landing-moon:has(.fhls-viewer.is-live){background-image:none}
+</style>
 </head>
 <body data-screen="landing">
 
@@ -243,5 +249,6 @@
 </section>
 
 <script type="module" src="app.js"></script>
+<script type="module" src="components/stats-ticker.js"></script>
 </body>
 </html>

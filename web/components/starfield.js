@@ -25,10 +25,10 @@ const DENSITY = {
   // own starfield inside the Moon canvas
   // matches the viewer's own 3-D starfield (--muted, 1.1 px, no twinkle) so the
   // page sky and the sky inside the Moon canvas read as one continuous field
-  landing:      { per1M: 240, twinkle: 0,    shootingEveryMs: 0,     maxR: 1.1, gain: 1.3, match: true },
-  beginner:     { per1M: 150, twinkle: 0.55, shootingEveryMs: 22000, maxR: 1.5, gain: 1.15 },
-  intermediate: { per1M: 95,  twinkle: 0.35, shootingEveryMs: 45000, maxR: 1.4, gain: 1 },
-  advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 90000, maxR: 1.7, gain: 1.1 },
+  landing:      { per1M: 230, twinkle: 0,    shootingEveryMs: 0,     maxR: 1.1, gain: 1.3, match: true },
+  beginner:     { per1M: 150, twinkle: 0.55, shootingEveryMs: 0, maxR: 1.5, gain: 1.15 },
+  intermediate: { per1M: 95,  twinkle: 0.35, shootingEveryMs: 0, maxR: 1.4, gain: 1 },
+  advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 0, maxR: 1.7, gain: 1.1 },
 };
 const MAX_STARS = 240;
 
@@ -41,7 +41,7 @@ export function createStarfield(canvas, options = {}) {
   let mode = options.density || "intermediate";
   let stars = [];
   let shooting = null;
-  let nextShootingAt = 0;
+  let nextShootingAt = performance.now() + rand(20000, 40000);
   let raf = 0;
   let lastFrame = 0;
   let width = 0, height = 0;
@@ -116,7 +116,16 @@ export function createStarfield(canvas, options = {}) {
       ctx.fill();
     }
 
-    if (shooting) {
+    if (shooting && canShoot()) {
+      ctx.save();
+      // P8: keep the trail in empty sky, outside every text/control area.
+      const canvasRect = canvas.getBoundingClientRect();
+      for (const node of document.querySelectorAll("#screen-landing h1, #screen-landing h2, #screen-landing h3, #screen-landing p, #screen-landing button, #screen-landing dl, #screen-landing .stats-ticker")) {
+        const r = node.getBoundingClientRect(); if (!r.width || !r.height) continue;
+        const mask = new Path2D(); mask.rect(0, 0, width, height);
+        mask.rect(r.left - canvasRect.left - 8, r.top - canvasRect.top - 8, r.width + 16, r.height + 16);
+        ctx.clip(mask, "evenodd");
+      }
       const p = (t - shooting.start) / shooting.life;
       if (p >= 1) {
         shooting = null;
@@ -124,36 +133,38 @@ export function createStarfield(canvas, options = {}) {
         const fade = Math.sin(Math.PI * p);            // in and out, no hard edges
         const x = shooting.x + shooting.dx * p;
         const y = shooting.y + shooting.dy * p;
-        const grad = ctx.createLinearGradient(x, y, x - shooting.dx * 0.08, y - shooting.dy * 0.08);
-        grad.addColorStop(0, `rgba(${tr},${tg},${tb},${(0.5 * fade).toFixed(3)})`);
+        const grad = ctx.createLinearGradient(x, y, x - shooting.dx / Math.hypot(shooting.dx, shooting.dy) * shooting.trail, y - shooting.dy / Math.hypot(shooting.dx, shooting.dy) * shooting.trail);
+        grad.addColorStop(0, `rgba(${tr},${tg},${tb},${(0.16 * fade).toFixed(3)})`);
         grad.addColorStop(1, `rgba(${tr},${tg},${tb},0)`);
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 0.75;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x - shooting.dx * 0.08, y - shooting.dy * 0.08);
+        ctx.lineTo(x - shooting.dx / Math.hypot(shooting.dx, shooting.dy) * shooting.trail, y - shooting.dy / Math.hypot(shooting.dx, shooting.dy) * shooting.trail);
         ctx.stroke();
       }
+      ctx.restore();
     }
   }
 
+  function canShoot() {
+    return mode === "landing" && (document.body.dataset.screen || "landing") === "landing" && !reduced.matches;
+  }
   function maybeShoot(t) {
-    const cfg = DENSITY[mode] || DENSITY.intermediate;
-    if (!cfg.shootingEveryMs) return;
-    if (reduced.matches || shooting || t < nextShootingAt) return;
-    nextShootingAt = t + cfg.shootingEveryMs * rand(0.6, 1.8);
-    const fromLeft = Math.random() < 0.5;
-    shooting = {
-      start: t,
-      life: rand(700, 1100),
-      x: fromLeft ? rand(-0.1, 0.3) * width : rand(0.7, 1.1) * width,
-      y: rand(0, 0.45) * height,
-      dx: (fromLeft ? 1 : -1) * rand(0.25, 0.45) * width,
-      dy: rand(0.12, 0.3) * height,
-    };
+    if (!canShoot() || shooting || t < nextShootingAt) return;
+    nextShootingAt = t + rand(20000, 40000);
+    const angle = rand(0, Math.PI * 2), distance = rand(70, 140);
+    shooting = { start: t, life: rand(850, 1200), trail: rand(12, 24),
+      x: rand(0.08, 0.92) * width, y: rand(0.08, 0.92) * height,
+      dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance };
   }
 
   function frame(t) {
+    if (destroyed || document.hidden || reduced.matches) {
+      raf = 0;
+      if (!destroyed && !document.hidden) paint(0);
+      return;
+    }
     raf = requestAnimationFrame(frame);
     if (t - lastFrame < FRAME_MS) return;      // throttle: the globe needs the frames more
     lastFrame = t;
@@ -162,7 +173,7 @@ export function createStarfield(canvas, options = {}) {
   }
 
   function start() {
-    if (destroyed || raf) return;
+    if (destroyed || raf || document.hidden) return;
     if (reduced.matches) { paint(0); return; }   // one static sky, no loop
     raf = requestAnimationFrame(frame);
   }
@@ -172,8 +183,9 @@ export function createStarfield(canvas, options = {}) {
     raf = 0;
   }
 
-  const onVisibility = () => (document.hidden ? stop() : start());
-  const onReducedChange = () => { stop(); start(); };
+  const resetShooting = () => { shooting = null; nextShootingAt = performance.now() + rand(20000, 40000); };
+  const onVisibility = () => { resetShooting(); document.hidden ? stop() : start(); };
+  const onReducedChange = () => { resetShooting(); stop(); start(); };
 
   let resizeTimer = 0;
   const onResize = () => {
@@ -191,11 +203,13 @@ export function createStarfield(canvas, options = {}) {
     setDensity(next) {
       if (!DENSITY[next] || next === mode) return;
       mode = next;
+      resetShooting();
       makeStars();
       if (reduced.matches) paint(0);
     },
     get mode() { return mode; },
     get starCount() { return stars.length; },
+    getDiagnostics() { return { mode, shooting: !!shooting && canShoot(), nextShootingAt, trail: shooting?.trail || 0, running: !!raf, frameMs: FRAME_MS }; },
     destroy() {
       destroyed = true;
       stop();
