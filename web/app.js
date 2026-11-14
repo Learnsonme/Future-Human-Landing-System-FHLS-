@@ -3,7 +3,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261115-perf";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261114-exact-time";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -15,6 +15,7 @@ import { mountCameraToolbar } from "./components/camera-toolbar.js";        // P
 import { createThemeToggle } from "./components/theme.js";
 
 import { createTextEntrances } from "./components/text-entrance.js";
+import { parseUtcFields, sliderHour } from "./components/exact-time.js";
 const textEntrances = createTextEntrances();
 
 const MODES = {
@@ -809,6 +810,9 @@ function mountTimePlayer() {
 function setHour(h) {
   if (!Number.isFinite(h)) return;
   state.hour = Math.min(LAST_HOUR, Math.max(0, Math.round(h)));
+  // Main time changes rejoin the panorama; its own scrubber can still explore independently.
+  panoHour = state.hour;
+  $("time-hint").textContent = "";
   syncTimeControls();
   renderLanding();
   renderResults();   // reuses the cached analysis; no recompute
@@ -825,6 +829,9 @@ function syncTimeControls() {
   const iso = d.toISOString();
   $("time-slider").value = String(state.hour);
   $("date").value = iso.slice(0, 10);
+  $("exact-date").value = iso.slice(0, 10);
+  $("exact-hour").value = iso.slice(11, 16);
+  $("time-slider").setAttribute("aria-valuetext", `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`);
   $("time-readout").textContent =
     `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC · hour ${state.hour.toLocaleString("en-GB")}`;
 }
@@ -1176,12 +1183,45 @@ for (const btn of document.querySelectorAll(".mode")) {
   });
 }
 
-$("date").addEventListener("change", (e) => {
-  if (!e.target.value || !core) return;
-  setHour(core.indexOf(`${e.target.value}T12:00:00Z`));
-});
+function commitExactTime(day = $("exact-date").value, hour = $("exact-hour").value) {
+  if (!core) return;
+  const ms = parseUtcFields(day, hour);
+  if (ms === null) {
+    $("time-hint").textContent = "Enter a valid date and a whole UTC hour, such as 06:00.";
+    return;
+  }
+  timePlayer?.stop();
+  const outside = ms < +core.timeOf(0) || ms > +core.timeOf(LAST_HOUR);
+  setHour(core.indexOf(ms));
+  if (outside) $("time-hint").textContent = "Limited to 1 Jan 2027 00:00 – 31 Dec 2028 23:00 UTC.";
+}
+$("exact-time").addEventListener("submit", e => { e.preventDefault(); commitExactTime(); });
+$("exact-time").addEventListener("focusin", () => timePlayer?.stop());
+for (const id of ["exact-date", "exact-hour"]) {
+  $(id).addEventListener("blur", () => {
+    const iso = hourToDate(state.hour).toISOString();
+    if ($("exact-date").value !== iso.slice(0, 10) || $("exact-hour").value !== iso.slice(11, 16)) commitExactTime();
+  });
+}
+$("date").addEventListener("change", e => commitExactTime(e.target.value, hourToDate(state.hour).toISOString().slice(11, 16)));
+for (const button of document.querySelectorAll("[data-time-step]")) {
+  button.addEventListener("click", () => {
+    timePlayer?.stop();
+    const next = state.hour + Number(button.dataset.timeStep);
+    setHour(next);
+    if (next < 0 || next > LAST_HOUR) $("time-hint").textContent = "You have reached the edge of the 2027–2028 data.";
+  });
+}
+$("time-reset").addEventListener("click", () => { timePlayer?.stop(); setHour(0); });
 
 $("time-slider").addEventListener("input", (e) => setHour(Number(e.target.value)));
+$("time-slider").addEventListener("keydown", e => {
+  const next = sliderHour(e.key, e.shiftKey, state.hour, LAST_HOUR);
+  if (next === null) return;
+  e.preventDefault();
+  timePlayer?.stop();
+  setHour(next);
+});
 
 $("pin-site").addEventListener("click", pinCurrent);
 $("clear-pins").addEventListener("click", () => { state.pins = []; renderPins(); renderPinControl(); });
