@@ -216,10 +216,10 @@ async function init() {
     core = await loadCore("../data");
   } catch (err) {
     coreError = err;
-    issues.push('Lunar data could not load, so Sun and Earth angles are unavailable. Please reload to try again.');
+    issues.push('The Moon data did not load, so no Sun or Earth angles can be shown. Reload the page to try again.');
     console.error("core failed to load", err);
-    fail("Could not load data/ — no angles can be shown. Serve the repository over HTTP " +
-         "rather than opening the file directly.");
+    fail("The data/ folder could not be loaded, so no angles can be shown. Serve the repository over HTTP " +
+         "instead of opening the file directly.");
   }
 
   if (state.screen === "landing") mountLandingViewer();
@@ -272,7 +272,7 @@ function mountLandingViewer() {
       console.error("landing Moon could not start", err);
     });
   } catch (err) {
-    host.textContent = "Moon preview unavailable. Select Start to explore the site data.";
+    host.textContent = "The Moon preview is not available here. Press Start to explore the data anyway.";
     console.error("landing Moon could not be created", err);
   }
 }
@@ -344,7 +344,7 @@ function pushTimeToViewer() {
 function renderSiteList() {
   const list = $("site-list");
   if (!sites.length) {
-    list.replaceChildren(el("li", "No site list available (data/sites.json missing).", "site-empty"));
+    list.replaceChildren(el("li", "The site list is missing (data/sites.json). You can still click the Moon.", "site-empty"));
     return;
   }
   list.replaceChildren(...sites.map((s) => {
@@ -387,7 +387,7 @@ async function selectSite(site, { fly = true } = {}) {
     state.result = result;
   } catch (err) {
     console.error("analyze failed", err);
-    $("r-sub").textContent = "Could not compute this point.";
+    $("r-sub").textContent = "This point could not be computed. Try another spot.";
     return;
   }
   renderResults();
@@ -649,9 +649,9 @@ function precisionOf(r) {
     low,
     short: low ? "Lower precision" : "Full terrain precision",
     sentence: low
-      ? `Lower precision: outside the south polar region the terrain comes from a ${sampling || "coarse grid"}. ` +
-        "Sun and Earth positions are exact everywhere."
-      : `Full terrain precision: horizon from a ${sampling || "south polar grid"}.`,
+      ? `Lower precision: away from the south pole the terrain comes from a ${sampling || "coarse grid"}. ` +
+        "The Sun and Earth positions are exact everywhere."
+      : `Full terrain precision: skyline from a ${sampling || "south polar grid"}.`,
   };
 }
 
@@ -747,7 +747,7 @@ function intermediatePanel(r, hour) {
       ["Time with sunlight", `${s.pct_sunlit.toFixed(1)} %`, "val-sun"],
       ["Time with Earth contact", `${s.pct_earth.toFixed(1)} %`, "val-earth"],
       ["Time with both", `${s.pct_both.toFixed(1)} %`, "val-both"],
-      ["Longest dark period", hoursOrDays(s.longest_dark_hours)],
+      ["Longest dark spell", hoursOrDays(s.longest_dark_hours)],
       ["Longest gap in contact", hoursOrDays(s.longest_no_comms_hours)],
     ]),
   ];
@@ -902,7 +902,7 @@ function drawTimeline() {
   $("timeline-caption").textContent = r
     ? `${r.windows.power.length} sunlight windows · ${r.windows.comms.length} contact windows · ` +
       `${r.windows.both.length} with both · ${precisionOf(r).short}. ` +
-      "Click or drag to move the date. Left half 2027, right half 2028."
+      "Click or drag to move the date. The left half is 2027, the right half 2028."
     : "Pick a site to see its windows.";
 }
 
@@ -1012,7 +1012,7 @@ function renderPanorama() {
 
   const p = precisionOf(r);
   $("panorama-sub").textContent = !ok ? "" : beginner
-    ? "The skyline all around this spot, with the Sun and Earth at the panorama's own time. Drag its slider to move them."
+    ? "The whole skyline around this spot, with the Sun and Earth where they are at the panorama's time. Drag the slider to move them."
     : `${p.short} · skyline from ${r.horizon.values.length} directions · fading trail = last 2 days · ` +
       `grey = ${Math.round(MONTH_HOURS / 24)} days either side · dimmed + dashed = behind terrain`;
   $("panorama-sub").classList.toggle("is-low", p.low);

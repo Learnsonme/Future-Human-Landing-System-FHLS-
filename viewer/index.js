@@ -84,7 +84,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
   }
   let disposed = false, failed = false, started = options.presentation === false, flight = null, raf = 0, lastFrame = 0;
   let selection = null, generation = 0, pendingPick;
-  let status = { phase: 'loading', message: 'Loading lunar imagery and ephemeris…', time: utc, lighting: 'loading', terrain: 'loading', synthetic: true, exaggeration: 1 };
+  let status = { phase: 'loading', message: 'Loading the Moon and the ephemeris…', time: utc, lighting: 'loading', terrain: 'loading', synthetic: true, exaggeration: 1 };
   const picks = new Set(), statuses = new Set(), listeners = [], abort = new AbortController();
   const looseTextures = new Set();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -113,7 +113,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
     root.setAttribute('aria-busy', 'false');
     if (fade) finishFade();
     if (flight) { flight.resolve({ cancelled: true }); flight = null; if (controls) controls.enabled = true; }
-    if (status.phase === 'loading-terrain') notify({ phase: 'ready', message: 'Terrain loading cancelled · using current relief' });
+    if (status.phase === 'loading-terrain') notify({ phase: 'ready', message: 'Terrain loading stopped · showing the current relief' });
   }
   // M1: the globe → terrain handover. While fading, the detail sits over a whole globe/overview
   // (polygon offset wins the depth test); once opaque, the coarse surface under it is cut away.
@@ -478,7 +478,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
     clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
     controls.minDistance = R_KM + 18; controls.maxDistance = overviewMaxDistance(); controls.update(); updateLight();
-    notify({ phase: 'ready', message: 'Drag to rotate · scroll or pinch to zoom · click a location' });
+    notify({ phase: 'ready', message: 'Drag to turn the Moon · scroll or pinch to zoom · click any spot' });
   }
   const ready = (async () => {
     try {
@@ -585,7 +585,7 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
       });
       event(canvas, 'pointercancel', e => { active.delete(e.pointerId); pendingPick = null; });
       event(canvas, 'wheel', () => { pendingPick = null; }, { passive: true });
-      event(canvas, 'webglcontextlost', e => { e.preventDefault(); notify({ phase: 'context-lost', message: 'Graphics context lost. Waiting for recovery…' }); });
+      event(canvas, 'webglcontextlost', e => { e.preventDefault(); notify({ phase: 'context-lost', message: 'The graphics card paused. Waiting for it to come back…' }); });
       event(canvas, 'webglcontextrestored', () => { notify({ phase: 'ready', message: 'Graphics restored.' }); resize(); updateLight(); });
       startButton.disabled = false; startButton.hidden = started;
       notify({ phase: 'ready', message: core

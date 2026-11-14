@@ -36,9 +36,9 @@ export function mountCameraToolbar(parent, before, { onClear, onStart } = {}) {
     b.innerHTML = `<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">${ICONS[key]}</svg><span class="cam-label">${label}</span>`;
     return b;
   };
-  const backBtn = make("back", "Back", "Undo the last zoom or flight");
+  const backBtn = make("back", "Back", "Go back to the previous view");
   const overBtn = make("overview", "Overview", "Zoom out to the whole Moon", "O");
-  const clearBtn = make("clear", "Clear selection", "Remove the lander and deselect the point", "Esc");
+  const clearBtn = make("clear", "Clear selection", "Remove the lander and forget this point", "Esc");
   const spacer = document.createElement("span"); spacer.className = "cam-spacer";
   const startBtn = make("start", "Start", "Back to the start screen");
   const fullBtn = make("full", "Full screen", "Show the 3D view full screen");

@@ -77,7 +77,7 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
       if (!alive() || `${state.layer}|${state.month}` !== key) return;
       v.setOverlay(L.canvas, { x0_km: L.x0_km, y0_km: L.y0_km, size_km: L.size_km, opacity: 0.6 });
     } catch (err) {
-      console.error("heat map unavailable", err); readout.textContent = "Heat map unavailable.";
+      console.error("heat map unavailable", err); readout.textContent = "The heat map could not load.";
     } finally { delete root.dataset.loading; }
   }
   function build() {
@@ -119,7 +119,7 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
         await ensure();
         const r = await heat.valueAt(lat, lon, state.layer, state.month);
         const where = r && (r.precision === "low" ? "whole-Moon map, lower precision" : r.grid.replace("_", " "));
-        readout.textContent = !r ? "No map value here."
+        readout.textContent = !r ? "The map has no value for this spot."
           : state.layer === "dark" ? `Map value here: ${r.capped ? "≥ 255" : r.value} days longest blackout (${where})`
           : `Map value here: ${r.value} % ${LAYERS[state.layer].label.toLowerCase()} (${where})`;
       });

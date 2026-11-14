@@ -101,7 +101,7 @@ export function beginnerSummary(result, { placeName = null, clickLat = result.la
       : `Earth is in view ${earth.word}.`;
     sentence = `${where} has the normal lunar day: about two weeks of sunlight, then about two weeks of night. ${earthPart}`;
   } else if (s.pct_sunlit <= 0 && s.pct_earth <= 0) {
-    sentence = `${where} stays in shadow and out of Earth's view: a cold trap where ice may survive, but hard to work in.`;
+    sentence = `${where} stays in shadow and out of Earth's view: a cold trap where ice may survive, but a hard place to work.`;
   } else if (s.pct_sunlit <= 0) {
     sentence = `${where} never sees the Sun ${when}, so solar panels would not work here, though Earth is in view ${earth.word}.`;
   } else if (s.pct_earth <= 0) {
@@ -111,7 +111,7 @@ export function beginnerSummary(result, { placeName = null, clickLat = result.la
   } else if (s.pct_both >= 20) {
     sentence = `${where} has Sun and Earth together ${shareOfTime(s.pct_both)}, so a mission would plan around the gaps.`;
   } else {
-    sentence = `${where} rarely has Sun and Earth at the same time, so batteries and a relay would be needed.`;
+    sentence = `${where} rarely has the Sun and Earth at the same time, so a mission would need batteries and a relay satellite.`;
   }
   if (!normalDay && s.pct_sunlit > 0 && s.longest_dark_hours >= 24 * 10) {
     sentence += ` Expect dark spells of ${duration(s.longest_dark_hours)}.`;
@@ -119,7 +119,7 @@ export function beginnerSummary(result, { placeName = null, clickLat = result.la
 
   const notes = [];
   if (result.precision === "low") {
-    notes.push({ icon: "approx", text: "Lower precision: terrain here is approximate (about 30 km detail). Sun and Earth positions are exact." });
+    notes.push({ icon: "approx", text: "Lower precision: the terrain here is coarse (about 30 km detail). The Sun and Earth positions are still exact." });
   } else {
     const p = result.horizon && result.horizon.point;
     if (p) {
@@ -127,7 +127,7 @@ export function beginnerSummary(result, { placeName = null, clickLat = result.la
       if (d >= 20) notes.push({ icon: "terrain", text: `Worked out for a point ${fmtDistance(d)} from your click. Near the pole, sunlight can change within a few hundred metres.` });
     }
   }
-  notes.push({ icon: null, text: "Sunlight and a view of Earth are what solar panels and direct radio need. They do not guarantee either." });
+  notes.push({ icon: null, text: "Solar panels need sunlight, and a direct radio link needs Earth in view. Seeing them is the first step, not a guarantee." });
 
   return { answers, sentence, notes, tones: { sun: sun.tone, earth: earth.tone } };
 }
@@ -139,7 +139,7 @@ export function beginnerNow(result, k) {
   let sun;
   if (f >= 0.999) sun = "The Sun is shining here.";
   else if (f > 0) sun = "The Sun is just peeking over the terrain.";
-  else if (sunEl > -0.265) sun = "The Sun is up, but hills or a crater wall block it.";
+  else if (sunEl > -0.265) sun = "The Sun is up, but hills or a crater wall are in the way.";
   else sun = "The Sun is below the horizon.";
 
   const earthEl = result.earth_el[k];

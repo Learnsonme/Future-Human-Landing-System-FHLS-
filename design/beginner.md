@@ -39,11 +39,11 @@ const now = beginnerNow(r, k);   // k = slider hour within the range → { sun, 
 | Case | Example |
 |---|---|
 | Normal lunar day (away from the poles) | "Apollo 11 site has the normal lunar day: about two weeks of sunlight, then about two weeks of night. Earth is always in view." |
-| Never sunlit, no Earth | "Shackleton crater stays in shadow and out of Earth's view: a cold trap where ice may survive, but hard to work in." |
+| Never sunlit, no Earth | "Shackleton crater stays in shadow and out of Earth's view: a cold trap where ice may survive, but a hard place to work." |
 | Sunlit but no Earth | "… never sees Earth, so messages would need a relay satellite." |
 | Both in view ≥ 50% | "… is a strong spot: Sun and Earth are both in view about 6 hours in every 10." |
 | Both in view 20–50% | "… has Sun and Earth together about 3 hours in every 10, so a mission would plan around the gaps." |
-| Both in view < 20% | "… rarely has Sun and Earth at the same time, so batteries and a relay would be needed." |
+| Both in view < 20% | "… rarely has the Sun and Earth at the same time, so a mission would need batteries and a relay satellite." |
 
 When the longest dark spell is 10 days or more, the sentence adds "Expect dark spells of about N days".
 
