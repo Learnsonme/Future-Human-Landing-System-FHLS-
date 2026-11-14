@@ -1005,7 +1005,6 @@ function renderLanding() {
 /* ---------- wiring ---------- */
 
 $("start").addEventListener("click", () => show("modes"));
-$("skip-to-modes").addEventListener("click", () => show("modes"));
 $("back-to-landing").addEventListener("click", () => show(pickerOrigin));
 for (const button of document.querySelectorAll("[data-home]")) button.addEventListener("click", goHome);
 $("change-mode").addEventListener("click", () => show("modes"));
