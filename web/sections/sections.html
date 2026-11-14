@@ -6,7 +6,7 @@
   <section class="fs-section fs-reveal" id="demo" aria-labelledby="demo-title">
     <div class="wrap">
       <p class="eyebrow">Video · Beginner mode</p>
-      <h2 class="fs-title" id="demo-title">How to use FHLS</h2>
+      <h2 class="fs-title" id="demo-title">See it in thirty seconds</h2>
       <div class="fs-video" data-video-slot>
         <img src="../viewer/assets/moon-poster.webp" alt="" loading="lazy" decoding="async">
         <p class="fs-video-note">Video coming soon</p>
@@ -21,14 +21,15 @@
         <p class="eyebrow">About</p>
         <h2 class="fs-title" id="about-title">Why we built FHLS</h2>
         <p>At the lunar south pole, where Artemis crews will land, the Sun never climbs more than about
-          1.5° and circles the horizon once a month, so a crater rim a few hundred metres away can cut off
-          sunlight for days. Earth wobbles by up to 6.7° and can sink behind the hills for two weeks,
-          taking the direct radio link with it. Choosing where and when to land means knowing both.</p>
-        <p>Our idea came from architecture: a sun-path diagram with a shading mask shows when light reaches
-          a window. FHLS does the same for the Moon. It traces the real skyline around any spot from NASA
-          elevation data and follows the Sun and Earth across it for every hour of 2027 and 2028. Mission
-          planners get numbers, teachers get a picture of why the poles are special, and anyone can see
-          what a crew would see.</p>
+          1.5° above the horizon. It circles the sky once a month, so a crater rim a few hundred metres
+          away can cut off the light for days. Earth wobbles by up to 6.7° and can drop behind the hills
+          for two weeks, taking the direct radio link with it. To choose where and when to land, you need
+          to know both.</p>
+        <p>The idea came from architecture. Architects draw a sun-path diagram with a shading mask, the
+          outline of everything around a building, to see when light reaches a window. FHLS does the same
+          for the Moon. It traces the real skyline around any spot from NASA elevation data, then follows
+          the Sun and Earth across it for every hour of 2027 and 2028. Planners get numbers, teachers get a
+          picture of why the poles are special, and anyone can stand where a crew would stand.</p>
       </div>
       <figure class="fs-figure">
         <img src="sections/img/apollo11-aldrin.webp" width="880" height="866" loading="lazy" decoding="async"
@@ -44,22 +45,23 @@
     <div class="wrap fs-cols">
       <div class="fs-col" id="built" aria-labelledby="built-title">
         <p class="eyebrow">How it's built</p>
-        <h2 class="fs-subtitle" id="built-title">NASA data to your browser</h2>
+        <h2 class="fs-subtitle" id="built-title">From NASA data to your browser</h2>
         <ol class="fs-flow" aria-label="Data flow">
           <li><span class="fs-flow-k">Data</span>LRO LOLA elevation · JPL SPICE ephemeris (DE440)</li>
-          <li><span class="fs-flow-k">Engine</span>Python traces the skyline in 180 directions and the Sun and Earth for all 17,544 hours</li>
-          <li><span class="fs-flow-k">Browser</span>JavaScript combines them for any click in about 10 ms. No server</li>
+          <li><span class="fs-flow-k">Engine</span>Python traces each spot's skyline in 180 directions, and places the Sun and Earth for all 17,544 hours</li>
+          <li><span class="fs-flow-k">Browser</span>JavaScript combines the two for any click in about 10 ms. No server, works offline</li>
         </ol>
-        <p class="fs-stat"><span class="num">r = 0.99</span> against NASA's LOLA illumination map, over 400
-          random south polar points (0.8 points mean difference).</p>
+        <p class="fs-stat"><span class="num">r = 0.99</span> against NASA's own LOLA illumination map at 400
+          random south polar points, with a mean difference of 0.8 percentage points.</p>
       </div>
 
       <div class="fs-col" id="limits" aria-labelledby="limits-title">
         <p class="eyebrow">Limits</p>
         <h2 class="fs-subtitle" id="limits-title">What the numbers don't say</h2>
         <p>Sunlight and a view of Earth are planning inputs, not proof that a site is safe. Slope, boulders,
-          temperature, dust, power systems and mission rules matter too. Away from the poles the terrain is
-          coarser, and the app says so.</p>
+          temperature, dust, hardware and mission rules all matter too. Seeing the Sun is not the same as
+          having power, and seeing Earth is not the same as having a link. Away from the poles the terrain
+          is coarser, and the app says so.</p>
       </div>
 
       <div class="fs-col" id="team" aria-labelledby="team-title">
