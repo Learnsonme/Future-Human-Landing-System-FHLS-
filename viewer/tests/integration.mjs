@@ -4,7 +4,7 @@ import {mkdir} from 'node:fs/promises';
 const {chromium}=await import(process.env.FHLS_PLAYWRIGHT||'playwright');
 const base=process.env.FHLS_TEST_URL||'http://127.0.0.1:8765';
 const browser=await chromium.launch({executablePath:process.env.FHLS_CHROME||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),errors=[],external=[],failed=[];
+const context=await browser.newContext({viewport:{width:1440,height:1000}}),errors=[],external=[],failed=[];
 await context.route('**/*',route=>{
   const url=route.request().url();
   if(url.startsWith(base)||url.startsWith('data:')||url.startsWith('blob:'))return route.continue();
@@ -14,6 +14,31 @@ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message)
 page.on('response',r=>{if(r.status()>=400)failed.push(r.url());});
 try{
   await page.goto(base+'/web/');await page.waitForFunction(()=>window.FHLS?.core);
+  await page.waitForFunction(()=>window.FHLS.landingViewer);await page.evaluate(()=>window.FHLS.landingViewer.ready);
+  const intro=page.locator('#landing-moon canvas');assert.equal(await intro.isVisible(),true);
+  assert.equal(await page.locator('.globe svg').count(),0);
+  const first=await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera);
+  await page.waitForTimeout(350);
+  assert.ok((await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera)).some((v,i)=>Math.abs(v-first[i])>1),'Home Moon must rotate');
+  await mkdir('/private/tmp/fhls-viewer-tests',{recursive:true});
+  await page.screenshot({path:'/private/tmp/fhls-viewer-tests/home-moon.png',fullPage:true});
+  // Decorative Moon must not add a second Start button or consume keyboard focus.
+  assert.equal(await page.locator('#landing-moon').evaluate(el=>el.inert),true);
+  assert.equal(await page.getByRole('button',{name:'Start exploration',exact:true}).isVisible(),false);
+  await page.locator('#start').click();
+  assert.equal(await page.evaluate(()=>window.FHLS.landingViewer),null);
+  assert.equal(await page.locator('#landing-moon canvas').count(),0);
+  await page.locator('#back-to-landing').click();
+  await page.evaluate(()=>window.FHLS.landingViewer.ready);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  const still=await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera);
+  await page.waitForTimeout(250);
+  assert.deepEqual(await page.evaluate(()=>window.FHLS.landingViewer.getDiagnostics().camera),still);
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  assert.ok((await intro.boundingBox()).height>=240);
+  await page.screenshot({path:'/private/tmp/fhls-viewer-tests/home-moon-mobile.png',fullPage:true});
+  await page.setViewportSize({width:1440,height:1000});
   await page.locator('#start').click();await page.locator('[data-mode="intermediate"]').click();
   await page.waitForFunction(()=>window.FHLS.viewer);await page.evaluate(()=>window.FHLS.viewer.ready);
   const canvas=page.locator('#viewer-slot canvas');assert.equal(await canvas.isVisible(),true);
@@ -36,5 +61,5 @@ try{
   await page.screenshot({path:'/private/tmp/fhls-viewer-tests/t2-integration.png',fullPage:true});
   await page.evaluate(()=>window.FHLS.viewer.dispose());
   assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(failed,[]);
-  console.log('PASS T2 integration: real app Start/mode, visible viewer, canvas picking → analysis/flight, polar site selection, results title and slider → real Sun; zero external requests or page errors.');
+  console.log('PASS integration: real home Moon renders and rotates; reduced motion, mobile, Back/remount and Start/disposal work; explorer picking → analysis/flight, polar terrain and slider → real Sun; zero external requests or page errors.');
 }finally{await browser.close();}

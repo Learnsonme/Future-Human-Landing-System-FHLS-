@@ -106,21 +106,16 @@ body[data-screen="app"]     #screen-app     { display: block; }
 }
 .landing-actions { margin-top: 36px; display: flex; align-items: center; gap: 20px; }
 
-/* wireframe globe: placeholder for the three.js viewer (V1, T1) */
-.globe { position: relative; }
-.globe svg { display: block; width: 100%; height: auto; }
+/* Real Moon intro; navigation stays with the landing page's Start button. */
+.globe { position: relative; min-width: 0; }
+#landing-moon { width: 100%; aspect-ratio: 1; }
+#landing-moon .fhls-viewer-start { display: none; }
+#landing-moon[data-phase="ready"][data-lighting="ephemeris"] .fhls-viewer-status { display: none; }
 .globe-note {
-  position: absolute;
-  left: 0;
-  bottom: -4px;
+  margin: 12px 0 0;
   font: 400 12px/1.4 var(--mono);
   color: var(--muted);
 }
-.globe .disc { fill: none; stroke: var(--line); stroke-width: 1; }
-.globe .mer { fill: none; stroke: var(--line); stroke-width: 1; }
-.globe .pole { fill: none; stroke: var(--terrain); stroke-width: 1.5; }
-.globe .spin { transform-origin: 200px 200px; animation: spin 60s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .stars { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -268,7 +263,6 @@ body[data-screen="app"]     #screen-app     { display: block; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .globe .spin { animation: none; }
   * { transition-duration: .01ms !important; }
 }
 

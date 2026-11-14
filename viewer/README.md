@@ -110,7 +110,10 @@ Keep the viewer's status visible so fallback/error information reaches users.
   `prefers-reduced-motion` disables intro rotation and makes flights immediate.
 
 T2 has committed `createViewer` integration in `web/app.js`, including picking,
-fly-to and time updates. Automated integration checks verify that committed app flow; see below.
+fly-to and time updates. The home screen mounts the same viewer as a rotating
+NASA-textured intro and disposes it when leaving for the mode picker. Integration
+checks cover home rotation, reduced motion, mobile layout, Back/remount, and the
+explorer's picking and time updates; see below.
 
 ## Bundled assets
 

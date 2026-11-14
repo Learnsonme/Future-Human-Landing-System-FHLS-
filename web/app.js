@@ -31,6 +31,7 @@ let core = null;
 let coreError = null;
 let sites = [];
 let viewer = null;
+let landingViewer = null;
 let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.json
 
 const $ = (id) => document.getElementById(id);
@@ -81,6 +82,8 @@ function show(screen) {
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
   if (screen === "landing") $("start").focus({ preventScroll: true });
+  if (screen === "landing") mountLandingViewer();
+  else { landingViewer?.dispose(); landingViewer = null; }
   if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
 }
 
@@ -115,6 +118,8 @@ async function init() {
          "rather than opening the file directly.");
   }
 
+  if (state.screen === "landing") mountLandingViewer();
+
   try {
     const res = await fetch("../data/sites.json");
     if (!res.ok) throw new Error(`sites.json: ${res.status}`);
@@ -145,6 +150,26 @@ function fail(message) {
 }
 
 /* ---------- viewer (T1) ---------- */
+// The intro uses the same local NASA assets and real Sun as the explorer.
+// Its inert host keeps decorative interaction from stopping the rotation.
+function mountLandingViewer() {
+  if (landingViewer) return;
+  const host = $("landing-moon");
+  try {
+    landingViewer = createViewer(host, { core: core || undefined });
+    landingViewer.onStatus((status) => {
+      host.dataset.phase = status.phase;
+      host.dataset.lighting = status.lighting;
+    });
+    landingViewer.ready.catch((err) => {
+      console.error("landing Moon could not start", err);
+    });
+  } catch (err) {
+    host.textContent = "Moon preview unavailable. Select Start to explore the site data.";
+    console.error("landing Moon could not be created", err);
+  }
+}
+
 // viewer/README.md: createViewer(host, {presentation:false}) → {ready, onPick, flyTo, setTime,
 // onStatus, dispose}. The host needs a real size, so this runs once the app screen is visible.
 
@@ -888,6 +913,13 @@ for (const type of ["pointerdown", "pointermove"]) {
 setMode(state.mode);
 init();
 
+// A restored page keeps its existing viewers; a page leaving the cache releases
+// both GPU contexts. Screen changes already dispose the decorative intro.
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) return;
+  landingViewer?.dispose(); viewer?.dispose();
+});
+
 // Hook for the viewer (T1) and later web tasks.
 window.FHLS = {
   get core() { return core; },
@@ -899,6 +931,7 @@ window.FHLS = {
   pin: pinCurrent,
   get pins() { return state.pins.map((p) => ({ ...p })); },
   get viewer() { return viewer; },
+  get landingViewer() { return landingViewer; },
   buildCsv: (scope = "all") => {
     const r = state.result;
     if (!r) return null;

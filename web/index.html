@@ -25,19 +25,9 @@
       </div>
     </div>
 
-    <div class="globe" aria-hidden="true">
-      <svg viewBox="0 0 400 400" role="presentation">
-        <circle class="disc" cx="200" cy="200" r="150"></circle>
-        <g class="spin">
-          <ellipse class="mer" cx="200" cy="200" rx="40"  ry="150"></ellipse>
-          <ellipse class="mer" cx="200" cy="200" rx="95"  ry="150"></ellipse>
-          <ellipse class="mer" cx="200" cy="200" rx="135" ry="150"></ellipse>
-        </g>
-        <line class="mer" x1="50" y1="200" x2="350" y2="200"></line>
-        <!-- 84°S → pole: the full-precision band -->
-        <path class="pole" d="M 97 316 A 150 150 0 0 0 303 316"></path>
-      </svg>
-      <p class="globe-note">south polar band (84°S → pole) · full terrain precision</p>
+    <div class="globe">
+      <div id="landing-moon" aria-hidden="true" inert></div>
+      <p class="globe-note">NASA LRO / LOLA · explore the whole Moon</p>
     </div>
   </div>
 
