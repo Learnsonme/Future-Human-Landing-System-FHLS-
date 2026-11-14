@@ -115,8 +115,11 @@ body[data-screen="app"]     #screen-app     { display: block; }
 #landing-moon .fhls-viewer-start { display: none; }
 #landing-moon[data-phase="ready"][data-lighting="ephemeris"] .fhls-viewer-status { display: none; }
 .globe-note {
-  margin: 12px 0 0;
-  font: 400 12px/1.4 var(--mono);
+  margin: 12px auto 0;
+  max-width: 34ch;
+  text-align: center;
+  text-wrap: balance;
+  font: 400 12px/1.5 var(--mono);
   color: var(--muted);
 }
 
