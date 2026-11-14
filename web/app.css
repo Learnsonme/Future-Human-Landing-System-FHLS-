@@ -478,3 +478,19 @@ body[data-screen="app"]     #screen-app     { display: block; }
 /* one marker for the row, not a bar per cell */
 .hourtable tr.is-now td:first-child { box-shadow: inset 2px 0 0 var(--text); }
 .val-off { color: var(--none); }
+
+/* ---------- horizon panorama (W5) ---------- */
+.panorama { margin: 8px 0 32px; }
+.panorama[hidden] { display: none; }
+.panorama-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.panorama-sub { margin: 8px 0 0; font: 400 12px/1.4 var(--mono); color: var(--muted); }
+.panorama-keys { display: flex; gap: 18px; font: 400 12px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+#panorama-canvas { display: block; width: 100%; margin-top: 12px; }

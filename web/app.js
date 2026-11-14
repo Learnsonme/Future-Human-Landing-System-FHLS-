@@ -3,6 +3,7 @@
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
 import { createViewer } from "../viewer/index.js";
+import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -242,6 +243,7 @@ function renderResults() {
        gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
+  renderPanorama();
   renderHourTable();
 }
 
@@ -503,8 +505,54 @@ function drawMarker() {
 let resizeTimer = null;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(drawTimeline, 150);
+  resizeTimer = setTimeout(() => { drawTimeline(); renderPanorama(); }, 150);
 });
+
+/* ---------- horizon panorama (W5, Intermediate) ---------- */
+
+// One synodic month each side of the selected hour: enough for the Sun to go
+// right around the sky once, which is the point of the picture.
+const MONTH_HOURS = 709;
+
+function trackPoints(r, azArr, elArr, span) {
+  const i = state.hour - r.start_index;
+  const from = Math.max(0, i - span);
+  const to = Math.min(elArr.length, i + span);
+  const points = [];
+  for (let k = from; k < to; k++) points.push({ az: azArr[k], el: elArr[k] });
+  return points;
+}
+
+function renderPanorama() {
+  const section = $("panorama");
+  const r = state.result;
+  if (!r || state.mode !== "intermediate") {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const i = state.hour - r.start_index;
+  const inRange = i >= 0 && i < r.sun_el.length;
+
+  const ok = drawHorizonPanorama($("panorama-canvas"), {
+    horizon: r.horizon,
+    tracks: [
+      { points: trackPoints(r, r.sun_az, r.sun_el, MONTH_HOURS), tone: "sun" },
+      { points: trackPoints(r, r.earth_az, r.earth_el, MONTH_HOURS), tone: "earth" },
+    ],
+    markers: inRange ? [
+      { az: r.sun_az[i], el: r.sun_el[i], tone: "sun" },
+      { az: r.earth_az[i], el: r.earth_el[i], tone: "earth" },
+    ] : [],
+    height: 240,
+  });
+
+  $("panorama-sub").textContent = ok
+    ? `Skyline from ${r.horizon.values.length} directions · Sun and Earth tracks span ` +
+      `${Math.round(MONTH_HOURS / 24)} days either side of the selected hour`
+    : "";
+}
 
 /* ---------- hour-by-hour table + CSV (W6, Advanced) ---------- */
 
