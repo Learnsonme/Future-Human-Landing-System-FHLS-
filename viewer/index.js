@@ -41,6 +41,12 @@ export function createViewer(container, options = {}) {
     generation++; pendingPick = null;
     if (flight) { flight.resolve({ cancelled: true }); flight = null; if (controls) controls.enabled = true; }
   }
+  function clearControlInertia() {
+    // OrbitControls keeps private damping deltas after a drag. Flush them before
+    // assigning a camera pose so a reset or completed flight stays at that pose.
+    const damping = controls.enableDamping;
+    controls.enableDamping = false; controls.update(); controls.enableDamping = damping;
+  }
   function heightAt(lat, lon) { return (terrain?.heightAt(lat, lon) ?? globe?.heightAt(lat, lon) ?? 0) * (terrain?.exaggeration || 1); }
   function updateLight() {
     if (!light) return;
@@ -97,7 +103,7 @@ export function createViewer(container, options = {}) {
   async function flyTo(lat, lon) {
     checkAlive(); const location = validateLocation(lat, lon); start(); cancelFlight();
     const token = generation; await ready; if (disposed || token !== generation) return { cancelled: true };
-    selection = location;
+    clearControlInertia(); selection = location;
     if (terrain) {
       notify({ phase: 'loading-terrain', message: 'Loading nearby LOLA terrain…' });
       try {
@@ -122,6 +128,7 @@ export function createViewer(container, options = {}) {
   function overview() {
     checkAlive(); start(); cancelFlight(); selection = null;
     if (!camera) return;
+    clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
     controls.minDistance = R_KM + 18; controls.maxDistance = 11000; controls.update(); updateLight();
     notify({ phase: 'ready', message: 'Drag to rotate · scroll or pinch to zoom · click a location' });

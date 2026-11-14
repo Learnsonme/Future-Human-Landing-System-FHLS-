@@ -73,12 +73,22 @@ try {
   assert.ok(Math.abs(pick.lat-Math.asin(1200/r)*180/Math.PI)<.2,JSON.stringify(pick));
   assert.ok(Math.abs(pick.lon-Math.atan2(-2900,4600)*180/Math.PI)<.2,JSON.stringify(pick));
   await page.waitForFunction(()=>!window.embeddedViewer.getDiagnostics().flying);
+  // Wheel input must change the camera distance without selecting a site.
+  await page.evaluate(()=>window.embeddedViewer.overview());
+  const zoomBefore = Math.hypot(...await page.evaluate(()=>window.embeddedViewer.getDiagnostics().camera));
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await page.mouse.wheel(0,-250);await page.waitForTimeout(200);
+  const zoomAfter = Math.hypot(...await page.evaluate(()=>window.embeddedViewer.getDiagnostics().camera));
+  assert.ok(zoomAfter < zoomBefore);assert.equal(await page.evaluate(()=>window.pickCount),1);
   // A pinch is never a pick.
   const session=await context.newCDPSession(page);
   await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:350,y:280,id:1},{x:450,y:320,id:2}]});
+  const pinchBefore = Math.hypot(...await page.evaluate(()=>window.embeddedViewer.getDiagnostics().camera));
   await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:320,y:260,id:1},{x:480,y:340,id:2}]});
   await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   assert.equal(await page.evaluate(()=>window.pickCount),1);
+  const pinchAfter = Math.hypot(...await page.evaluate(()=>window.embeddedViewer.getDiagnostics().camera));
+  assert.ok(pinchAfter < pinchBefore);
   await page.evaluate(()=>{document.getElementById('host').style.width='500px';document.getElementById('host').style.height='350px';});
   await page.waitForTimeout(100);const size=await canvas.boundingBox();assert.equal(size.width,500);assert.equal(size.height,350);
   await page.evaluate(()=>window.embeddedViewer.dispose());assert.equal(await page.locator('canvas').count(),0);

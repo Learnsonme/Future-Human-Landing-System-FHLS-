@@ -18,7 +18,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
 - [x] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button (claimed by T1, 09:04; continuation by T1 (Codex), 09:27; normal pushes authorized)
-- [~] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/) (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
+- [x] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/) (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
 - [~] V3 · T1 · Fly-to animation to the clicked point (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
 - [~] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
 - [~] V5 · T1 · Light the scene with the real Sun direction for a given time (from core), long shadows (claimed by T1, 09:05; continuation by T1 (Codex), 09:27; normal pushes authorized)
