@@ -10,11 +10,11 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] E3 · T3 · Horizon algorithm (near = fine DEM, far = coarse DEM, curvature correction); test on Shackleton
 - [x] E4 · T3 · **Start long run Saturday morning:** `south_2km` grid → `data/horizon/` (all CPU cores)
 - [x] E5 · T3 · Terrain tiles (16-bit PNG) for the viewer → `data/terrain/` (**by Sat 12:00 for T1**)
-- [~] E6 · T3 · `data/sites.json` with NASA's Artemis candidate landing regions (announced for Artemis III; first landing now Artemis IV, 2028) (claimed by T3, 10:05)
+- [x] E6 · T3 · `data/sites.json` with NASA's Artemis candidate landing regions (announced for Artemis III; first landing now Artemis IV, 2028)
 - [x] C1 · T3 · `core/fhls-core.js`: az/el, grid lookup, blocked?, power/comms, summaries
 - [ ] E7 · T3 · Validate vs PGDA illumination maps; write accuracy notes
 - [ ] E8 · T3 · `global_coarse` horizon grid (whole Moon, low precision)
-- [~] E9 · T3 · `south_fine` grids over Artemis candidate regions (claimed by T3, 10:05)
+- [x] E9 · T3 · `south_fine` grids over Artemis candidate regions
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
 - [~] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button (claimed by T1, 09:04; local only, user authorized no push)

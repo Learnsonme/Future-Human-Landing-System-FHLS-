@@ -1,0 +1,24 @@
+{
+ "artemis_iii_regions_2024": {
+  "source": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+  "names": [
+   "Peak near Cabeus B",
+   "Haworth",
+   "Malapert Massif",
+   "Mons Mouton Plateau",
+   "Mons Mouton",
+   "Nobile Rim 1",
+   "Nobile Rim 2",
+   "de Gerlache Rim 2",
+   "Slater Plain"
+  ]
+ },
+ "unplaced_regions": [
+  "Peak near Cabeus B",
+  "Haworth",
+  "Malapert Massif",
+  "Nobile Rim 1",
+  "Slater Plain"
+ ],
+ "note": "NASA published region names, not coordinates. Pins are representative points or IAU feature centres."
+}

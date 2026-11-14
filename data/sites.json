@@ -1,0 +1,155 @@
+[
+ {
+  "id": "nobile_rim_2",
+  "name": "Nobile Rim 2",
+  "lat": -84.20156,
+  "lon": 60.69989,
+  "type": "artemis_candidate_region",
+  "source": "https://arxiv.org/html/2406.19863v2",
+  "note": "Representative point (paper's top-ranked site 358), not an official region centre"
+ },
+ {
+  "id": "peak_near_shackleton",
+  "name": "Peak near Shackleton",
+  "lat": -89.00506,
+  "lon": 125.3093,
+  "type": "artemis_candidate_region_2022",
+  "source": "https://arxiv.org/html/2406.19863v2",
+  "note": "Representative point (site 1223); 2022 region list"
+ },
+ {
+  "id": "de_gerlache_rim_2",
+  "name": "de Gerlache Rim 2",
+  "lat": -88.51566,
+  "lon": -61.16732,
+  "type": "artemis_candidate_region",
+  "source": "https://arxiv.org/html/2406.19863v2",
+  "note": "Representative point (site 726); 'O' read as west (matches de Gerlache crater)"
+ },
+ {
+  "id": "amundsen_rim",
+  "name": "Amundsen Rim",
+  "lat": -84.19184,
+  "lon": 67.22904,
+  "type": "artemis_candidate_region_2022",
+  "source": "https://arxiv.org/html/2406.19863v2",
+  "note": "Representative point (site 1121); 2022 region list"
+ },
+ {
+  "id": "faustini_rim_a",
+  "name": "Faustini Rim A",
+  "lat": -88.08695,
+  "lon": 98.35549,
+  "type": "artemis_candidate_region_2022",
+  "source": "https://arxiv.org/html/2406.19863v2",
+  "note": "Representative point (site 744); 2022 region list"
+ },
+ {
+  "id": "connecting_ridge",
+  "name": "Connecting Ridge",
+  "lat": -89.53432,
+  "lon": -150.05233,
+  "type": "artemis_candidate_region_2022",
+  "source": "https://www.hou.usra.edu/meetings/lpsc2024/pdf/1695.pdf",
+  "note": "Representative point from LPSC 2024 abstract 1695 (lon 209.94767°E)"
+ },
+ {
+  "id": "mons_mouton",
+  "name": "Mons Mouton",
+  "lat": -84.6,
+  "lon": 31.0,
+  "type": "artemis_candidate_region",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/16070",
+  "note": "IAU centre of the massif; NASA regions 'Mons Mouton' and 'Mons Mouton Plateau' lie on it"
+ },
+ {
+  "id": "shackleton",
+  "name": "Shackleton crater",
+  "lat": -89.67,
+  "lon": 129.78,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/5450",
+  "note": "Permanently shadowed floor"
+ },
+ {
+  "id": "shackleton_ridge_test",
+  "name": "Shackleton ridge (test point)",
+  "lat": -89.45,
+  "lon": -137.3,
+  "type": "reference_point",
+  "source": "engine/test_spice.py",
+  "note": "Team reference point used to test SPICE and the horizon code"
+ },
+ {
+  "id": "malapert",
+  "name": "Malapert crater",
+  "lat": -85.0,
+  "lon": 11.4,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/3603",
+  "note": "NASA region 'Malapert Massif' is the ridge near this crater (no official coordinates)"
+ },
+ {
+  "id": "nobile",
+  "name": "Nobile crater",
+  "lat": -85.28,
+  "lon": 53.27,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/4321",
+  "note": ""
+ },
+ {
+  "id": "amundsen",
+  "name": "Amundsen crater",
+  "lat": -84.44,
+  "lon": 83.07,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/247",
+  "note": ""
+ },
+ {
+  "id": "faustini",
+  "name": "Faustini crater",
+  "lat": -87.18,
+  "lon": 84.31,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/1919",
+  "note": ""
+ },
+ {
+  "id": "de_gerlache",
+  "name": "de Gerlache crater",
+  "lat": -88.48,
+  "lon": -88.34,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/1439",
+  "note": ""
+ },
+ {
+  "id": "slater",
+  "name": "Slater crater",
+  "lat": -88.08,
+  "lon": 111.29,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/15325",
+  "note": "NASA region 'Slater Plain' is near this crater (no official coordinates)"
+ },
+ {
+  "id": "cabeus",
+  "name": "Cabeus crater",
+  "lat": -85.33,
+  "lon": -42.13,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/953",
+  "note": ""
+ },
+ {
+  "id": "cabeus_b",
+  "name": "Cabeus B crater",
+  "lat": -82.26,
+  "lon": -54.58,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/8058",
+  "note": "Outside 84°S. NASA region 'Peak near Cabeus B' is nearby (no official coordinates)"
+ }
+]
