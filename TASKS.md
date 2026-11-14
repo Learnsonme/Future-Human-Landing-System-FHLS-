@@ -78,15 +78,15 @@ All of these follow `design/style.md`. Anything animated must also follow the M1
 ### T1 · polish pass (Saturday, all done before leaving)
 Small fixes only, no new features. Claim each one, push, tick, log. If one is unfinished when you leave, set it back to `[ ]` and leave a LOG.md note for T2.
 P1 touches `web/`: allowed for T1 by agreement. Build it as `web/components/stats-ticker.js` and tell @T2 in LOG.md, because M6 also changes the landing screen.
-- [ ] P1 · T1 · **Landing stats move slowly left → right.** The three stat cards (Ephemeris · Terrain · Live check) become one strip drifting slowly to the right in a seamless loop (about 40 s per full cycle). Pause on hover/focus, keep text readable, palette tokens only. `prefers-reduced-motion` → static strip, no motion.
-- [ ] P2 · T1 · **No blank Moon on load.** Show a still poster image of the Moon until the 3D viewer is ready, then cross-fade. No white or empty flash.
-- [ ] P3 · T1 · **Camera feel.** Smooth ease-in-out fly-to, no jitter at the end, zoom limits so you can't clip into the terrain or zoom out to a dot.
-- [ ] P4 · T1 · **Phone touch.** One-finger rotate, pinch zoom, tap to pick a site. Test at 375 px width.
-- [ ] P5 · T1 · **Loading and error states.** Subtle indicator while terrain tiles load; if a tile fails, fall back to the coarser terrain instead of a hole.
-- [ ] P6 · T1 · **Clean console.** Zero errors and zero 404s from opening the site through Start → mode → click → fly-to → Home.
-- [ ] P7 · T1 · **Smooth and light.** Cap device pixel ratio at 2, pause rendering when the tab is hidden, aim for smooth motion on a normal laptop.
+- [~] P1 · T1 · **Landing stats move slowly left → right.** The three stat cards (Ephemeris · Terrain · Live check) become one strip drifting slowly to the right in a seamless loop (about 40 s per full cycle). Pause on hover/focus, keep text readable, palette tokens only. `prefers-reduced-motion` → static strip, no motion. (claimed by T1, 15:10)
+- [~] P2 · T1 · **No blank Moon on load.** Show a still poster image of the Moon until the 3D viewer is ready, then cross-fade. No white or empty flash. (claimed by T1, 15:10)
+- [~] P3 · T1 · **Camera feel.** Smooth ease-in-out fly-to, no jitter at the end, zoom limits so you can't clip into the terrain or zoom out to a dot. (claimed by T1, 15:10)
+- [~] P4 · T1 · **Phone touch.** One-finger rotate, pinch zoom, tap to pick a site. Test at 375 px width. (claimed by T1, 15:10)
+- [~] P5 · T1 · **Loading and error states.** Subtle indicator while terrain tiles load; if a tile fails, fall back to the coarser terrain instead of a hole. (claimed by T1, 15:10)
+- [~] P6 · T1 · **Clean console.** Zero errors and zero 404s from opening the site through Start → mode → click → fly-to → Home. (claimed by T1, 15:10)
+- [~] P7 · T1 · **Smooth and light.** Cap device pixel ratio at 2, pause rendering when the tab is hidden, aim for smooth motion on a normal laptop. (claimed by T1, 15:10)
 
-- [ ] P8 · T1 · **Faint shooting stars on the landing background.** Tune the existing shooting stars (W9, `web/components/starfield.js`) or add them if missing: very faint, thin short trail, rare (one about every 20–40 s at a random spot and angle), never over text, landing screen only. `prefers-reduced-motion` → none. Tell @T2 in LOG.md, since it's their component.
+- [~] P8 · T1 · **Faint shooting stars on the landing background.** Tune the existing shooting stars (W9, `web/components/starfield.js`) or add them if missing: very faint, thin short trail, rare (one about every 20–40 s at a random spot and angle), never over text, landing screen only. `prefers-reduced-motion` → none. Tell @T2 in LOG.md, since it's their component. (claimed by T1, 15:10)
 
 - [x] P9 · T1 · **Overlay hook for the heat map (small, before leaving).** Add `viewer.setOverlay(imageOrCanvas, {projection, x0_km, y0_km, size_km, opacity})` and `viewer.clearOverlay()`, which drape a semi-transparent image over the south polar terrain. Document it in `viewer/README.md`. T3 builds the heat map on top of it. (done by T3)
 
