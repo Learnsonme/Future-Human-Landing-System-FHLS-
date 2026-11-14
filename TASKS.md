@@ -109,6 +109,7 @@ Below the landing screen, the page scrolls into these sections. Built by T3 in `
 - [x] S4 · T3 · **Limits.** One short note: sunlight and Earth visibility are planning inputs, not proof a site is safe; slope, boulders, temperature and mission constraints also matter.
 - [x] S5 · T3 · **How it's built.** Data → engine → browser in one line or a simple diagram, NASA data used, validation result (r = 0.99 vs NASA's illumination map).
 - [~] S6 · T3 · **Team.** Three members, names and roles. (claimed by T3; built with placeholders, waiting for the three names)
+- [~] S11 · T3 · **Own time slider for the horizon panorama.** A separate slider inside the panorama, independent of the timeline at the top: moving it moves only the panorama's Sun and Earth (with trails and visible/blocked states), never the main hour, the 3D view or the results panel. It starts at the timeline's hour when a site is chosen; a "Match timeline" link re-syncs it. Keyboard accessible; all modes. (claimed by T3, 02:20)
 - [x] S7 · T3 · **Footer.** "Made by Team FHLS · NASA Space Apps Challenge 2026". No NASA logo.
 - [x] S8 · T3 · Check on phone (375 px) and laptop; no layout jumps.
 
