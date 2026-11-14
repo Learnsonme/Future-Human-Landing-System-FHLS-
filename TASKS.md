@@ -1,3 +1,5 @@
+Team task board used during the hackathon.
+
 # Task board
 `[ ]` = free · `[~]` = in progress (claimed by …, time) · `[x]` = done.
 Cycle: pull → claim → push → work → tick → log → push.
