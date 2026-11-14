@@ -2,6 +2,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
+import { createViewer } from "../viewer/index.js";
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -25,6 +26,7 @@ const LAST_HOUR = 17543;
 let core = null;
 let coreError = null;
 let sites = [];
+let viewer = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -74,7 +76,7 @@ function show(screen) {
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
   if (screen === "landing") $("start").focus({ preventScroll: true });
-  if (screen === "app") drawTimeline();   // zero width while hidden
+  if (screen === "app") { drawTimeline(); mountViewer(); }   // zero size while hidden
 }
 
 /* ---------- mode ---------- */
@@ -119,7 +121,7 @@ async function init() {
   renderSiteList();
   syncTimeControls();
   renderLanding();
-  mountViewer();
+  if (state.screen === "app") mountViewer();
 }
 
 function fail(message) {
@@ -128,24 +130,53 @@ function fail(message) {
   notice.hidden = false;
 }
 
-/* ---------- viewer hand-off (T1) ---------- */
-// The viewer is not in the repo yet. When it arrives it should expose
-// window.FHLSViewer.mount(element) and .onPick(cb); until then the site list stands in.
+/* ---------- viewer (T1) ---------- */
+// viewer/README.md: createViewer(host, {presentation:false}) → {ready, onPick, flyTo, setTime,
+// onStatus, dispose}. The host needs a real size, so this runs once the app screen is visible.
+
 function mountViewer() {
-  const viewer = window.FHLSViewer;
-  if (!viewer || typeof viewer.mount !== "function") return;
+  if (viewer || !$("viewer-slot")) return;
   try {
-    viewer.mount($("viewer-slot"));
-    $("stage-placeholder").hidden = true;
-    if (typeof viewer.onPick === "function") {
-      viewer.onPick((lat, lon) => selectSite({ lat, lon }));
-    }
+    viewer = createViewer($("viewer-slot"), { presentation: false });
   } catch (err) {
-    console.error("viewer failed to mount", err);
+    console.error("viewer could not be created", err);
+    return;
+  }
+
+  viewer.onPick((lat, lon) => selectSite({ lat, lon }, { fly: true }));
+
+  // The viewer prints its own hint inside the canvas, so only the terrain
+  // level is worth repeating here.
+  viewer.onStatus((status) => {
+    const terrain = {
+      "LOLA-120m": "Terrain · LOLA 120 m tiles",
+      "LOLA-overview-480m": "Terrain · LOLA 480 m overview",
+      "global-lower-precision": "Terrain · global relief, lower precision",
+    }[status.terrain] || status.terrain || "";
+    $("stage-status").textContent = terrain;
+  });
+
+  viewer.ready.then(() => {
+    $("stage-placeholder").hidden = true;
+    pushTimeToViewer();
+    if (state.site) viewer.flyTo(state.site.lat, state.site.lon).catch(() => {});
+  }).catch((err) => {
+    console.error("viewer failed to start", err);
+    $("stage-placeholder").hidden = false;
+    $("stage-status").textContent = `3D viewer unavailable: ${err.message}`;
+  });
+}
+
+function pushTimeToViewer() {
+  if (!viewer || !core) return;
+  try {
+    viewer.setTime(new Date(core.timeOf(state.hour)).toISOString().replace(".000Z", "Z"));
+  } catch (err) {
+    console.warn("setTime rejected", err);
   }
 }
 
-/* ---------- site list (stands in for the viewer) ---------- */
+/* ---------- site list ---------- */
 
 function renderSiteList() {
   const list = $("site-list");
@@ -169,8 +200,9 @@ function renderSiteList() {
 
 /* ---------- selection → core → panel ---------- */
 
-async function selectSite(site) {
+async function selectSite(site, { fly = true } = {}) {
   if (!core) return;
+  if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
 
   for (const b of document.querySelectorAll(".site")) {
@@ -368,6 +400,7 @@ function setHour(h) {
   renderLanding();
   renderResults();   // reuses the cached analysis; no recompute
   drawMarker();
+  pushTimeToViewer();
 }
 
 function hourToDate(h) {
@@ -535,5 +568,5 @@ window.FHLS = {
   setSite(lat, lon, name) { return selectSite({ lat, lon, name }); },
   setMode,
   show,
-  mountViewer,
+  get viewer() { return viewer; },
 };

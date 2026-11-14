@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FHLS · Future Human Landing System</title>
 <meta name="description" content="Compare lunar landing sites and dates: Sun and Earth angles above the local horizon, power and direct-to-Earth communication windows, 2027–2028.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="app.css">
 </head>
 <body data-screen="landing">
@@ -139,15 +136,20 @@
     </section>
 
     <div class="app-grid">
-      <div class="stage" id="viewer-slot">
-        <div class="stage-placeholder" id="stage-placeholder">
-          <p class="eyebrow">Viewer slot</p>
-          <p>
-            The 3D Moon mounts here (V1–V6, T1). Until it does, pick a site below — the maths and
-            the results panel do not depend on the viewer.
-          </p>
-          <ul class="site-list" id="site-list"></ul>
+      <div class="stage-col">
+        <div class="stage" id="viewer-slot">
+          <div class="stage-placeholder" id="stage-placeholder">
+            <p class="eyebrow">Loading the Moon…</p>
+            <p>If this stays, the 3D viewer could not start in this browser. The site list and the
+              results panel below still work.</p>
+          </div>
         </div>
+        <p class="stage-status" id="stage-status"></p>
+
+        <section class="sites">
+          <p class="eyebrow">Candidate sites</p>
+          <ul class="site-list" id="site-list"></ul>
+        </section>
       </div>
 
       <aside class="panel" id="results">
