@@ -2,7 +2,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261115-p13";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261114-p14";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -196,10 +196,12 @@ function setMode(mode) {
 /* ---------- startup ---------- */
 
 async function init() {
+  const issues = []; // P14: retain recoverable failures for the loading handoff.
   try {
     core = await loadCore("../data");
   } catch (err) {
     coreError = err;
+    issues.push('Lunar data could not load, so Sun and Earth angles are unavailable. Please reload to try again.');
     console.error("core failed to load", err);
     fail("Could not load data/ — no angles can be shown. Serve the repository over HTTP " +
          "rather than opening the file directly.");
@@ -213,6 +215,7 @@ async function init() {
     sites = await res.json();
   } catch (err) {
     console.warn("sites.json unavailable", err);
+    issues.push('The site list could not load. You can still choose a point on the Moon.');
   }
 
   try {
@@ -222,12 +225,14 @@ async function init() {
     horizonGrids = new Map((index.grids || []).map((g) => [g.id, g]));
   } catch (err) {
     console.warn("horizon index unavailable", err);
+    issues.push('The terrain index could not load. Please reload before using terrain visibility results.');
   }
 
   renderSiteList();
   syncTimeControls();
   renderLanding();
   if (state.screen === "app") mountViewer();
+  return issues;
 }
 
 function fail(message) {
@@ -1132,7 +1137,14 @@ startAtmosphere();     // before init(): the sky must not wait on the data load
 playEntrance();
 sky?.setDensity(state.screen === "landing" ? "landing" : state.mode);
 setMode(state.mode);
-init();
+// P14: core includes the ephemeris; init also loads sites and the horizon index.
+const startupReady = init().then(async issues => {
+  if (landingViewer) await landingViewer.ready;
+  else if (state.screen === 'landing') throw new Error('The Moon preview could not start. Site data may still be available.');
+  if (issues.length) throw new Error(issues.join(' '));
+});
+startupReady.catch(() => {}); // the early inline loader announces startup errors
+window.FHLSLoading?.waitFor(startupReady);
 
 // A restored page keeps its existing viewers; a page leaving the cache releases
 // both GPU contexts. Screen changes already dispose the decorative intro.
@@ -1143,6 +1155,7 @@ window.addEventListener("pagehide", (event) => {
 
 // Hook for the viewer (T1) and later web tasks.
 window.FHLS = {
+  ready: startupReady,
   get core() { return core; },
   get state() { return { ...state }; },
   get sites() { return sites; },

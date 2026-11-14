@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="fhls-is-loading">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,29 @@
 <meta name="description" content="Compare lunar landing sites and dates: Sun and Earth angles above the local horizon, power and direct-to-Earth communication windows, 2027–2028.">
 <link rel="icon" type="image/png" sizes="32x32" href="../design/logo/favicon-32.png">
 <link rel="apple-touch-icon" href="../design/logo/apple-touch-icon-180.png">
-<link rel="stylesheet" href="app.css">
+<!-- P14: let the inline intro paint while the main stylesheet downloads. -->
+<link id="app-styles" rel="preload" as="style" href="app.css" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="app.css"></noscript>
+<style>
+html{background:#141414}body{margin:0}
+html.fhls-is-loading{overflow:hidden}
+#fhls-content{display:contents}
+#fhls-loading{--bg:#141414;--text:#ECE9E2;--muted:#9A978F;--sun:#F2B33D;position:fixed;inset:0;z-index:10000;overflow:hidden;display:grid;place-items:center;background:var(--bg);color:var(--text);opacity:1;transition:opacity .4s cubic-bezier(.4,0,.2,1);font:14px/1.5 'Open Sans',sans-serif}
+#fhls-loading.is-leaving{opacity:0}
+.fhls-loading-stars{position:absolute;inset:0;width:100%;height:100%;color:var(--muted);opacity:.3;pointer-events:none}
+.fhls-loading-brand{position:relative;text-align:center;padding:24px}
+.fhls-loading-brand img{display:block;width:160px;height:auto;margin:0 auto 28px}
+.fhls-loading-brand p{margin:0;color:var(--muted);font-size:14px}
+.fhls-loading-line{height:1px;width:120px;margin:16px auto 0;background:var(--sun)}
+.fhls-loading-ship{position:absolute;left:0;top:18%;width:40px;height:26px;color:var(--text);opacity:.7;animation:fhls-loading-flight 16s linear infinite;pointer-events:none}
+.fhls-loading-ship--two{top:76%;width:32px;animation-duration:22s;animation-delay:-7s}
+.fhls-loading-ship--three{top:88%;width:36px;animation-duration:19s;animation-delay:-13s}
+@keyframes fhls-loading-flight{from{transform:translateX(-60px)}to{transform:translateX(calc(100vw + 60px))}}
+#startup-error{box-sizing:border-box;margin:0;padding:12px 20px;border-bottom:1px solid #F2B33D;background:#1E1E1E;color:#ECE9E2;font:14px/1.5 'Open Sans',sans-serif}
+#startup-error[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){#fhls-loading{transition:none}.fhls-loading-ship{display:none;animation:none}}
+</style>
+
 <!-- P2 (T1): visible before the viewer module and full imagery finish loading. -->
 <link rel="preload" as="image" href="../viewer/assets/moon-poster.webp" fetchpriority="high">
 <style>
@@ -16,6 +38,88 @@
 </style>
 </head>
 <body data-screen="landing">
+
+<!-- P14: HTML/CSS first, independent of app imports. These are our own SVG glyphs. -->
+<div id="fhls-loading" role="status" aria-live="polite">
+  <svg class="fhls-loading-stars" aria-hidden="true" focusable="false"><defs><pattern id="loading-stars" width="220" height="190" patternUnits="userSpaceOnUse"><g fill="currentColor"><circle cx="18" cy="30" r=".8"/><circle cx="93" cy="12" r="1"/><circle cx="177" cy="76" r=".7"/><circle cx="54" cy="145" r="1"/><circle cx="132" cy="166" r=".7"/><circle cx="209" cy="124" r=".8"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#loading-stars)"/></svg>
+  <svg class="fhls-loading-ship" viewBox="0 0 40 26" aria-hidden="true" focusable="false"><defs><g id="loading-lander"><g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M9 8h12l9 5-9 5H9Z M16 8l-4-5H7l4 5 M16 18l-4 5H7l4-5"/><circle cx="21" cy="13" r="2"/></g><path d="M8 10 1 13l7 3" fill="var(--sun)"/></g></defs><use href="#loading-lander"/></svg>
+  <svg class="fhls-loading-ship fhls-loading-ship--two" viewBox="0 0 40 26" aria-hidden="true" focusable="false"><use href="#loading-lander"/></svg>
+  <svg class="fhls-loading-ship fhls-loading-ship--three" viewBox="0 0 40 26" aria-hidden="true" focusable="false"><use href="#loading-lander"/></svg>
+  <div class="fhls-loading-brand">
+    <img id="loading-logo" src="../design/logo/fhls-logo-320w.png" width="320" height="258" alt="FHLS: Future Human Landing System" fetchpriority="high">
+    <p>Loading the Moon…</p><div class="fhls-loading-line" aria-hidden="true"></div>
+  </div>
+</div>
+<script>
+// P14: the watchdog runs before app imports, so a broken module cannot trap the intro.
+(() => {
+  const intro = document.getElementById('fhls-loading'), logo = document.getElementById('loading-logo');
+  const styles = document.getElementById('app-styles'), reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const start = performance.now(); let phase = 'loading', removal = 0, pendingNotice = null;
+  performance.mark('fhls-loading:start');
+  function notice(message, reason) {
+    pendingNotice = { message, reason };
+    const node = document.getElementById('startup-error');
+    if (node) { node.textContent = message; node.hidden = !message; node.dataset.reason = reason; }
+  }
+  function remove() {
+    clearTimeout(removal); intro.remove(); phase = 'done';
+    document.documentElement.classList.remove('fhls-is-loading');
+    performance.mark('fhls-loading:end');
+    if (pendingNotice) notice(pendingNotice.message, pendingNotice.reason);
+    const content = document.getElementById('fhls-content');
+    if (content) { content.inert = false; content.setAttribute('aria-busy', 'false'); }
+    reduced.removeEventListener('change', onReduced);
+    window.dispatchEvent(new Event('fhls:loaded'));
+  }
+  function finish(reason, message = '') {
+    if (message) notice(message, reason);
+    else if (reason === 'ready' && document.getElementById('startup-error')?.dataset.reason === 'timeout') notice('', 'ready');
+    if (phase !== 'loading') return;
+    phase = 'settling'; clearTimeout(watchdog);
+    setTimeout(() => {
+      phase = 'leaving'; intro.dataset.result = reason;
+      performance.mark('fhls-loading:fade');
+      document.documentElement.dataset.startup = reason;
+      intro.classList.add('is-leaving');
+      if (reduced.matches) remove(); else removal = setTimeout(remove, 400);
+    }, Math.max(0, 800 - (performance.now() - start)));
+  }
+  function onReduced() { if (reduced.matches && phase === 'leaving') remove(); }
+  reduced.addEventListener('change', onReduced);
+  const watchdog = setTimeout(() => finish('timeout', 'Loading is taking longer than expected. The page can keep loading; reload if its controls do not respond.'), 12000);
+  const styleReady = new Promise((resolve, reject) => {
+    const loaded = () => {
+      if (!styles.sheet) return;
+      styles.removeEventListener('load', loaded); resolve();
+    };
+    if (styles.sheet) loaded();
+    else {
+      styles.addEventListener('load', loaded);
+      styles.addEventListener('error', () => reject(new Error('The page styles could not load. Please reload to try again.')), { once: true });
+    }
+  });
+  const assetsReady = Promise.all([
+    styleReady.then(async () => {
+      const fonts = await document.fonts.load('400 14px "Open Sans"');
+      if (!fonts.length) throw new Error('The site font could not load. Please reload to try again.');
+      await document.fonts.ready;
+    }),
+    logo.decode()
+  ]);
+  // Handle an asset failure even when app.js never arrives.
+  assetsReady.catch(() => finish('error', 'Some page assets could not load. Please reload to try again.'));
+  window.FHLSLoading = {
+    waitFor(ready) {
+      Promise.all([ready, assetsReady]).then(() => finish('ready'), error => finish('error', error.message || 'The Moon could not load. Please reload to try again.'));
+    }
+  };
+})();
+</script>
+<noscript><style>#fhls-loading{display:none}html.fhls-is-loading{overflow:auto}</style><p>FHLS needs JavaScript to show the Moon and calculate Sun and Earth angles.</p></noscript>
+<div id="fhls-content" inert aria-busy="true">
+<p id="startup-error" role="alert" hidden></p>
+
 
 <canvas id="sky" class="sky" aria-hidden="true"></canvas>
 <div id="transition"></div>
@@ -248,8 +352,10 @@
   </div>
 </section>
 
+</div><!-- fhls-content: released after the loading intro -->
+
 <!-- version tag: bump it when viewer/ or app.js change, so browsers never mix old and new modules -->
-<script type="module" src="app.js?v=20261115-p13"></script>
+<script type="module" src="app.js?v=20261114-p14"></script>
 <!-- S12 (T3): scroll-down sections below the landing -->
 <script type="module" src="sections/sections.js"></script>
 <script type="module" src="components/stats-ticker.js"></script>

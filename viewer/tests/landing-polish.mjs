@@ -1,27 +1,30 @@
 // P1/P2/P8: actual landing ticker/poster plus an accelerated shooting-star check.
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
+// P14 replaces the first-load poster flash; the P2 background remains its fallback.
+process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY='1';
 const {chromium}=await import(process.env.FHLS_PLAYWRIGHT||'playwright');
 const base=process.env.FHLS_TEST_URL||'http://127.0.0.1:8765',out='/private/tmp/fhls-viewer-tests';await mkdir(out,{recursive:true});
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const report={};
 try{
  const early=await browser.newPage({viewport:{width:375,height:812}});let held;
- await early.route('**/web/app.js',r=>{held=r;});
+ await early.route(/\/web\/app\.js(?:\?|$)/,r=>{held=r;});
  await early.goto(base+'/web/',{waitUntil:'commit'});await early.waitForSelector('#landing-moon');
  await early.waitForFunction(()=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('moon-poster.webp')&&r.responseEnd>0));
  assert.ok(held);assert.equal(await early.evaluate(()=>!!window.FHLS),false);
  assert.match(await early.locator('#landing-moon').evaluate(n=>getComputedStyle(n).backgroundImage),/moon-poster.webp/);
  await early.locator('#landing-moon').scrollIntoViewIfNeeded();
- await early.screenshot({path:out+'/poster-before-javascript-375.png'});
- report.poster={visibleBeforeAppJavaScript:true,resourceMs:await early.evaluate(()=>performance.getEntriesByType('resource').find(r=>r.name.endsWith('moon-poster.webp')).responseEnd)};
+ assert.equal(await early.locator('#fhls-loading').isVisible(),true);
+ await early.screenshot({path:out+'/loading-before-javascript-375.png'});
+ report.poster={fallbackAvailableBeforeAppJavaScript:true,brandedIntroVisible:true,resourceMs:await early.evaluate(()=>performance.getEntriesByType('resource').find(r=>r.name.endsWith('moon-poster.webp')).responseEnd)};
  await held.continue();await early.waitForFunction(()=>window.FHLS?.landingViewer);
  await early.evaluate(()=>FHLS.landingViewer.ready);await early.waitForSelector('.fhls-viewer.is-live');
  await early.locator('.fhls-viewer-poster').waitFor({state:'detached'});
  assert.equal(await early.locator('#landing-moon').evaluate(n=>getComputedStyle(n).backgroundImage),'none');await early.close();
  for(const width of [1440,375]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/web/');await page.waitForSelector('.stats-ticker-track');await page.waitForTimeout(1000);
+  await page.goto(base+'/web/');await page.waitForSelector('.stats-ticker-track');await page.locator('#fhls-loading').waitFor({state:'detached'});await page.waitForTimeout(1000);
   await page.locator('.stats-ticker').scrollIntoViewIfNeeded();await page.mouse.move(0,0);
   const track=page.locator('.stats-ticker-track');const x=()=>track.evaluate(n=>new DOMMatrix(getComputedStyle(n).transform).m41);
   const before=await x();await page.waitForTimeout(300);assert.ok(await x()>before,'strip must drift right');
