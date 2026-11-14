@@ -17,7 +17,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [ ] E9 · T3 · `south_fine` grids over Artemis candidate regions
 
 ### Viewer (T1 + Claude Code) · **all done by Saturday evening**
-- [ ] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button
+- [~] V1 · T1 · Spinning globe (three.js) with CGI Moon Kit colour + displacement; starfield; Start button (claimed by T1, 09:04; local only, user authorized no push)
 - [ ] V2 · T1 · Drag to rotate, scroll/pinch to zoom; click returns lat/lon (event for web/)
 - [ ] V3 · T1 · Fly-to animation to the clicked point
 - [ ] V4 · T1 · South pole terrain mesh from `data/terrain/` tiles: real cliffs, slight vertical exaggeration option
