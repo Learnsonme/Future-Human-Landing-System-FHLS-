@@ -36,7 +36,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 
 ### Design & pitch (T3 + Claude)
 - [x] D0 · T3 · `design/style.md`
-- [ ] D1 · T3 · Beginner-mode wording and icons
+- [~] D1 · T3 · Beginner-mode wording and icons (claimed by T3, 11:30)
 - [ ] D2 · T3 · Logo assets (transparent PNG, square icon)
 - [ ] D3 · T3 · Demo story + video (by Sun 12:30)
 - [ ] D4 · T3 · Project page text + AI-use disclosure
