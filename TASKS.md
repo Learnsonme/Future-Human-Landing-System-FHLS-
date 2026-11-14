@@ -62,20 +62,20 @@ Done when H1–H3 are verified, Home is visible and usable after both mode and s
 
 ## Optional (only when everything above works)
 - [x] O1 · T2 · Pin up to 3 spots and compare side by side
-- [ ] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions
+- [~] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions (claimed by T1, 11:50)
 - [x] E10 · T3 · Whole-Moon horizon grid 4× sharper: `global_fine` (0.25° ≈ 7.5 km, from LOLA LDEM_64 474 m), tiled + lazy-loaded
 - [x] E11 · T3 · North pole at south-pole quality: `north_2km` horizon grid + `data/terrain/` north tiles (LOLA LDEM_80N_40M)
 - [x] C2 · T3 · `core/fhls-core.js`: use north polar grids + tiled `global_fine` automatically
-- [ ] V8 · T1 · **Viewer: load the new detailed terrain.** (a) North pole tiles: `data/terrain/index_north.json`. (b) **Whole Moon at 474 m**: `data/terrain/index_global.json`, 990 equirectangular 8° tiles, loading only the tiles around the camera, replacing the 7.6 km globe relief when you fly down. (c) **40 m Artemis tiles**: `data/terrain/index_detail.json`, lod 2, inside each site's 20 km box. Same 16-bit PNG tile format and decode formula as the south tiles. The index files explain the registration. Seams match exactly, including across the date line.
+- [~] V8 · T1 · **Viewer: load the new detailed terrain.** (a) North pole tiles: `data/terrain/index_north.json`. (b) **Whole Moon at 474 m**: `data/terrain/index_global.json`, 990 equirectangular 8° tiles, loading only the tiles around the camera, replacing the 7.6 km globe relief when you fly down. (c) **40 m Artemis tiles**: `data/terrain/index_detail.json`, lod 2, inside each site's 20 km box. Same 16-bit PNG tile format and decode formula as the south tiles. The index files explain the registration. Seams match exactly, including across the date line. (claimed by T1, 11:50)
 
 ## Round 2 · polish from user feedback (14 Nov) · 4 tasks each
 All of these follow `design/style.md`. Anything animated must also follow the M11 update to "Motion (D5)", so read M11 before building M1, M5 or M6. Claim before you start, as usual.
 
 ### T1 · viewer/
-- [ ] M1 · T1 · **Smooth the move from space down to the terrain.** No jump or pop where the globe hands over to the terrain tiles. Keep one continuous camera path and crossfade globe → terrain detail. Fly-to stays 1.2–2.5 s (D5); with reduced motion it is an instant cut.
-- [ ] M2 · T1 · **Landing Moon blends into the page.** The Moon currently sits in a visibly lighter/darker box, and its brightness doesn't match the page. Make the canvas background transparent (or exactly `--bg`), with no edge or box, so the page's stars continue behind and around the Moon. Keep the real-Sun lighting from F5.
-- [ ] M3 · T1 · **Landing Moon shows up straight away.** It appears late during loading. Show a lightweight first frame immediately (a small texture or a poster image of the same view), then swap in the full-resolution globe without a flash. Report the time to first visible Moon before and after.
-- [ ] M4 · T1 · **Pin markers in the viewer.** Add `viewer.addMarker(id, lat, lon, label)` and `viewer.removeMarker(id)`, and document them in `viewer/README.md`. Markers must be visible on the globe and on the terrain. Use a thin `--text` ring with a small number label (1–3) and no glow.
+- [~] M1 · T1 · **Smooth the move from space down to the terrain.** No jump or pop where the globe hands over to the terrain tiles. Keep one continuous camera path and crossfade globe → terrain detail. Fly-to stays 1.2–2.5 s (D5); with reduced motion it is an instant cut. (claimed by T1, 11:50)
+- [~] M2 · T1 · **Landing Moon blends into the page.** The Moon currently sits in a visibly lighter/darker box, and its brightness doesn't match the page. Make the canvas background transparent (or exactly `--bg`), with no edge or box, so the page's stars continue behind and around the Moon. Keep the real-Sun lighting from F5. (claimed by T1, 11:50)
+- [~] M3 · T1 · **Landing Moon shows up straight away.** It appears late during loading. Show a lightweight first frame immediately (a small texture or a poster image of the same view), then swap in the full-resolution globe without a flash. Report the time to first visible Moon before and after. (claimed by T1, 11:50)
+- [~] M4 · T1 · **Pin markers in the viewer.** Add `viewer.addMarker(id, lat, lon, label)` and `viewer.removeMarker(id)`, and document them in `viewer/README.md`. Markers must be visible on the globe and on the terrain. Use a thin `--text` ring with a small number label (1–3) and no glow. (claimed by T1, 11:50)
 - (V8 above now covers loading all the new terrain: north, whole Moon at 474 m, and 40 m Artemis.)
 
 ### T2 · web/
