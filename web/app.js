@@ -1,6 +1,7 @@
 // FHLS web shell. Screens and mode (W1); site selection → core → results panel (W2).
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
+import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
 
 const MODES = {
   beginner:     { label: "Beginner" },
@@ -197,11 +198,11 @@ function renderResults() {
   const i = core.indexOf(`${state.date}T12:00:00Z`) - r.start_index;
   const hour = (i >= 0 && i < r.sun_el.length) ? i : null;
 
-  const parts = [precisionBadge(r)];
-  if (state.mode === "beginner")     parts.push(...beginnerPanel(r, hour));
-  if (state.mode === "intermediate") parts.push(...intermediatePanel(r, hour));
-  if (state.mode === "advanced")     parts.push(...advancedPanel(r, hour));
-  parts.push(gridNote(r, site));
+  const parts = state.mode === "beginner"
+    ? beginnerPanel(r, hour)
+    : [precisionBadge(r),
+       ...(state.mode === "advanced" ? advancedPanel(r, hour) : intermediatePanel(r, hour)),
+       gridNote(r, site)];
 
   body.replaceChildren(...parts.filter(Boolean));
 }
@@ -244,40 +245,45 @@ function hoursOrDays(h) {
   return h >= 48 ? `${(h / 24).toFixed(1)} days` : `${h} hours`;
 }
 
-/* ---------- Beginner: yes / no, then one sentence ---------- */
-// Wording is deliberately plain. D1 (T3) may replace the sentence.
+/* ---------- Beginner: wording comes from design/beginner.js (D1, T3) ---------- */
 
 function beginnerPanel(r, hour) {
+  const b = beginnerSummary(r, {
+    placeName: state.site.name,
+    clickLat: state.site.lat,
+    clickLon: state.site.lon,
+  });
+
   const out = [];
-  const sunlit = hour != null && !!r.power[hour];
-  const earth  = hour != null && !!r.comms[hour];
 
-  const verdicts = el("div", null, "verdicts");
-  verdicts.append(
-    verdict("Sunlight", sunlit, "val-sun"),
-    verdict("Earth in view", earth, "val-earth"),
-  );
-  out.push(verdicts);
+  const list = el("div", null, "answers");
+  for (const a of b.answers) {
+    const row = el("div", null, `answer tone-${a.tone}`);
+    const icon = el("span", null, "answer-icon");
+    icon.innerHTML = ICONS[a.icon] || "";
+    const text = el("div", null, "answer-text");
+    text.append(
+      el("p", a.question, "answer-q"),
+      el("p", a.answer, "answer-a"),
+      el("p", a.detail, "answer-d"),
+    );
+    row.append(icon, text);
+    list.append(row);
+  }
+  out.push(list);
 
-  const s = r.summary;
-  const dark = s.longest_dark_hours;
-  out.push(el("p",
-    `Over 2027 and 2028 this spot is sunlit about ${Math.round(s.pct_sunlit)}% of the time and ` +
-    `can see Earth about ${Math.round(s.pct_earth)}% of the time, with both together about ` +
-    `${Math.round(s.pct_both)}% of the time; the longest unbroken stretch without sunlight is ` +
-    `${hoursOrDays(dark)}.`,
-    "r-sentence"));
+  if (hour != null) {
+    const now = beginnerNow(r, hour);
+    const box = el("div", null, `now tone-${now.tone}`);
+    box.append(el("p", now.sun, "now-line"), el("p", now.earth, "now-line"));
+    out.push(heading("On the date you picked"), box);
+  }
+
+  out.push(el("p", b.sentence, "r-sentence"));
+
+  for (const n of b.notes) out.push(el("p", n.text, "pending"));
 
   return out;
-}
-
-function verdict(label, yes, cls) {
-  const box = el("div", null, `verdict${yes ? " verdict--yes" : ""}`);
-  box.append(
-    el("span", label, "verdict-label"),
-    el("span", yes ? "Yes" : "No", `verdict-value ${yes ? cls : ""}`),
-  );
-  return box;
 }
 
 /* ---------- Intermediate: angles and percentages ---------- */

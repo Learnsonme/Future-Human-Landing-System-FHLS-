@@ -318,23 +318,31 @@ body[data-screen="app"]     #screen-app     { display: block; }
 #results .pending code { font-size: 11px; }
 .val-both { color: var(--both); }
 
-/* ---------- Beginner verdicts (W3) ---------- */
-.verdicts { margin-top: 18px; border-top: 1px solid var(--line); }
-.verdict {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding: 14px 0;
+/* ---------- Beginner answers (W3 · wording and icons from design/beginner.js) ---------- */
+.answers { margin-top: 18px; border-top: 1px solid var(--line); }
+.answer {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 0;
   border-bottom: 1px solid var(--line);
 }
-.verdict-label { font-size: 14px; color: var(--muted); }
-.verdict--yes .verdict-label { color: var(--text); }
-.verdict-value {
-  font: 500 20px/1 var(--mono);
-  letter-spacing: .02em;
-  color: var(--none);
-}
-.verdict--yes .verdict-value { color: var(--text); }
-.r-sentence { margin: 18px 0 0; font-size: 13px; line-height: 1.6; }
+.answer-icon { color: var(--muted); line-height: 0; padding-top: 2px; }
+.answer-q { margin: 0; font-size: 13px; color: var(--muted); }
+.answer-a { margin: 4px 0 0; font: 500 18px/1.25 var(--sans); }
+.answer-d { margin: 6px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+.tone-sun   .answer-icon, .tone-sun   .answer-a { color: var(--sun); }
+.tone-earth .answer-icon, .tone-earth .answer-a { color: var(--earth); }
+.tone-both  .answer-icon, .tone-both  .answer-a { color: var(--both); }
+.tone-none  .answer-icon, .tone-none  .answer-a { color: var(--muted); }
+
+.now { margin-top: 12px; border-left: 2px solid var(--line); padding: 2px 0 2px 14px; }
+.now.tone-sun   { border-left-color: var(--sun); }
+.now.tone-earth { border-left-color: var(--earth); }
+.now.tone-both  { border-left-color: var(--both); }
+.now.tone-none  { border-left-color: var(--none); }
+.now-line { margin: 6px 0; font-size: 13px; }
+
+.r-sentence { margin: 20px 0 0; font-size: 13px; line-height: 1.6; }
 .val-terrain { color: var(--terrain); }
