@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E6 · Named places → data/sites.json, and the boxes that get a fine horizon grid (E9).
 
 Run:  cd engine && python3 sites.py

@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E3 · Terrain horizon (skyline) elevation per azimuth, south polar region.
 
 Idea: stand at a point, look out in 180 directions (every 2°). Along each direction walk outward

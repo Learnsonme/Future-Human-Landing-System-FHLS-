@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """Quick check that SPICE works. Run:  cd engine && python3 test_spice.py"""
 import numpy as np
 import spiceypy as sp

@@ -1,3 +1,4 @@
+# Part of FHLS (NASA Space Apps 2026). Written with AI assistance (Claude, Codex); designed, reviewed and tested by Team FHLS.
 """E5 · South polar terrain heightmap tiles for the viewer → data/terrain/.
 
 Run:  cd engine && python3 make_terrain.py [south|north]   (north → data/terrain/north/ + index_north.json)
