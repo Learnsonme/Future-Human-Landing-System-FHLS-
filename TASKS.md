@@ -63,6 +63,10 @@ Done when H1–H3 are verified, Home is visible and usable after both mode and s
 ## Optional (only when everything above works)
 - [x] O1 · T2 · Pin up to 3 spots and compare side by side
 - [ ] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions
+- [~] E10 · T3 · Whole-Moon horizon grid 4× sharper: `global_fine` (0.25° ≈ 7.5 km, from LOLA LDEM_64 474 m), tiled + lazy-loaded (claimed by T3, 14:55)
+- [~] E11 · T3 · North pole at south-pole quality: `north_2km` horizon grid + `data/terrain/` north tiles (LOLA LDEM_80N_40M) (claimed by T3, 14:55)
+- [~] C2 · T3 · `core/fhls-core.js`: use north polar grids + tiled `global_fine` automatically (claimed by T3, 14:55)
+- [ ] V8 · T1 · Viewer: fly-down terrain for the north pole from the north tiles (after E11; index in `data/terrain/index_north.json`)
 
 ## Sunday
 - 11:00 feature freeze · 12:30 video + page ready · 13:15 submitted · 13:30 deadline · 14:00 judging (ask for an early slot)
