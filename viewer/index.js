@@ -30,7 +30,9 @@ export function createViewer(container, options = {}) {
   const presentation = options.presentation !== false;
   // P9: one shared overlay (heat map) draped over the south polar terrain by the terrain shaders.
   const overlay = { uOverlay: { value: null }, uOverlayRect: { value: new T.Vector4(0, 0, 1, 1) },
-    uOverlayOpacity: { value: 0 }, uOverlayOn: { value: 0 } };
+    uOverlayOpacity: { value: 0 }, uOverlayOn: { value: 0 },
+    // P10: a second, whole-Moon equirectangular layer (lat_min, lat_max, lon_min, lon_max); the polar one wins where it covers
+    uGlobal: { value: null }, uGlobalRect: { value: new T.Vector4(-90, 90, -180, 180) }, uGlobalOpacity: { value: 0 }, uGlobalOn: { value: 0 } };
   function withOverlay(material) {
     material.onBeforeCompile = shader => {
       Object.assign(shader.uniforms, overlay);
@@ -38,7 +40,9 @@ export function createViewer(container, options = {}) {
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvOverlayPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
 uniform sampler2D uOverlay; uniform vec4 uOverlayRect; uniform float uOverlayOpacity; uniform float uOverlayOn;
-varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayOn > 0.5) {
+uniform sampler2D uGlobal; uniform vec4 uGlobalRect; uniform float uGlobalOpacity; uniform float uGlobalOn;
+varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `bool fhlsPolarDone = false;
+if (uOverlayOn > 0.5) {
   // render (x, y, z) = MOON_ME (x, z, −y); south polar stereographic: x = 2R·(−u.z)/(1 − u.y), y = 2R·u.x/(1 − u.y)
   vec3 u = normalize(vOverlayPos);
   if (u.y < -0.5) {
@@ -49,12 +53,24 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       // After lighting: the map colour reads the same in sunlight and in the long polar shadows,
       // while (1 − opacity) of the lit relief still shows through.
       outgoingLight = mix(outgoingLight, o.rgb, o.a * uOverlayOpacity);
+      fhlsPolarDone = o.a > 0.0;
     }
   }
 }
+if (uGlobalOn > 0.5 && !fhlsPolarDone) {
+  // P10: render → lat/lon (see coordinates.js): lat = asin(u.y), lon = atan2(−u.z, u.x)
+  vec3 g = normalize(vOverlayPos);
+  float lat = degrees(asin(clamp(g.y, -1.0, 1.0)));
+  float lon = degrees(atan(-g.z, g.x));
+  if (lon > uGlobalRect.w) lon -= 360.0;
+  if (lon < uGlobalRect.z) lon += 360.0;
+  vec2 guv = vec2((lon - uGlobalRect.z) / (uGlobalRect.w - uGlobalRect.z), (lat - uGlobalRect.x) / (uGlobalRect.y - uGlobalRect.x));
+  vec4 go = texture2D(uGlobal, clamp(guv, 0.0, 1.0));
+  outgoingLight = mix(outgoingLight, go.rgb, go.a * uGlobalOpacity);
+}
 #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'fhls-overlay';
+    material.customProgramCacheKey = () => 'fhls-overlay-2';
     return material;
   }
   // M3: show a matching still of the Moon at once; the live globe crossfades in after its first frame.
@@ -328,6 +344,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     for (const mat of materials) for (const value of Object.values(mat)) if (value?.isTexture) textures.add(value);
     for(const texture of looseTextures)textures.add(texture);looseTextures.clear();
     if (overlay.uOverlay.value) textures.add(overlay.uOverlay.value);
+    if (overlay.uGlobal.value) textures.add(overlay.uGlobal.value);
     for (const resource of [...geometries, ...materials, ...textures]) resource.dispose();
     light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss();
   }
@@ -465,7 +482,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       const [texture, relief] = await Promise.all([texturePromise,
         fetchOK(asset('moon-displacement.tiff'), abort.signal).then(r => r.arrayBuffer()).then(decodeMoonTIFF), corePromise]);
       if (disposed) { for (const texture of looseTextures) texture.dispose(); terrainPromise.then(t => t?.dispose()); return; }
-      globe = createGlobe(texture, relief, null); looseTextures.clear(); scene.add(globe.mesh);
+      globe = createGlobe(texture, relief, null); withOverlay(globe.mesh.material); looseTextures.clear(); scene.add(globe.mesh);
       // LOLA cap terrain streams in after the first frame instead of delaying it.
       terrainReady = terrainPromise.then(value => {
         if (!value || disposed) return null;
@@ -543,6 +560,26 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     },
     /** Swing the camera to face 'sun' or 'earth' over the selected site's skyline. */
     lookAt(body) { checkAlive(); if (body !== 'sun' && body !== 'earth') throw new RangeError("lookAt('sun' | 'earth')"); return lookAt(body); },
+    /**
+     * P10 · drape a whole-Moon equirectangular image (row 0 = north) over the globe and all terrain.
+     * The south polar overlay (setOverlay) wins where it covers. Extents are the image edges in degrees.
+     */
+    setGlobalOverlay(image, { lat_min = -90, lat_max = 90, lon_min = -180, lon_max = 180, opacity = 0.6 } = {}) {
+      checkAlive();
+      if (![lat_min, lat_max, lon_min, lon_max, opacity].every(Number.isFinite) || lat_max <= lat_min || lon_max <= lon_min) throw new TypeError('setGlobalOverlay needs lat/lon extents.');
+      const old = overlay.uGlobal.value;
+      const texture = new T.Texture(image); texture.colorSpace = T.SRGBColorSpace; texture.needsUpdate = true;
+      texture.minFilter = T.LinearFilter; texture.magFilter = T.LinearFilter; texture.generateMipmaps = false;
+      overlay.uGlobal.value = texture; overlay.uGlobalRect.value.set(lat_min, lat_max, lon_min, lon_max);
+      overlay.uGlobalOpacity.value = Math.max(0, Math.min(1, opacity)); overlay.uGlobalOn.value = 1;
+      needsRender = true;
+      if (old && old !== texture) old.dispose();
+    },
+    clearGlobalOverlay() {
+      checkAlive(); overlay.uGlobalOn.value = 0;
+      overlay.uGlobal.value?.dispose(); overlay.uGlobal.value = null;
+      needsRender = true;
+    },
     clearOverlay() {
       checkAlive(); overlay.uOverlayOn.value = 0;
       overlay.uOverlay.value?.dispose(); overlay.uOverlay.value = null;

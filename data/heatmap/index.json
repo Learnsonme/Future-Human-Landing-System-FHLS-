@@ -233,5 +233,31 @@
     "dark": "fine_mons_mouton_dark.png"
    }
   }
- ]
+ ],
+ "global": {
+  "id": "global_coarse",
+  "projection": "equirectangular",
+  "px": [
+   360,
+   181
+  ],
+  "step_deg": 1,
+  "lat_min": -90.5,
+  "lat_max": 90.5,
+  "lon_min": -180.5,
+  "lon_max": 179.5,
+  "row0": "north",
+  "precision": "low",
+  "source": "LOLA LDEM_16 (16 px/deg, ~1.9 km)",
+  "files": {
+   "sunlit": "global_sunlit.png",
+   "sunlit_months": "global_sunlit_months.png",
+   "earth": "global_earth.png",
+   "earth_months": "global_earth_months.png",
+   "both": "global_both.png",
+   "both_months": "global_both_months.png",
+   "dark": "global_dark.png",
+   "dark_months": "global_dark_months.png"
+  }
+ }
 }

@@ -1,4 +1,4 @@
-// S10 · "Map" control over the 3D view (T3). Off by default. South pole only.
+// S10 + P10 · "Map" control over the 3D view (T3). Off by default. Whole Moon, higher detail at the south pole.
 //   Beginner      one switch "Sunlight map", legend "rarely lit … often lit"
 //   Intermediate  Off / Sunlight / Earth contact / Both, numeric % legend
 //   Advanced      + Longest blackout and a month selector; clicking the terrain shows the exact map value
@@ -7,7 +7,7 @@
 //   const heat = mountHeatmapControl(document.getElementById("viewer-slot"), { mode: "beginner" });
 //   heat.attach(viewer);   // after each createViewer (Home round trips make a new viewer)
 //   heat.setMode(mode);    // when the mode changes
-import { loadHeatmap } from "./heatmap.js";
+import { loadHeatmap, scaleColour } from "./heatmap.js";
 
 const LAYERS = {
   sunlit: { label: "Sunlight", fill: "--sun-fill", fallback: "#F2B33D" },
@@ -29,8 +29,8 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
   const rendered = new Map();
   const ensure = () => (heatPromise ||= loadHeatmap(dataBase).then((h) => (heat = h)));
 
-  const root = el("section", "heat-control"); root.setAttribute("aria-label", "South pole heat map");
-  const head = el("div", "heat-head"); head.append(el("span", "heat-title", "Map"), el("span", "heat-note", "south pole only"));
+  const root = el("section", "heat-control"); root.setAttribute("aria-label", "Heat map, whole Moon");
+  const head = el("div", "heat-head"); head.append(el("span", "heat-title", "Map"), el("span", "heat-note", "Whole Moon · higher detail at the south pole"));
   const buttons = el("div", "heat-buttons"); buttons.setAttribute("role", "group");
   const monthWrap = el("label", "heat-month"); const monthSelect = el("select");
   monthWrap.append(el("span", null, "Period"), monthSelect);
@@ -40,19 +40,14 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
   root.append(head, buttons, monthWrap, legend, readout);
   stage.append(root);
 
-  function ramp(t, layerKey) {
-    // must match heatmap.js tint(): background → fill, square-root curve
-    const from = css("--bg", "#141414"), to = css(LAYERS[layerKey].fill, LAYERS[layerKey].fallback);
-    const h = (c) => { const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(c); return m ? m.slice(1).map((x) => parseInt(x, 16)) : [0, 0, 0]; };
-    const [a, b] = [h(from), h(to)], s = Math.sqrt(t);
-    return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * s)).join(",")})`;
-  }
+  // P10: the same blue → cyan → yellow → orange → red scale as the map (heatmap.js scaleColour)
+  const ramp = (t) => `rgb(${scaleColour(t).join(",")})`;
   function drawLegend() {
     legend.hidden = !state.layer; if (!state.layer) return;
     // a CSS gradient with the same square-root ramp as the map (no extra canvas in the stage)
-    bar.style.background = `linear-gradient(to right, ${Array.from({ length: 11 }, (_, i) => `${ramp(i / 10, state.layer)} ${i * 10}%`).join(", ")})`;
-    ticks.replaceChildren(...(state.mode === "beginner" ? ["rarely lit", "often lit"]
-      : state.layer === "dark" ? ["≥ 60 days", "30", "0 days"] : ["0 %", "25 %", "50 %", "75 %", "100 %"])
+    bar.style.background = `linear-gradient(to right, ${Array.from({ length: 11 }, (_, i) => `${ramp(i / 10)} ${i * 10}%`).join(", ")})`;
+    ticks.replaceChildren(...(state.mode === "beginner" ? ["0 % · rarely lit", "100 % · often lit"]
+      : state.layer === "dark" ? ["0 days", "30", "≥ 60 days"] : ["0 %", "25 %", "50 %", "75 %", "100 %"])
       .map((t) => el("span", null, t)));
   }
   async function apply() {
@@ -62,13 +57,17 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
     if (!v) return;
     const alive = () => state.viewer === v && !v.getDiagnostics?.().disposed;
     if (!alive()) return;
-    if (!state.layer) { try { v.clearOverlay?.(); } catch { /* disposed */ } return; }
+    if (!state.layer) { try { v.clearOverlay?.(); v.clearGlobalOverlay?.(); } catch { /* disposed */ } return; }
     root.dataset.loading = "";
     try {
       await ensure();
       const key = `${state.layer}|${state.month}`;
-      if (!rendered.has(key)) rendered.set(key, heat.render({ layer: state.layer, month: state.month,
-        fill: css(LAYERS[state.layer].fill, LAYERS[state.layer].fallback), background: css("--bg", "#141414") }));
+      // P10: the whole-Moon layer first (shows at once on the globe), then the detailed south polar one
+      if (!rendered.has("g|" + key)) rendered.set("g|" + key, heat.renderGlobal({ layer: state.layer, month: state.month }));
+      const G = await rendered.get("g|" + key);
+      if (!alive() || `${state.layer}|${state.month}` !== key) return;
+      if (G) v.setGlobalOverlay?.(G.canvas, { lat_min: G.lat_min, lat_max: G.lat_max, lon_min: G.lon_min, lon_max: G.lon_max, opacity: 0.6 });
+      if (!rendered.has(key)) rendered.set(key, heat.render({ layer: state.layer, month: state.month }));
       const L = await rendered.get(key);
       if (!alive() || `${state.layer}|${state.month}` !== key) return;
       v.setOverlay(L.canvas, { x0_km: L.x0_km, y0_km: L.y0_km, size_km: L.size_km, opacity: 0.6 });
@@ -114,9 +113,10 @@ export function mountHeatmapControl(stage, { dataBase = "../data", mode = "begin
         if (state.mode !== "advanced" || !state.layer || state.viewer !== viewer) return;
         await ensure();
         const r = await heat.valueAt(lat, lon, state.layer, state.month);
-        readout.textContent = !r ? "Outside the south pole map."
-          : state.layer === "dark" ? `Map value here: ${r.capped ? "≥ 255" : r.value} days longest blackout (${r.grid.replace("_", " ")})`
-          : `Map value here: ${r.value} % ${LAYERS[state.layer].label.toLowerCase()} (${r.grid.replace("_", " ")})`;
+        const where = r && (r.precision === "low" ? "whole-Moon map, lower precision" : r.grid.replace("_", " "));
+        readout.textContent = !r ? "No map value here."
+          : state.layer === "dark" ? `Map value here: ${r.capped ? "≥ 255" : r.value} days longest blackout (${where})`
+          : `Map value here: ${r.value} % ${LAYERS[state.layer].label.toLowerCase()} (${where})`;
       });
       viewer.ready.then(() => { if (state.viewer === viewer) apply(); }).catch(() => {});
     },

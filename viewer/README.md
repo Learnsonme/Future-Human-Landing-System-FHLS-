@@ -275,6 +275,13 @@ not a scientific visibility result. They create no additional canvas.
 Disposal removes pins. The web owner retains pin state and re-adds pins after
 Home or a mode change creates a new viewer; the viewer does not store app state.
 
+### Whole-Moon overlay (P10)
+`viewer.setGlobalOverlay(image, { lat_min, lat_max, lon_min, lon_max, opacity = 0.6 })` drapes an
+equirectangular image (row 0 = north, column 0 = `lon_min`) over the whole globe and every terrain
+patch; the extents are the image's outer edges in degrees. The south polar overlay from `setOverlay`
+wins wherever it covers. `viewer.clearGlobalOverlay()` removes it. Both are applied in the same shader
+step, after lighting.
+
 ### Selected-spot lander (S16)
 `viewer.showLander(lat, lon, label?)` puts a small lunar-lander glyph (our own 24 px SVG: `--text`
 outline, `--sun` descent stage and window) with its feet on that spot, with an optional label below
