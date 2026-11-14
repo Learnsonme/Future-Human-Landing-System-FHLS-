@@ -98,6 +98,8 @@ body[data-screen="app"]     #screen-app     { display: block; }
   text-transform: uppercase;
 }
 .title span { display: block; }
+/* M7 · the logo carries the wordmark, so it IS the title here */
+.wordmark { display: block; width: min(100%, 440px); height: auto; }
 .subtitle {
   margin: 20px 0 0;
   max-width: 46ch;
@@ -728,4 +730,22 @@ body[data-screen="app"] .app-grid { padding-bottom: 64px; }
   .appbar .brand { order: 0; }
   .appbar label[for="date"] { display: block; width: 100%; margin-bottom: -6px; }
   .appbar input[type="date"] { width: 100%; }
+}
+
+/* ---------- M5 · title screen entrance ---------- */
+/* The wordmark and the Moon move as one composition: same delay, same curve,
+   same distance. 760 ms, inside D5's 800 for the one Start-screen moment. */
+body.is-entering .landing-main > *,
+body.is-entering .strip {
+  animation: entrance 760ms cubic-bezier(.16, .8, .3, 1) both;
+}
+body.is-entering .strip { animation-delay: 90ms; }
+@keyframes entrance {
+  from { opacity: 0; transform: translateY(14px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-entering .landing-main > *,
+  body.is-entering .strip { animation: none; }
 }

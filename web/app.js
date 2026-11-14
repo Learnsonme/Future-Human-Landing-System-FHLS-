@@ -371,6 +371,21 @@ function renderResults() {
 
 /* ---------- atmosphere (W9) ---------- */
 
+// M5 · the title and the Moon arrive together, once per visit. sessionStorage,
+// not a module variable, so a reload inside the same visit does not replay it.
+function playEntrance() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (state.screen !== "landing") return;
+  try {
+    if (sessionStorage.getItem("fhls.entered")) return;
+    sessionStorage.setItem("fhls.entered", "1");
+  } catch {
+    // private window or blocked storage: play it, rather than never
+  }
+  document.body.classList.add("is-entering");
+  setTimeout(() => document.body.classList.remove("is-entering"), 900);
+}
+
 function startAtmosphere() {
   document.addEventListener("pointerdown", (e) => {
     lastPointer = { x: e.clientX, y: e.clientY, at: performance.now() };
@@ -1041,6 +1056,7 @@ for (const type of ["pointerdown", "pointermove"]) {
 }
 
 startAtmosphere();     // before init(): the sky must not wait on the data load
+playEntrance();
 sky?.setDensity(state.screen === "landing" ? "landing" : state.mode);
 setMode(state.mode);
 init();

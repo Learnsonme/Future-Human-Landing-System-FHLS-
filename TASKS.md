@@ -79,9 +79,9 @@ All of these follow `design/style.md`. Anything animated must also follow the M1
 - (V8 above, extended: also load the **40 m Artemis tiles from M9** when flying into those sites.)
 
 ### T2 · web/
-- [~] M5 · T2 · (claimed by T2, 17:55) **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
+- [x] M5 · T2 · **Title screen entrance.** The "FUTURE HUMAN LANDING SYSTEM" title and the Moon swish in together, as one composition, when the page first loads. Play it once per visit, ≤ 800 ms, with no animation under reduced motion (M11 rules).
 - [ ] M6 · T2 · **Simplify the landing actions and add background depth.** Remove "CHOOSE A MODE", because Start does the same. Add the background visual effects allowed by M11 (e.g. depth layers of stars drifting slowly at different speeds), on the landing screen only, palette tokens only.
-- [~] M7 · T2 · (claimed by T2, 17:55) **Put the logos on the site.** Use the FHLS logo from `design/logo/` (wordmark/header plus favicon tags), the NASA Space Apps logo `design/logo/app_logo.png`, and the team logo, all from M10. Placement: the FHLS logo on the landing screen, and the Space Apps and team logos small in a footer credit line. Follow `design/logo/README.md` and the Space Apps brand rules noted there.
+- [~] M7 · T2 · FHLS logo + favicons DONE; Space Apps and team logos BLOCKED on M10 (files do not exist). **Put the logos on the site.** Use the FHLS logo from `design/logo/` (wordmark/header plus favicon tags), the NASA Space Apps logo `design/logo/app_logo.png`, and the team logo, all from M10. Placement: the FHLS logo on the landing screen, and the Space Apps and team logos small in a footer credit line. Follow `design/logo/README.md` and the Space Apps brand rules noted there.
 - [ ] M8 · T2 · **Show what you pinned.** When a site is pinned, call `viewer.addMarker` (M4). The marker number matches its pin card (1–3). Unpinning removes the marker, and markers survive mode changes and Home round trips.
 
 ### T3 · engine/, design/
