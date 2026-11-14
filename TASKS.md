@@ -62,19 +62,16 @@ Done when H1–H3 are verified, Home is visible and usable after both mode and s
 
 ## Optional (only when everything above works)
 - [x] O1 · T2 · Pin up to 3 spots and compare side by side
-- [~] O2 · T1/T2 · Higher-res terrain tiles near Artemis regions (claimed by T1, 11:50)
+- [ ] O2 · T3 · Higher-res terrain tiles near Artemis regions (reassigned from T1 to T3 at the user’s request; unclaimed)
 - [x] E10 · T3 · Whole-Moon horizon grid 4× sharper: `global_fine` (0.25° ≈ 7.5 km, from LOLA LDEM_64 474 m), tiled + lazy-loaded
 - [x] E11 · T3 · North pole at south-pole quality: `north_2km` horizon grid + `data/terrain/` north tiles (LOLA LDEM_80N_40M)
 - [x] C2 · T3 · `core/fhls-core.js`: use north polar grids + tiled `global_fine` automatically
-- [~] V8 · T1 · **Viewer: load the new detailed terrain.** (a) North pole tiles: `data/terrain/index_north.json`. (b) **Whole Moon at 474 m**: `data/terrain/index_global.json`, 990 equirectangular 8° tiles, loading only the tiles around the camera, replacing the 7.6 km globe relief when you fly down. (c) **40 m Artemis tiles**: `data/terrain/index_detail.json`, lod 2, inside each site's 20 km box. Same 16-bit PNG tile format and decode formula as the south tiles. The index files explain the registration. Seams match exactly, including across the date line. (claimed by T1, 11:50)
+- [ ] V8 · T3 · **Viewer: load the new detailed terrain.** (a) North pole tiles: `data/terrain/index_north.json`. (b) **Whole Moon at 474 m**: `data/terrain/index_global.json`, 990 equirectangular 8° tiles, loading only the tiles around the camera, replacing the 7.6 km globe relief when you fly down. (c) **40 m Artemis tiles**: `data/terrain/index_detail.json`, lod 2, inside each site's 20 km box. Same 16-bit PNG tile format and decode formula as the south tiles. The index files explain the registration. Seams match exactly, including across the date line. (reassigned from T1 to T3 at the user’s request; unclaimed)
 
-## Round 2 · polish from user feedback (14 Nov) · 4 tasks each
+## Round 2 · polish from user feedback (14 Nov)
 All of these follow `design/style.md`. Anything animated must also follow the M11 update to "Motion (D5)", so read M11 before building M1, M5 or M6. Claim before you start, as usual.
 
-### T1 · viewer/
-- [~] M1 · T1 · **Smooth the move from space down to the terrain.** No jump or pop where the globe hands over to the terrain tiles. Keep one continuous camera path and crossfade globe → terrain detail. Fly-to stays 1.2–2.5 s (D5); with reduced motion it is an instant cut. (claimed by T1, 11:50)
-- [~] M2 · T1 · **Landing Moon blends into the page.** The Moon currently sits in a visibly lighter/darker box, and its brightness doesn't match the page. Make the canvas background transparent (or exactly `--bg`), with no edge or box, so the page's stars continue behind and around the Moon. Keep the real-Sun lighting from F5. (claimed by T1, 11:50)
-- [~] M3 · T1 · **Landing Moon shows up straight away.** It appears late during loading. Show a lightweight first frame immediately (a small texture or a poster image of the same view), then swap in the full-resolution globe without a flash. Report the time to first visible Moon before and after. (claimed by T1, 11:50)
+### T1 · viewer/ · completed work
 - [x] M4 · T1 · **Pin markers in the viewer.** Add `viewer.addMarker(id, lat, lon, label)` and `viewer.removeMarker(id)`, and document them in `viewer/README.md`. Markers must be visible on the globe and on the terrain. Use a thin `--text` ring with a small number label (1–3) and no glow. (claimed by T1, 11:50)
 - (V8 above now covers loading all the new terrain: north, whole Moon at 474 m, and 40 m Artemis.)
 
@@ -84,7 +81,12 @@ All of these follow `design/style.md`. Anything animated must also follow the M1
 - [~] M7 · T2 · FHLS logo + favicons DONE; Space Apps and team logos BLOCKED on M10 (files do not exist). **Put the logos on the site.** Use the FHLS logo from `design/logo/` (wordmark/header plus favicon tags), the NASA Space Apps logo `design/logo/app_logo.png`, and the team logo, all from M10. Placement: the FHLS logo on the landing screen, and the Space Apps and team logos small in a footer credit line. Follow `design/logo/README.md` and the Space Apps brand rules noted there.
 - [ ] M8 · T2 · **Show what you pinned.** When a site is pinned, call `viewer.addMarker` (M4). The marker number matches its pin card (1–3). Unpinning removes the marker, and markers survive mode changes and Home round trips.
 
-### T3 · engine/, design/
+### T3 · engine/, design/, plus reassigned viewer/ work
+The user reassigned unfinished T1 work to T3. T3 is authorized to edit `viewer/` for V8, O2 and M1–M3; claim these before continuing. M4 is complete and pushed.
+
+- [ ] M1 · T3 · **Smooth the move from space down to the terrain.** No jump or pop where the globe hands over to the terrain tiles. Keep one continuous camera path and crossfade globe → terrain detail. Fly-to stays 1.2–2.5 s (D5); with reduced motion it is an instant cut. (reassigned from T1 to T3 at the user’s request; unclaimed)
+- [ ] M2 · T3 · **Landing Moon blends into the page.** The Moon currently sits in a visibly lighter/darker box, and its brightness doesn't match the page. Make the canvas background transparent (or exactly `--bg`), with no edge or box, so the page's stars continue behind and around the Moon. Keep the real-Sun lighting from F5. (reassigned from T1 to T3 at the user’s request; unclaimed)
+- [ ] M3 · T3 · **Landing Moon shows up straight away.** It appears late during loading. Show a lightweight first frame immediately (a small texture or a poster image of the same view), then swap in the full-resolution globe without a flash. Report the time to first visible Moon before and after. (reassigned from T1 to T3 at the user’s request; unclaimed)
 - [x] M9 · T3 · **Higher-res terrain where it matters.** Full-resolution 40 m LOLA tiles around the 7 Artemis sites (lod 2, same tile format). Check the north tiles too. Hand over to T1 for V8 in LOG.md.
 - [x] M10 · T3 · **Logo files.** Get the official NASA Space Apps logo per the Space Apps brand guidelines, saved as `design/logo/app_logo.png`. Prepare the team logo, and web sizes of the FHLS logo for M7. Document the usage rules in `design/logo/README.md`.
 - [x] M11 · T3 · **Update "Motion (D5)" for round 2.** Specify the M5 title entrance, the M6 background effects, the M1 globe→terrain handover and the M2 blend, with what is allowed, durations and reduced-motion behaviour. Do this first, because M1, M5 and M6 depend on it.
