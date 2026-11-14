@@ -13,4 +13,4 @@ All the links to the respective stuff required:
                 SUN    azimuth  223.8°   elevation  0.34°
                 EARTH  azimuth  129.6°   elevation  5.24°
                 SPICE works ✔
-https://futurehumanlandingsystem.netlify.app/web/
+https://learnsonme.github.io/Future-Human-Landing-System-FHLS-/web/
