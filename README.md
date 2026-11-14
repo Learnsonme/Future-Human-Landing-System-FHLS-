@@ -1,6 +1,6 @@
 # FHLS – Future Human Landing System
 
-Click anywhere on the Moon and see, hour by hour through 2027 and 2028, whether the Sun and Earth clear that spot's own horizon: the two numbers that decide power and direct communication for a landing.
+Click any spot on the Moon. See when it gets sunlight and when it can see Earth, hour by hour through 2027 and 2028, measured against that spot's own horizon. Those two things decide whether a lander has power and a direct line home.
 
 **Live demo:** https://learnsonme.github.io/Future-Human-Landing-System-FHLS-/
 **Demo video:** coming soon
@@ -9,11 +9,11 @@ Click anywhere on the Moon and see, hour by hour through 2027 and 2028, whether 
 ![FHLS explorer: the Connecting Ridge Artemis site on 40 m LOLA terrain with the sunlight heat map, and its results panel](docs/img/fhls-explorer.jpg)
 
 ## The problem
-At the lunar south pole, where Artemis crews will land, the Sun never rises more than about 1–2° above the horizon, and Earth wobbles by up to about ±6.7° over a month. At such low angles, a crater rim a few hundred metres away decides whether solar panels get light and whether a lander can see Earth for a direct radio link. A good site 1 km away can be dark for weeks.
+At the lunar south pole, where Artemis crews will land, the Sun never climbs more than about 1–2° above the horizon, and Earth wobbles by up to about ±6.7° over a month. At angles that low, a crater rim a few hundred metres away decides whether solar panels get light and whether a lander can see Earth. Two spots 1 km apart can have completely different years.
 
 ## What FHLS does
-- **Any spot on the Moon:** click the 3D Moon or pick one of 26 candidate sites (Artemis regions, Apollo sites, famous craters).
-- **Sun and Earth against the real horizon,** for all 17,544 hours of 2027–2028, from NASA terrain and JPL ephemerides.
+- **Any spot on the Moon:** click the 3D Moon, or pick one of 26 candidate sites (Artemis regions, the six Apollo sites, famous craters). A small lander marks your spot.
+- **Sun and Earth against the real skyline,** for all 17,544 hours of 2027–2028, from NASA terrain and JPL ephemerides.
 - **Three modes:** Beginner (a plain yes/no and one sentence), Intermediate (angles, percentages, windows), Advanced (exact numbers, an hour-by-hour table, CSV export).
 - **Heat maps over the whole Moon:** sunlight, Earth contact, both, longest blackout, per month. Higher detail (250 m) at the south pole.
 - **Horizon panorama:** the site's real skyline with the Sun and Earth moving across it, with its own time slider and a Play button.
@@ -26,8 +26,8 @@ NASA data ──► engine/ (Python, run once) ──► data/ (small files) ─
 SPICE, LOLA     horizons, ephemeris,          JSON, binary,           combines them for any click
                 terrain tiles, heat maps      PNG tiles               in about 10 ms
 ```
-- **Engine (`engine/`):** traces each point's skyline in 180 directions from LOLA elevation data (every 2 km around the south pole, 250 m at Artemis sites, 0.25° over the whole Moon). It computes the Sun and Earth position for every hour from JPL SPICE.
-- **Browser (`core/`, `viewer/`, `web/`):** no server. The site loads the precomputed files, and `core/fhls-core.js` combines skyline and ephemeris for the clicked spot. The 3D Moon is three.js with real LOLA terrain tiles.
+- **Engine (`engine/`):** for each grid point it looks out in 180 directions across LOLA elevation data and records the highest terrain angle, which gives that point's skyline. Grid points sit every 2 km around the south pole, every 250 m at the Artemis sites, and every 0.25° over the whole Moon. It also places the Sun and Earth for every hour from JPL SPICE.
+- **Browser (`core/`, `viewer/`, `web/`):** no server. The site loads the precomputed files, and `core/fhls-core.js` combines the skyline and the ephemeris for the spot you clicked. The 3D Moon is three.js with real LOLA terrain tiles.
 
 ## NASA data used
 - **JPL NAIF SPICE:** DE440s planetary ephemeris, Moon PA/ME frame kernels (`moon_de440_250416.tf`), `pck00011.tpc`, `naif0012.tls`.
@@ -38,10 +38,10 @@ SPICE, LOLA     horizons, ephemeris,          JSON, binary,           combines t
 - **Apollo 11 photo:** AS11-40-5903, NASA, public domain.
 
 ## Validation
-We compared FHLS with NASA's published LOLA south polar illumination map at **400 random points**. The mean difference is **0.8 percentage points**, the correlation **0.99**, and we find the same permanently shadowed ground (37 of 37 points). Details in [engine/ACCURACY.md](engine/ACCURACY.md).
+We did not take our own numbers on trust. We compared FHLS with NASA's published LOLA south polar illumination map at **400 random points**: the mean difference is **0.8 percentage points**, the correlation **0.99**, and we find the same permanently shadowed ground (37 of 37 points). Details in [engine/ACCURACY.md](engine/ACCURACY.md).
 
 ## Limits
-- Seeing the Sun or Earth does **not** guarantee power or a radio link, and it is **not** proof that a site is safe to land on. Slope, boulders, temperature and dust matter too.
+- Seeing the Sun or Earth does **not** guarantee power or a radio link, and it is **not** proof that a site is safe to land on. Slope, boulders, temperature and dust matter just as much.
 - Away from the poles the terrain is lower precision (1° to 0.25° horizon grids), and the app says so wherever it applies.
 - The 3D shadows are illustrative; the numbers come from the horizon calculation.
 
@@ -82,7 +82,7 @@ You need Python 3 with numpy, spiceypy and Pillow, plus the SPICE kernels and LO
 - **Hariyank Suvarna:** data engine, browser maths, design and pitch
 
 ## Use of AI
-We used AI coding agents throughout: **Claude** (Claude Code) and **OpenAI Codex**. They wrote most of the code and much of the documentation text, and helped plan and split the tasks. The team chose the idea, made the design and scientific decisions, directed every task, reviewed the results and tested the site. Validation against NASA's published illumination map was the team's check that the science is right. How the agents were briefed is in `AGENTS.md`, `roles/` and `LOG.md`.
+We used AI coding agents throughout: **Claude** (Claude Code) and **OpenAI Codex**. They wrote most of the code and much of the documentation text, and helped plan and split the tasks. The idea, the design and the scientific decisions were ours. We directed every task, reviewed the results and tested the site, and we checked the science against NASA's published illumination map rather than trusting the output. How the agents were briefed is in `AGENTS.md`, `roles/` and `LOG.md`.
 
 ## Credits and licences
 - **Code:** MIT, see [LICENSE](LICENSE).
