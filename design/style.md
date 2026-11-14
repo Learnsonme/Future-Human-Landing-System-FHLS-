@@ -39,7 +39,7 @@ Apply under `:root[data-theme="light"]`. Dark stays the default when the system 
 In light mode, text and thin strokes use `--sun` / `--earth` / `--both`; areas use the `-fill` versions. In dark mode both look the same, so nothing changes there.
 
 **Rules**
-- **Space stays dark in both modes:** the 3D Moon, terrain view, starfield and landing sky keep the dark palette. Only panels, text, cards, tables and charts switch. Where a light panel meets the dark space view, use a 1 px `--line` edge, no shadow.
+- **The 3D view stays dark in both modes** (it shows space). Everything else switches, including the landing screen (user decision, round 3): there the starfield fades out and the wordmark uses `design/logo/fhls-logo-ink.png`. The Space Apps credit band stays dark because its official logo is white and may not be recoloured. Where a light panel meets the dark space view, use a 1 px `--line` edge, no shadow.
 - **Stars and shooting stars:** only on dark areas. None on light panels.
 - **No pure white (`#FFFFFF`) or pure black anywhere.**
 - **Switching:** colours cross-fade in 300 ms with `--ease`; no layout movement. Reduced motion → instant switch.

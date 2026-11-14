@@ -193,7 +193,8 @@ export class Terrain {
     }
     const indices = [];
     const intersections = new Map();
-    const inside = i => Math.hypot(polar[i].x,polar[i].y) <= capRadius + 1e-8;
+    const cap2 = (capRadius + 1e-8) ** 2;
+    const inside = i => { const p = polar[i]; return p.x * p.x + p.y * p.y <= cap2; };
     function intersection(a,b) {
       const key = [a,b].sort((a,b)=>a-b).join(':');
       if (intersections.has(key)) return intersections.get(key);
@@ -269,18 +270,20 @@ export class Terrain {
   addSkirts(indices, positions, uv, skip, depthKm, hangs = this._hangs = []) {
     // Hide small height differences at LOD joins with vertical skirts.
     // Surface vertices and scientific elevations remain unchanged.
-    const edges = new Map();
+    // Boundary edges = edges used by exactly one triangle. Numeric keys (lo·N + hi): a string key per
+    // edge cost ~0.8 s per flight on 40 m tiles (user-visible freeze).
+    const edges = new Map(), N = positions.length / 3 + 1;
     for(let i=0;i<indices.length;i+=3)for(let j=0;j<3;j++){
-      const a=indices[i+j],b=indices[i+(j+1)%3],key=a<b?`${a}:${b}`:`${b}:${a}`;
+      const a=indices[i+j],b=indices[i+(j+1)%3],key=a<b?a*N+b:b*N+a;
       if(edges.has(key))edges.delete(key);else edges.set(key,[a,b]);
     }
     for(const [a,b] of edges.values()){
       if(skip(a,b))continue;
       const lower=[];
       for(const i of [a,b]){
-        const v=new T.Vector3(...positions.slice(i*3,i*3+3));v.setLength(v.length()-depthKm);
+        const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2],r=Math.sqrt(x*x+y*y+z*z),k=(r-depthKm)/r;
         hangs.push([positions.length/3, i]);
-        lower.push(positions.length/3);positions.push(...v.toArray());uv.push(uv[i*2],uv[i*2+1]);
+        lower.push(positions.length/3);positions.push(x*k,y*k,z*k);uv.push(uv[i*2],uv[i*2+1]);
       }
       indices.push(a,lower[0],b,b,lower[0],lower[1]);
     }
@@ -307,19 +310,55 @@ export class Terrain {
    * Rebuild meshes. `detailMaterial` is used for the selection's detail tiles (it fades in, M1).
    * With omit:false the cap overviews are built whole underneath the detail (used while fading).
    */
-  rebuild(group, material, detailMaterial = material, { omit = true, finestMaterial = detailMaterial } = {}) {
-    for (const child of [...group.children]) { group.remove(child); child.geometry.dispose(); }
-    const polarRecords = pole => this.records.filter(t => t.meta.projection !== 'equirectangular' && poleOf(t.meta) === pole);
-    if (this.overview) group.add(this.mesh(this.overview, material, 4, omit ? polarRecords('south') : []));
-    if (this.north?.overview) group.add(this.mesh(this.north.overview, material, 4, omit ? polarRecords('north') : []));
-    for (const tile of this.records) {
-      const equiFine = this.records.filter(t => t.meta.projection === 'equirectangular' && t.meta.lod === 2);
-      const mesh = tile.meta.projection === 'equirectangular'
-        ? (tile.meta.lod === 2 ? this.meshGlobal(tile, finestMaterial, 1) : this.meshGlobal(tile, detailMaterial, 1, equiFine))
-        : this.mesh(tile, tile.meta.lod === 2 ? finestMaterial : detailMaterial, 1,
-          tile.meta.lod === 1 ? this.records.filter(t => t.meta.lod === 2) : []);
-      mesh.userData.detail = true; group.add(mesh);
-    }
+  rebuild(group, material, detailMaterial = material, options = {}) {
+    const plan = this.meshPlan(material, detailMaterial, options), built = [];
+    for (const item of plan) built.push(this.meshCache?.get(item.key) || item.build());
+    this.swapMeshes(group, plan, built);
   }
-  dispose() { this.generation++; this.records = []; this.sortedFor = null; this.sortedRecords = []; this.cache.clear(); }
+  /**
+   * Same result as rebuild(), but builds new tiles one at a time and yields to the browser between them, so
+   * a flight keeps drawing frames. The group changes only once, at the end. Meshes whose inputs did not change
+   * (tile, material, exaggeration, cut-outs) are reused instead of rebuilt. Returns false if `current()` turned
+   * false meanwhile (a newer selection): nothing is swapped then.
+   */
+  async rebuildAsync(group, material, detailMaterial = material, options = {}, current = () => true) {
+    const plan = this.meshPlan(material, detailMaterial, options), built = [];
+    for (const item of plan) {
+      const cached = this.meshCache?.get(item.key);
+      built.push(cached || item.build());
+      if (!cached) await new Promise(resolve => setTimeout(resolve, 0));
+      if (!current()) { for (let k = 0; k < built.length; k++) if (built[k] !== this.meshCache?.get(plan[k].key)) built[k].geometry.dispose(); return false; }
+    }
+    this.swapMeshes(group, plan, built);
+    return true;
+  }
+  /** P-perf: the list of meshes a rebuild needs, each with a cache key and a builder. */
+  meshPlan(material, detailMaterial = material, { omit = true, finestMaterial = detailMaterial } = {}) {
+    const ids = list => list.map(t => t.meta.id).sort().join(',');
+    const polarRecords = pole => this.records.filter(t => t.meta.projection !== 'equirectangular' && poleOf(t.meta) === pole);
+    const plan = [], ex = this.exaggeration;
+    for (const [tile, pole] of [[this.overview, 'south'], [this.north?.overview, 'north']]) {
+      if (!tile) continue;
+      const cut = omit ? polarRecords(pole) : [];
+      plan.push({ key: `${tile.meta.id}|${material.uuid}|${ex}|${ids(cut)}|overview`, build: () => this.mesh(tile, material, 4, cut) });
+    }
+    const equiFine = this.records.filter(t => t.meta.projection === 'equirectangular' && t.meta.lod === 2);
+    const polarFine = this.records.filter(t => t.meta.lod === 2);
+    for (const tile of this.records) {
+      const equi = tile.meta.projection === 'equirectangular', fine = tile.meta.lod === 2;
+      const mat = fine ? finestMaterial : detailMaterial;
+      const cut = equi ? (fine ? [] : equiFine) : (tile.meta.lod === 1 ? polarFine : []);
+      // skirts depend on the neighbouring loaded tiles, so they are part of the key too
+      const key = `${tile.meta.id}|${mat.uuid}|${ex}|${ids(cut)}|${ids(this.records)}`;
+      plan.push({ key, detail: true, build: () => equi ? this.meshGlobal(tile, mat, 1, cut) : this.mesh(tile, mat, 1, cut) });
+    }
+    return plan;
+  }
+  swapMeshes(group, plan, built) {
+    const keep = new Set(built), next = new Map();
+    for (const child of [...group.children]) { group.remove(child); if (!keep.has(child)) child.geometry.dispose(); }
+    plan.forEach((item, k) => { const mesh = built[k]; if (item.detail) mesh.userData.detail = true; group.add(mesh); next.set(item.key, mesh); });
+    this.meshCache = next;
+  }
+  dispose() { this.generation++; this.meshCache = null; this.records = []; this.sortedFor = null; this.sortedRecords = []; this.cache.clear(); }
 }

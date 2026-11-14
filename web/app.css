@@ -804,3 +804,20 @@ html.is-changing-theme :is(body,.screen,.panel,.pin-card,.badge,.now,.mode,.appb
 /* Corner avoidance is immediate; only the toggle's colour may transition. */
 .theme-toggle{transition-property:color,background-color,border-color;transition-duration:.15s;transition-timing-function:var(--ease)}
 @media(min-width:769px) and (max-width:1240px){.compare-grid{margin-right:52px}}
+
+/* ---------- Light mode, whole page (T3, user request: "it does not turn all places light") ----------
+   The landing (hero, stats strip) now follows the theme too. Still dark in light mode, on purpose:
+   the 3D view (it is space), the Start transition and the Space Apps credit band (its official logo
+   is white and may not be recoloured). The starfield fades out on paper (style.md: stars only on dark). */
+:root[data-theme="light"] { background: var(--bg); }
+:root[data-theme="light"] :is(.fs-hero, .landing-main, .stats-ticker, .strip, #screen-landing > .wrap) {
+  color-scheme: light; --bg: #F4F2ED; --surface: #FBFAF7; --line: #D9D5CC; --text: #1C1B19; --muted: #635F57;
+  --sun: #8A5A00; --earth: #1C64A8; --both: #22774A; --none: #CFCBC2; --terrain: #8C877D;
+}
+:root[data-theme="light"] .sky { opacity: 0; visibility: hidden; }
+:root[data-theme="light"] #screen-landing { background: var(--bg); }
+/* areas that re-declare tokens must also re-apply the text colour, or they inherit the other theme's */
+.fs-hero, .landing-main, .stats-ticker, .strip, .mission-credit, .stage { color: var(--text); }
+.mission-credit { color: #9A978F; }
+html.is-changing-theme .sky { transition: opacity .3s var(--ease), visibility .3s; }
+:root[data-theme="light"] .mission-credit { max-width: none; margin-inline: 0; }

@@ -93,5 +93,16 @@ function setupVideo(slot) {
   }, { once: true });
 }
 
+// Light mode: the FHLS wordmark switches to its ink version (design/logo/fhls-logo-ink.png, same size and
+// placement), because the cream lettering disappears on paper. The Moon and lander are unchanged.
+function syncWordmark() {
+  const img = document.querySelector(".wordmark"); if (!img) return;
+  const ink = document.documentElement.dataset.theme === "light";
+  const want = new URL(`../design/logo/${ink ? "fhls-logo-ink.png" : "fhls-logo-transparent.png"}`, new URL("../", here)).href;
+  if (img.src !== want) img.src = want;
+}
+new MutationObserver(syncWordmark).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+syncWordmark();
+
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount, { once: true });
 else mount();

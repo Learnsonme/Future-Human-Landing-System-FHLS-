@@ -12,11 +12,12 @@ All of these are generated from `fhls-logo-original.png` by `python3 design/make
 | `apple-touch-icon-180.png` | 180², on `#141414` | iOS home screen |
 | `favicon-32.png` | 32², transparent | Browser tab |
 | `fhls-logo-320w.png` | 320×258, transparent | **M7:** the landing-screen logo, shown at 160 px wide (2× for sharp screens) |
+| `fhls-logo-ink.png` | 1127×909, transparent | **Light mode:** the same logo with the lettering in ink `#1C1B19`; Moon and lander unchanged. Made by `python3 design/make_logo_ink.py`. The page swaps to it when `data-theme="light"` |
 | `app_logo.png` | 1527×600, transparent | **NASA Space Apps Challenge logo**, the official "Color and White" version, downloaded unmodified from assets.spaceappschallenge.org (Space Apps brand page) |
 | `app_logo-64h.png` | 163×64, transparent | **M7:** the Space Apps logo for the footer credit, shown at 32 px tall |
 
 **Rules**
-- **Dark backgrounds only.** The lettering is off-white, so the logo disappears on white.
+- **`fhls-logo-transparent.png` on dark backgrounds only** (off-white lettering); on light backgrounds use `fhls-logo-ink.png`.
 - **Don't recolour, stretch or add effects.**
 - **The transparent logo keeps the Moon and lander solid,** so stars don't show through them. Only the soft glow is see-through.
 - **The square mark's lowest sliver of the Moon is filled in.** In the original it's hidden behind the title, so the script fills it with the Moon's own texture.

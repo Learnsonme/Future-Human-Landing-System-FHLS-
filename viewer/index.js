@@ -439,7 +439,9 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
           await terrain.select(location.lat, location.lon);
           if (disposed || token !== generation) return;
           // Build the new detail transparent over a whole globe/overview; finishFade() cuts the holes.
-          terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { omit: false, finestMaterial });
+          // tile by tile, yielding between tiles, so the flight keeps drawing (no freeze mid-flight)
+          if (!await terrain.rebuildAsync(terrainGroup, terrainMaterial, detailMaterial, { omit: false, finestMaterial },
+            () => !disposed && token === generation)) return;
           globe.setHoles(lat => capHoles(lat));
           setFade(0); fade = { start: Math.max(performance.now(), fadeFrom) };
           if (reduced.matches) finishFade();
@@ -482,6 +484,9 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
       // M2: the landing Moon has no box: a transparent canvas lets the page's own starfield show
       // around it. The explorer stays opaque with its own stars (an opaque working surface).
       renderer = new T.WebGLRenderer({ antialias: true, alpha: presentation, premultipliedAlpha: true });
+      // Asking the driver for every shader's error log blocks until compilation finishes (~0.4 s stalls
+      // mid-flight). Shaders here are fixed and tested, so skip the check.
+      renderer.debug.checkShaderErrors = false;
       renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setClearColor('#141414', presentation ? 0 : 1);
       renderer.outputColorSpace = T.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.autoUpdate = false;
@@ -539,6 +544,11 @@ if (uGlobalOn > 0.5 && !fhlsPolarDone) {
         fetchOK(asset('moon-displacement.tiff'), abort.signal).then(r => r.arrayBuffer()).then(decodeMoonTIFF), corePromise]);
       if (disposed) { for (const texture of looseTextures) texture.dispose(); terrainPromise.then(t => t?.dispose()); return; }
       globe = createGlobe(texture, relief, null); withOverlay(globe.mesh.material); looseTextures.clear(); scene.add(globe.mesh);
+      // Warm up the detail-terrain shaders now (a tiny hidden mesh per material), so the first flight
+      // doesn't stall while the GPU compiles them.
+      const warm = [detailMaterial, finestMaterial].map(m => { const w = new T.Mesh(new T.PlaneGeometry(1e-3, 1e-3), m); w.castShadow = w.receiveShadow = true; scene.add(w); return w; });
+      Promise.resolve(renderer.compileAsync ? renderer.compileAsync(scene, camera) : renderer.compile(scene, camera)).catch(() => {})
+        .finally(() => { for (const w of warm) { scene.remove(w); w.geometry.dispose(); } needsRender = true; });
       // LOLA cap terrain streams in after the first frame instead of delaying it.
       terrainReady = terrainPromise.then(value => {
         if (!value || disposed) return null;
