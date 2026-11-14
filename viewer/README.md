@@ -175,7 +175,7 @@ longitude registration and displacement conversion.
   `tools/prepare-displacement.py` using the CGI Moon Kit convention.
   Height = sample × 0.5 − 10000 metres above the 1737.4 km reference sphere.
   The original 0…360° columns are shifted to −180…180° without resampling.
-  [Original PDS product directory](https://pds-geosciences.wustl.edu/lro/lro-l-lola-4-gdr-v1/lrolol_1001/data/ldem_4/).
+  [Original PDS product directory](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/).
 - `assets/open-sans.woff2`: local Open Sans variable font (latin, weights 300–800),
   SIL Open Font License in `assets/OFL-open-sans.txt`.
 - `vendor/three.module.js` and `vendor/OrbitControls.js`: Three.js r170,
