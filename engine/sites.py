@@ -40,6 +40,17 @@ SITES = [
      LPSC, "Representative point from LPSC 2024 abstract 1695 (lon 209.94767°E)", 30),
     ("mons_mouton", "Mons Mouton", -84.60, 31.00, "artemis_candidate_region",
      GAZ + "16070", "IAU centre of the massif; NASA regions 'Mons Mouton' and 'Mons Mouton Plateau' lie on it", 30),
+    # Apollo landing sites (LM descent stage; Wikipedia mission infoboxes, NSSDC-attributed) and famous
+    # craters (IAU Gazetteer). These have 120 m terrain (E12, engine/make_terrain_regions.py).
+    ("apollo_11", "Apollo 11 · Tranquility Base", 0.67416, 23.47314, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_11", "First crewed landing, 20 Jul 1969", None),
+    ("apollo_12", "Apollo 12 · Ocean of Storms", -3.01239, -23.42157, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_12", "", None),
+    ("apollo_14", "Apollo 14 · Fra Mauro", -3.64530, -17.47136, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_14", "", None),
+    ("apollo_15", "Apollo 15 · Hadley–Apennine", 26.1322, 3.6339, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_15", "", None),
+    ("apollo_16", "Apollo 16 · Descartes Highlands", -8.97301, 15.50019, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_16", "", None),
+    ("apollo_17", "Apollo 17 · Taurus–Littrow", 20.1908, 30.7717, "apollo_site", "https://en.wikipedia.org/wiki/Apollo_17", "Last crewed landing, Dec 1972", None),
+    ("tycho", "Tycho crater", -43.31, -11.36, "crater", GAZ + "6163", "", None),
+    ("copernicus", "Copernicus crater", 9.62, -20.08, "crater", GAZ + "1296", "", None),
+    ("aristarchus", "Aristarchus crater", 23.70, -47.40, "crater", GAZ + "380", "", None),
     # Named features (IAU Gazetteer centres)
     ("shackleton", "Shackleton crater", -89.67, 129.78, "crater", GAZ + "5450", "Permanently shadowed floor", None),
     ("shackleton_ridge_test", "Shackleton ridge (test point)", -89.45, -137.3, "reference_point",

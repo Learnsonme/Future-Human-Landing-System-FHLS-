@@ -85,11 +85,14 @@ The viewer loads only the tiles around a click. It picks the finest terrain avai
 | Artemis sites (inside the 20 km boxes) | `data/terrain/index_detail.json`, lod 2 | 40 m | `LOLA-40m` |
 | South cap (≤ −84°) | `index.json`, four nearest lod 1 | 120 m | `LOLA-120m` |
 | North cap (≥ 84°) | `index_north.json`, four nearest lod 1 | 120 m | `LOLA-120m` |
+| Apollo sites, Tycho, Copernicus, Aristarchus (12° boxes) | `index_regions.json`, the 4 nearest 2° tiles (lod 2), with 474 m around them | 118 m | `LOLA-120m` |
 | Everywhere else | `index_global.json`, the 2 × 2 block of 8° tiles nearest the click (≈ 480 km) | 474 m | `LOLA-474m` |
 
 **How the layers fit together**
 - **The globe mesh is exactly 1° × 1°,** so its vertices are exact grid points of the 8° tiles. After a load, the globe re-samples its heights from the detailed terrain and hides its own surface under the patch. The patch therefore meets the globe without a step. Skirts (4 km) remain at the patch edge as a safety net.
 - **Neighbouring whole-Moon tiles join exactly,** including across the ±180° date line.
+- **Skirts are shaded like the ground they hang from** (surface normals are copied), so a crack never shows a lit vertical wall.
+- **Shadow maps are sized to the detail:** an 80 km half-size for the 120 m regions and 40 m tiles (about 78 m per shadow pixel), 160 km for the polar caps, 320 km for the 474 m patch.
 - **40 m tiles have no skirts.** The 120 m surface continues under their edge strip, and they win it by polygon offset. This avoids lit vertical skirts under the grazing polar Sun.
 - **Tests:** `tests/terrain-v8.test.mjs` (Node) checks registration, outward faces, seams, cap clipping and priority for the new tile sets. `tests/v8-browser.mjs` (plain Chrome DevTools, no Playwright) flies to six places and checks the terrain type, timing, reduced motion and console errors.
 

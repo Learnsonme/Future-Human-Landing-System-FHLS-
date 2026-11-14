@@ -30,8 +30,10 @@ const PLACES = [
   ["artemis-connecting-ridge", -89.53432, -150.05233, "LOLA-40m"],
   ["south-cap", -87, 45, "LOLA-120m"],
   ["north-pole-peary", 88.6, 25, "LOLA-120m"],
-  ["tycho", -43.3, -11.2, "LOLA-474m"],
-  ["copernicus", 9.6, -20.1, "LOLA-474m"],
+  ["tycho", -43.3, -11.2, "LOLA-120m"],
+  ["copernicus", 9.6, -20.1, "LOLA-120m"],
+  ["apollo-15-hadley", 26.1322, 3.6339, "LOLA-120m"],
+  ["far-side", -20, 160, "LOLA-474m"],
   ["date-line", 4, 179.9, "LOLA-474m"],
 ];
 let pass = 0, fail = 0;

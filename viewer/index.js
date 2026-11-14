@@ -99,7 +99,11 @@ export function createViewer(container, options = {}) {
       direction = tangent.normalize().multiplyScalar(Math.cos(Math.PI / 180)).addScaledVector(up, Math.sin(Math.PI / 180));
     }
     light.target.position.copy(centre); light.position.copy(centre).addScaledVector(direction, 1000);
-    const local = !!selection && !!terrain?.records.length, extent = !local ? 2100 : terrain.kind === 'global' ? 320 : 160;
+    // Shadow-map half-size (km). 2048² texels: 80 km → 78 m texels for the 120 m regions and 40 m Artemis
+    // tiles (close camera), 160 km for the polar caps, 320 km for the 474 m whole-Moon patch.
+    const local = !!selection && !!terrain?.records.length;
+    const fine = local && (terrain.regionAt(selection.lat, selection.lon) || terrain.describe(selection.lat, selection.lon) === 'LOLA-40m');
+    const extent = !local ? 2100 : fine ? 80 : terrain.kind === 'global' ? 320 : 160;
     Object.assign(light.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent, near: 0.1, far: local ? 2400 : 6000 });
     light.shadow.camera.updateProjectionMatrix(); light.castShadow = !!local; light.shadow.needsUpdate = true;
     renderer.shadowMap.needsUpdate = true;
@@ -162,7 +166,7 @@ export function createViewer(container, options = {}) {
     controls.autoRotate = false; controls.enabled = false;
     // M1: the flight starts immediately; nearby LOLA tiles load meanwhile and fade in (FADE_MS)
     // from 35 % of the flight, or as soon as they arrive if that is later.
-    const near = Math.abs(location.lat) >= 84 ? true : 'mid';
+    const near = Math.abs(location.lat) >= 84 || terrain?.regionAt(location.lat, location.lon) ? true : 'mid';
     const arrival = new Promise(resolve => {
       flight = { ...makeFlight(camera, controls, location.lat, location.lon, heightAt(location.lat, location.lon),
         near, 1800, performance.now()), resolve };
@@ -198,6 +202,7 @@ export function createViewer(container, options = {}) {
         : status.terrain === 'LOLA-40m' ? 'LOLA 40 m terrain · Artemis site · rendered shadows are illustrative'
         : kind === 'south' ? 'LOLA south polar terrain · rendered shadows are illustrative'
         : kind === 'north' ? 'LOLA north polar terrain · rendered shadows are illustrative'
+        : kind === 'global' && status.terrain === 'LOLA-120m' ? `LOLA 120 m terrain · ${terrain.regionAt(location.lat, location.lon)?.name || 'detailed region'} · rendered shadows are illustrative`
         : kind === 'global' ? 'LOLA 474 m terrain · lower precision horizon · rendered shadows are illustrative'
         : 'Global relief · lower precision terrain' });
     })().catch(error => console.error(error));
@@ -277,6 +282,7 @@ export function createViewer(container, options = {}) {
         terrain.rebuild(terrainGroup, terrainMaterial, detailMaterial, { finestMaterial }); globe.setHoles(lat => capHoles(lat));
         renderer.shadowMap.needsUpdate = true;
         if (status.terrain === 'loading') notify({ terrain: 'LOLA-overview-480m' });
+        if (!presentation) extrasReady ||= terrain.initializeExtras();
         return terrain;
       });
       if (!started && core) {

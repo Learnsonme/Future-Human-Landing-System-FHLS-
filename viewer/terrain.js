@@ -17,6 +17,8 @@ const GLOBAL_DEG = 8;            // data/terrain/index_global.json tile size
  *   Artemis    data/terrain/index_detail.json 40 m tiles (lod 2) inside the south cap [optional]
  *   North cap  data/terrain/index_north.json  480 m overview + 120 m tiles            [optional]
  *   Whole Moon data/terrain/index_global.json 474 m equirectangular 8° tiles          [optional]
+ *   Regions    data/terrain/index_regions.json 118 m equirectangular 2° tiles (lod 2) around the
+ *              Apollo sites, Tycho, Copernicus and Aristarchus                       [optional]
  * `manifest`/`overview` stay the south cap so existing callers and tests are unchanged.
  * `records` are the detail tiles loaded around the current selection.
  */
@@ -37,7 +39,9 @@ export class Terrain {
   async initializeExtras() {
     const json = name => fetchOK(new URL(`terrain/${name}`, this.base), this.signal).then(r => r.json())
       .then(m => (m.R_km === 1737.4 && m.synthetic === false && Array.isArray(m.tiles) ? m : null)).catch(() => null);
-    const [north, global, detail] = await Promise.all([json('index_north.json'), json('index_global.json'), json('index_detail.json')]);
+    const [north, global, detail, regions] = await Promise.all([json('index_north.json'), json('index_global.json'),
+      json('index_detail.json'), json('index_regions.json')]);
+    if (regions) this.regionIndex = regions;
     if (north) {
       try { this.north = { manifest: north, overview: await this.load(north.tiles.find(t => t.lod === 0)) }; }
       catch { this.north = null; }
@@ -47,7 +51,7 @@ export class Terrain {
       this.globalTiles = new Map(global.tiles.map(t => [`${t.lon0},${t.lat0}`, t]));
     }
     if (detail) this.detailIndex = detail;
-    return { north: !!this.north, global: !!this.globalIndex, detail: !!this.detailIndex };
+    return { north: !!this.north, global: !!this.globalIndex, detail: !!this.detailIndex, regions: !!this.regionIndex };
   }
   async load(meta) {
     const polar = meta && (meta.projection === 'polar_stereographic_south' || meta.projection === 'polar_stereographic_north');
@@ -109,9 +113,13 @@ export class Terrain {
   describe(lat, lon) {
     const tile = this.tileAt(lat, lon);
     if (!tile) return 'global-lower-precision';
-    if (tile.meta.lod === 2) return 'LOLA-40m';
+    if (tile.meta.lod === 2) return tile.meta.projection === 'equirectangular' ? 'LOLA-120m' : 'LOLA-40m';
     if (tile.meta.projection === 'equirectangular') return 'LOLA-474m';
     return tile.meta.lod === 0 ? 'LOLA-overview-480m' : 'LOLA-120m';
+  }
+  /** The 120 m region (Apollo site / famous crater) containing lat/lon, if any. */
+  regionAt(lat, lon) {
+    return this.regionIndex?.regions.find(r => this.containsLL({ ...r.box }, lat, lon)) || null;
   }
   async select(lat, lon) {
     const generation = ++this.generation;
@@ -138,6 +146,13 @@ export class Terrain {
       for (const [ix, iy] of [[tx, ty], [tx + dx, ty], [tx, ty + dy], [tx + dx, ty + dy]]) {
         const meta = this.globalTiles.get(`${-180 + ((ix % nx + nx) % nx) * GLOBAL_DEG},${-88 + iy * GLOBAL_DEG}`);
         if (meta && !metas.includes(meta)) metas.push(meta);
+      }
+      // Inside an Apollo / crater region: also the 2 × 2 nearest 118 m tiles (≈ 120 km, like the south cap).
+      const region = this.regionAt(lat, lon);
+      if (region) {
+        const centre = t => [t.lat0 + t.size_deg / 2, t.lon0 + t.size_deg / 2];
+        const dist = t => { const [a, b] = centre(t); return Math.hypot(a - lat, normalizeLongitude(b - lon) * Math.cos(lat * Math.PI / 180)); };
+        metas.push(...this.regionIndex.tiles.filter(t => t.region === region.id).sort((a, b) => dist(a) - dist(b)).slice(0, 4));
       }
     }
     if (!kind) { this.records = []; this.kind = null; return false; }
@@ -203,7 +218,7 @@ export class Terrain {
         : this.contains(t.meta, mid.x, mid.y)))) continue;
       addTriangle([a,c,b]);addTriangle([b,c,d]);
     }
-    const surfaceIndexCount = indices.length;
+    const surfaceIndexCount = indices.length; this._hangs = [];
     // 40 m tiles get no skirts: the 120 m surface continues under their edge, and a lit vertical
     // skirt would show as a bright line under the grazing polar Sun.
     if (m.lod !== 2) this.addSkirts(indices, positions, uv, (a, b) => {
@@ -215,7 +230,7 @@ export class Terrain {
     return this.finish(positions, uv, indices, material, surfaceIndexCount);
   }
   /** Whole-Moon equirectangular tile mesh (474 m), clipped to |lat| < 84° where the polar caps take over. */
-  meshGlobal(tile, material, stride = 1) {
+  meshGlobal(tile, material, stride = 1, omit = []) {
     const { meta: m, heights } = tile;
     const n = Math.ceil((m.px - 1) / stride) + 1, positions = [], uv = [], ll = [];
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
@@ -229,11 +244,13 @@ export class Terrain {
     for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) {
       const a = j * n + i, b = a + 1, c = a + n, d = c + 1;
       if (Math.abs((ll[a].lat + ll[d].lat) / 2) > CAP_LAT) continue;      // polar caps own this
+      // Only cells wholly under a finer tile are left out, so this surface continues under its edge.
+      if (omit.some(t => [a, b, c, d].every(k => this.containsLL(t.meta, ll[k].lat, ll[k].lon)))) continue;
       indices.push(a, c, b, b, c, d);
     }
-    const surfaceIndexCount = indices.length;
-    const others = this.records.filter(t => t !== tile && t.meta.projection === 'equirectangular');
-    this.addSkirts(indices, positions, uv, (a, b) => {
+    const surfaceIndexCount = indices.length; this._hangs = [];
+    const others = this.records.filter(t => t !== tile && t.meta.projection === 'equirectangular' && t.meta.lod === m.lod);
+    if (m.lod !== 2) this.addSkirts(indices, positions, uv, (a, b) => {
       const lat = (ll[a].lat + ll[b].lat) / 2, lon = (ll[a].lon + ll[b].lon) / 2;
       // Between two loaded whole-Moon tiles the seam is exact (no skirt); at the edge of the patch
       // and at the ±84° cap boundary a skirt hides the step down to the coarser globe/overview.
@@ -241,7 +258,7 @@ export class Terrain {
     }, 4);
     return this.finish(positions, uv, indices, material, surfaceIndexCount);
   }
-  addSkirts(indices, positions, uv, skip, depthKm) {
+  addSkirts(indices, positions, uv, skip, depthKm, hangs = this._hangs = []) {
     // Hide small height differences at LOD joins with vertical skirts.
     // Surface vertices and scientific elevations remain unchanged.
     const edges = new Map();
@@ -254,6 +271,7 @@ export class Terrain {
       const lower=[];
       for(const i of [a,b]){
         const v=new T.Vector3(...positions.slice(i*3,i*3+3));v.setLength(v.length()-depthKm);
+        hangs.push([positions.length/3, i]);
         lower.push(positions.length/3);positions.push(...v.toArray());uv.push(uv[i*2],uv[i*2+1]);
       }
       indices.push(a,lower[0],b,b,lower[0],lower[1]);
@@ -261,7 +279,13 @@ export class Terrain {
   }
   finish(positions, uv, indices, material, surfaceIndexCount) {
     const geometry = new T.BufferGeometry(); geometry.setAttribute('position', new T.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); geometry.setIndex(indices); geometry.computeVertexNormals();
+    geometry.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    // Normals from the surface alone, and each skirt vertex copies the normal of the surface vertex it
+    // hangs from: a skirt seen through a crack then shades like ground, not as a lit vertical wall.
+    geometry.setIndex(indices.slice(0, surfaceIndexCount)); geometry.computeVertexNormals();
+    const normal = geometry.attributes.normal;
+    for (const [lower, top] of this._hangs || []) normal.setXYZ(lower, normal.getX(top), normal.getY(top), normal.getZ(top));
+    this._hangs = []; geometry.setIndex(indices);
     // Polar UVs cross the longitude seam; terrain uses a procedural lunar grey material.
     const mesh = new T.Mesh(geometry, material); mesh.castShadow = true; mesh.receiveShadow = true;
     mesh.userData.surfaceIndexCount = surfaceIndexCount;
@@ -281,7 +305,9 @@ export class Terrain {
     if (this.overview) group.add(this.mesh(this.overview, material, 4, omit ? polarRecords('south') : []));
     if (this.north?.overview) group.add(this.mesh(this.north.overview, material, 4, omit ? polarRecords('north') : []));
     for (const tile of this.records) {
-      const mesh = tile.meta.projection === 'equirectangular' ? this.meshGlobal(tile, detailMaterial, 1)
+      const equiFine = this.records.filter(t => t.meta.projection === 'equirectangular' && t.meta.lod === 2);
+      const mesh = tile.meta.projection === 'equirectangular'
+        ? (tile.meta.lod === 2 ? this.meshGlobal(tile, finestMaterial, 1) : this.meshGlobal(tile, detailMaterial, 1, equiFine))
         : this.mesh(tile, tile.meta.lod === 2 ? finestMaterial : detailMaterial, 1,
           tile.meta.lod === 1 ? this.records.filter(t => t.meta.lod === 2) : []);
       mesh.userData.detail = true; group.add(mesh);

@@ -63,6 +63,87 @@
   "note": "IAU centre of the massif; NASA regions 'Mons Mouton' and 'Mons Mouton Plateau' lie on it"
  },
  {
+  "id": "apollo_11",
+  "name": "Apollo 11 · Tranquility Base",
+  "lat": 0.67416,
+  "lon": 23.47314,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_11",
+  "note": "First crewed landing, 20 Jul 1969"
+ },
+ {
+  "id": "apollo_12",
+  "name": "Apollo 12 · Ocean of Storms",
+  "lat": -3.01239,
+  "lon": -23.42157,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_12",
+  "note": ""
+ },
+ {
+  "id": "apollo_14",
+  "name": "Apollo 14 · Fra Mauro",
+  "lat": -3.6453,
+  "lon": -17.47136,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_14",
+  "note": ""
+ },
+ {
+  "id": "apollo_15",
+  "name": "Apollo 15 · Hadley–Apennine",
+  "lat": 26.1322,
+  "lon": 3.6339,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_15",
+  "note": ""
+ },
+ {
+  "id": "apollo_16",
+  "name": "Apollo 16 · Descartes Highlands",
+  "lat": -8.97301,
+  "lon": 15.50019,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_16",
+  "note": ""
+ },
+ {
+  "id": "apollo_17",
+  "name": "Apollo 17 · Taurus–Littrow",
+  "lat": 20.1908,
+  "lon": 30.7717,
+  "type": "apollo_site",
+  "source": "https://en.wikipedia.org/wiki/Apollo_17",
+  "note": "Last crewed landing, Dec 1972"
+ },
+ {
+  "id": "tycho",
+  "name": "Tycho crater",
+  "lat": -43.31,
+  "lon": -11.36,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/6163",
+  "note": ""
+ },
+ {
+  "id": "copernicus",
+  "name": "Copernicus crater",
+  "lat": 9.62,
+  "lon": -20.08,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/1296",
+  "note": ""
+ },
+ {
+  "id": "aristarchus",
+  "name": "Aristarchus crater",
+  "lat": 23.7,
+  "lon": -47.4,
+  "type": "crater",
+  "source": "https://planetarynames.wr.usgs.gov/Feature/380",
+  "note": ""
+ },
+ {
   "id": "shackleton",
   "name": "Shackleton crater",
   "lat": -89.67,
