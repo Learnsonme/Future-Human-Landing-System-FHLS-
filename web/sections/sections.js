@@ -1,10 +1,11 @@
-// S1–S8 · Scroll-down sections below the landing screen (T3).
-// T2 includes this once in web/index.html:   <script type="module" src="sections/sections.js"></script>
-// It appends sections.html to the end of #screen-landing, so the sections scroll below the hero and
-// disappear with the landing screen.
+// S1–S8, S12 · Scroll-down sections below the landing screen (T3).
+// Included once in web/index.html:   <script type="module" src="sections/sections.js"></script>
+// It wraps the existing landing content in a full-screen .fs-hero (with a quiet "Scroll ↓" cue) and appends
+// sections.html after it inside #screen-landing, so the sections scroll below the hero and disappear with
+// the landing screen.
 //
-// S2: when the demo video is ready, set VIDEO to its URL: an .mp4/.webm file (plays muted with captions
-// if CAPTIONS is set) or a YouTube link (loads only after a click). Leave it empty for the placeholder.
+// S12: when the Beginner walkthrough video is ready, set VIDEO to its URL: an .mp4/.webm file (plays muted
+// with captions if CAPTIONS is set) or a YouTube link (loads only after a click). Empty = placeholder.
 const VIDEO = "";
 const CAPTIONS = "";            // optional .vtt file for an .mp4/.webm video
 
@@ -18,9 +19,45 @@ async function mount() {
   const html = await (await fetch(new URL("sections.html", here))).text();
   const tpl = document.createElement("template"); tpl.innerHTML = html;
   // relative URLs in the partial are written from web/, which is where index.html lives
+  const hero = wrapHero(landing);
   landing.append(tpl.content);
   setupVideo(landing.querySelector("[data-video-slot]"));
+  fillTeamNames(landing);
+  scrollCue(hero, landing.querySelector("#demo"));
   reveal(landing.querySelectorAll(".fs-reveal"));
+}
+
+// S12: the landing's own content becomes one full-screen block, so the first screen looks as before.
+function wrapHero(landing) {
+  const hero = document.createElement("div"); hero.className = "fs-hero";
+  hero.append(...landing.childNodes);
+  landing.append(hero);
+  return hero;
+}
+
+// S12: quiet "Scroll ↓" at the bottom of the hero; fades away once the page is scrolled.
+function scrollCue(hero, target) {
+  if (!target) return;
+  const cue = document.createElement("a"); cue.className = "fs-cue"; cue.href = "#demo";
+  cue.innerHTML = 'Scroll <span aria-hidden="true">↓</span>';
+  cue.addEventListener("click", (e) => {
+    e.preventDefault();
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+  });
+  hero.append(cue);
+  let queued = false;
+  const update = () => { queued = false; cue.classList.toggle("is-gone", scrollY > 40); };
+  addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
+  update();
+}
+
+// S6/S12: the footer lists the same names as the Team block, so names are edited in one place.
+function fillTeamNames(root) {
+  const slot = root.querySelector("[data-team-names]");
+  if (!slot) return;
+  const names = [...root.querySelectorAll(".fs-team .fs-name")].map((n) => n.textContent.trim()).filter(Boolean);
+  slot.textContent = names.length ? `Team: ${names.join(" · ")}` : "";
 }
 
 // S1: fade + rise once as each section enters the screen; instant under reduced motion.
@@ -34,7 +71,7 @@ function reveal(nodes) {
   for (const n of nodes) io.observe(n);
 }
 
-// S2: placeholder now; the real demo later, muted with captions, no sound until the viewer asks.
+// S2/S12: placeholder now; the Beginner walkthrough later, muted with captions, no sound until the viewer asks.
 function setupVideo(slot) {
   if (!slot || !VIDEO) return;
   const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec(VIDEO);

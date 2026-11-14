@@ -11,6 +11,7 @@
  * alpha, so it stays inside design/style.md. The modes differ in how many
  * stars there are and how often they twinkle, never in hue.
  *
+ * S13 (T3): slow left → right drift; frequent, visible landing shooting stars.
  * Budget: at most 150 stars, redrawn at 24fps, paused when the tab is hidden
  * and when prefers-reduced-motion is set (then it paints once and stops).
  */
@@ -31,6 +32,12 @@ const DENSITY = {
   advanced:     { per1M: 55,  twinkle: 0.18, shootingEveryMs: 0, maxR: 1.7, gain: 1.1 },
 };
 const MAX_STARS = 240;
+// S13 (T3, user request): the whole field drifts slowly left → right (px per second, nearer stars a little
+// faster), and landing shooting stars are more frequent and clearly visible.
+const DRIFT_PX_S = [2.5, 7];
+const SHOOT_EVERY_MS = [6000, 14000];
+const SHOOT_TRAIL_PX = [70, 150];
+const SHOOT_PEAK = 0.75;
 
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -41,7 +48,7 @@ export function createStarfield(canvas, options = {}) {
   let mode = options.density || "intermediate";
   let stars = [];
   let shooting = null;
-  let nextShootingAt = performance.now() + rand(20000, 40000);
+  let nextShootingAt = performance.now() + rand(...SHOOT_EVERY_MS);
   let raf = 0;
   let lastFrame = 0;
   let width = 0, height = 0;
@@ -75,6 +82,7 @@ export function createStarfield(canvas, options = {}) {
         // the viewer's field is a single token, so matched skies have no warm star
         warm: match ? false : Math.random() < 0.08,
         muted: match,
+        vx: rand(...DRIFT_PX_S) * (0.6 + depth * 0.4),
       };
     });
   }
@@ -111,8 +119,10 @@ export function createStarfield(canvas, options = {}) {
       }
       const [r, g, b] = s.muted ? [mr, mg, mb] : s.warm ? [sr, sg, sb] : [tr, tg, tb];
       ctx.fillStyle = `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+      // S13: slow drift to the right, wrapping at the edge (t = 0 under reduced motion → still)
+      const x = width ? (((s.x + s.vx * t / 1000) % width) + width) % width : s.x;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.arc(x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -133,15 +143,21 @@ export function createStarfield(canvas, options = {}) {
         const fade = Math.sin(Math.PI * p);            // in and out, no hard edges
         const x = shooting.x + shooting.dx * p;
         const y = shooting.y + shooting.dy * p;
-        const grad = ctx.createLinearGradient(x, y, x - shooting.dx / Math.hypot(shooting.dx, shooting.dy) * shooting.trail, y - shooting.dy / Math.hypot(shooting.dx, shooting.dy) * shooting.trail);
-        grad.addColorStop(0, `rgba(${tr},${tg},${tb},${(0.16 * fade).toFixed(3)})`);
+        const len = Math.hypot(shooting.dx, shooting.dy);
+        const tx = x - shooting.dx / len * shooting.trail, ty = y - shooting.dy / len * shooting.trail;
+        const grad = ctx.createLinearGradient(x, y, tx, ty);
+        grad.addColorStop(0, `rgba(${tr},${tg},${tb},${(SHOOT_PEAK * fade).toFixed(3)})`);
         grad.addColorStop(1, `rgba(${tr},${tg},${tb},0)`);
         ctx.strokeStyle = grad;
-        ctx.lineWidth = 0.75;
+        ctx.lineWidth = 1.4;
+        ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x - shooting.dx / Math.hypot(shooting.dx, shooting.dy) * shooting.trail, y - shooting.dy / Math.hypot(shooting.dx, shooting.dy) * shooting.trail);
+        ctx.lineTo(tx, ty);
         ctx.stroke();
+        // a small bright head
+        ctx.fillStyle = `rgba(${tr},${tg},${tb},${(Math.min(1, SHOOT_PEAK + 0.15) * fade).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
@@ -152,10 +168,11 @@ export function createStarfield(canvas, options = {}) {
   }
   function maybeShoot(t) {
     if (!canShoot() || shooting || t < nextShootingAt) return;
-    nextShootingAt = t + rand(20000, 40000);
-    const angle = rand(0, Math.PI * 2), distance = rand(70, 140);
-    shooting = { start: t, life: rand(850, 1200), trail: rand(12, 24),
-      x: rand(0.08, 0.92) * width, y: rand(0.08, 0.92) * height,
+    nextShootingAt = t + rand(...SHOOT_EVERY_MS);
+    // S13: mostly left → right and slightly downward, matching the drift
+    const angle = rand(0.12, 0.6), distance = rand(260, 460);
+    shooting = { start: t, life: rand(900, 1400), trail: rand(...SHOOT_TRAIL_PX),
+      x: rand(0.05, 0.6) * width, y: rand(0.05, 0.7) * height,
       dx: Math.cos(angle) * distance, dy: Math.sin(angle) * distance };
   }
 
@@ -183,7 +200,7 @@ export function createStarfield(canvas, options = {}) {
     raf = 0;
   }
 
-  const resetShooting = () => { shooting = null; nextShootingAt = performance.now() + rand(20000, 40000); };
+  const resetShooting = () => { shooting = null; nextShootingAt = performance.now() + rand(...SHOOT_EVERY_MS); };
   const onVisibility = () => { resetShooting(); document.hidden ? stop() : start(); };
   const onReducedChange = () => { resetShooting(); stop(); start(); };
 

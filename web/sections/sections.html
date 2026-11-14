@@ -1,94 +1,92 @@
-<!-- S2–S7 · Scroll-down sections below the landing screen (T3). Loaded by sections.js. -->
+<!-- S12 · Scroll-down sections below the landing screen (T3). Loaded by sections.js.
+     Order: video → why we built it + photo → how it's built / limits / team → footer. -->
 <div class="fhls-sections">
 
+  <!-- 1 · Video. Set VIDEO in sections.js when the Beginner walkthrough is uploaded. -->
   <section class="fs-section fs-reveal" id="demo" aria-labelledby="demo-title">
     <div class="wrap">
-      <p class="eyebrow">Demo</p>
-      <h2 class="fs-title" id="demo-title">Thirty seconds at the lunar south pole</h2>
+      <p class="eyebrow">Video · Beginner mode</p>
+      <h2 class="fs-title" id="demo-title">How to use FHLS</h2>
       <div class="fs-video" data-video-slot>
         <img src="../viewer/assets/moon-poster.webp" alt="" loading="lazy" decoding="async">
-        <p class="fs-video-note">Demo video coming soon</p>
+        <p class="fs-video-note">Video coming soon</p>
       </div>
     </div>
   </section>
 
+  <!-- 2 · Why we built it (left) + a real NASA photo (right). Stacks text-first on phones. -->
   <section class="fs-section fs-reveal" id="about" aria-labelledby="about-title">
-    <div class="wrap fs-grid">
-      <div>
+    <div class="wrap fs-split">
+      <div class="fs-body">
         <p class="eyebrow">About</p>
-        <h2 class="fs-title" id="about-title">Why we built this</h2>
+        <h2 class="fs-title" id="about-title">Why we built FHLS</h2>
+        <p>At the lunar south pole, where Artemis crews will land, the Sun never climbs more than about
+          1.5° and circles the horizon once a month, so a crater rim a few hundred metres away can cut off
+          sunlight for days. Earth wobbles by up to 6.7° and can sink behind the hills for two weeks,
+          taking the direct radio link with it. Choosing where and when to land means knowing both.</p>
+        <p>Our idea came from architecture: a sun-path diagram with a shading mask shows when light reaches
+          a window. FHLS does the same for the Moon. It traces the real skyline around any spot from NASA
+          elevation data and follows the Sun and Earth across it for every hour of 2027 and 2028. Mission
+          planners get numbers, teachers get a picture of why the poles are special, and anyone can see
+          what a crew would see.</p>
       </div>
-      <div class="fs-body">
-        <p>NASA asked for a tool that lets mission planners, teachers and the public compare landing
-          sites and dates by where the Sun and Earth sit above the horizon. At the lunar south pole that
-          question is hard. The Sun never climbs more than about 1.5° and circles the sky once every
-          29.5 days, so a crater rim a few hundred metres away can block it for days. Earth wobbles by
-          up to 6.7° each month and can drop behind the hills for about two weeks.</p>
-        <p>The idea came from architecture. Architects draw a sun-path diagram with a shading mask, the
-          outline of everything around a building, to see when sunlight reaches a window. FHLS does the
-          same on the Moon. It traces the real skyline around any spot from NASA elevation data, then
-          follows the Sun and Earth across it for every hour of 2027 and 2028. Planners get numbers,
-          teachers get a picture of why the poles are special, and anyone can see what an Artemis crew
-          would see.</p>
-      </div>
+      <figure class="fs-figure">
+        <img src="sections/img/apollo11-aldrin.webp" width="880" height="866" loading="lazy" decoding="async"
+             alt="Astronaut Buzz Aldrin in a white spacesuit standing on the grey lunar surface, his long shadow and boot prints in the foreground and the gold foil of the lunar module at the edge of the frame.">
+        <figcaption>Buzz Aldrin at Tranquility Base, Apollo 11, 20 July 1969. Photo: Neil Armstrong, NASA
+          (AS11-40-5903, public domain).</figcaption>
+      </figure>
     </div>
   </section>
 
-  <section class="fs-section fs-reveal" id="built" aria-labelledby="built-title">
-    <div class="wrap fs-grid">
-      <div>
+  <!-- 3 · Compact facts: validation, limits, team -->
+  <section class="fs-section fs-reveal fs-facts" aria-label="How it's built, limits and team">
+    <div class="wrap fs-cols">
+      <div class="fs-col" id="built" aria-labelledby="built-title">
         <p class="eyebrow">How it's built</p>
-        <h2 class="fs-title" id="built-title">From NASA data to your browser</h2>
-      </div>
-      <div class="fs-body">
+        <h2 class="fs-subtitle" id="built-title">NASA data to your browser</h2>
         <ol class="fs-flow" aria-label="Data flow">
-          <li><span class="fs-flow-k">NASA data</span>LRO LOLA elevation maps · JPL SPICE ephemeris (DE440)</li>
-          <li><span class="fs-flow-k">Engine</span>Python works out the skyline in 180 directions at every 2 km
-            around the south pole (250 m at Artemis sites), and the Sun and Earth for all 17,544 hours</li>
-          <li><span class="fs-flow-k">Browser</span>a small JavaScript library combines them for any click in about
-            10 ms. No server, works offline</li>
+          <li><span class="fs-flow-k">Data</span>LRO LOLA elevation · JPL SPICE ephemeris (DE440)</li>
+          <li><span class="fs-flow-k">Engine</span>Python traces the skyline in 180 directions and the Sun and Earth for all 17,544 hours</li>
+          <li><span class="fs-flow-k">Browser</span>JavaScript combines them for any click in about 10 ms. No server</li>
         </ol>
-        <p class="fs-stat"><span class="num">r = 0.99</span> against NASA's own LOLA illumination map:
-          0.8 percentage points mean difference over 400 random south polar points, and the same 37
-          permanently shadowed points.</p>
+        <p class="fs-stat"><span class="num">r = 0.99</span> against NASA's LOLA illumination map, over 400
+          random south polar points (0.8 points mean difference).</p>
       </div>
-    </div>
-  </section>
 
-  <section class="fs-section fs-reveal" id="limits" aria-labelledby="limits-title">
-    <div class="wrap fs-grid">
-      <div>
+      <div class="fs-col" id="limits" aria-labelledby="limits-title">
         <p class="eyebrow">Limits</p>
-        <h2 class="fs-title" id="limits-title">What the numbers don't say</h2>
+        <h2 class="fs-subtitle" id="limits-title">What the numbers don't say</h2>
+        <p>Sunlight and a view of Earth are planning inputs, not proof that a site is safe. Slope, boulders,
+          temperature, dust, power systems and mission rules matter too. Away from the poles the terrain is
+          coarser, and the app says so.</p>
       </div>
-      <div class="fs-body">
-        <p>Sunlight and a view of Earth are planning inputs, not proof that a site is safe or usable. Slope,
-          boulders, temperature, dust, power systems and mission rules all matter too. Seeing the Sun
-          does not guarantee power, and seeing Earth does not guarantee a radio link. Away from the poles
-          the terrain is lower precision, and the app says so.</p>
-      </div>
-    </div>
-  </section>
 
-  <section class="fs-section fs-reveal" id="team" aria-labelledby="team-title">
-    <div class="wrap fs-grid">
-      <div>
+      <div class="fs-col" id="team" aria-labelledby="team-title">
         <p class="eyebrow">Team</p>
-        <h2 class="fs-title" id="team-title">Team FHLS</h2>
+        <h2 class="fs-subtitle" id="team-title">Team FHLS</h2>
+        <!-- S6: names come from the team; edit only the .fs-name text (the footer copies them) -->
+        <ul class="fs-team">
+          <li><span class="fs-name" data-todo>Team member 1</span><span class="fs-role">3D Moon viewer</span></li>
+          <li><span class="fs-name" data-todo>Team member 2</span><span class="fs-role">Web app and integration</span></li>
+          <li><span class="fs-name" data-todo>Team member 3</span><span class="fs-role">Data engine, browser maths, design and pitch</span></li>
+        </ul>
       </div>
-      <!-- S6: names come from the team; edit only the .fs-name text -->
-      <ul class="fs-team">
-        <li><span class="fs-name" data-todo>Team member 1</span><span class="fs-role">3D Moon viewer</span></li>
-        <li><span class="fs-name" data-todo>Team member 2</span><span class="fs-role">Web app and integration</span></li>
-        <li><span class="fs-name" data-todo>Team member 3</span><span class="fs-role">Data engine, browser maths, design and pitch</span></li>
-      </ul>
     </div>
   </section>
 
+  <!-- 4 · Footer. No NASA logo. -->
   <footer class="fs-footer">
-    <div class="wrap">
-      <p>Made by Team FHLS · NASA Space Apps Challenge 2026</p>
-      <p class="fs-credit">Data: NASA LRO LOLA (PDS Geosciences) · JPL NAIF SPICE · NASA SVS CGI Moon Kit</p>
+    <div class="wrap fs-footer-grid">
+      <div>
+        <p class="fs-made">Made by Team FHLS · NASA Space Apps Challenge 2026</p>
+        <p class="fs-names" data-team-names></p>
+      </div>
+      <div>
+        <p><a href="https://github.com/Learnsonme/Future-Human-Landing-System-FHLS-" rel="noopener">Source code on GitHub</a></p>
+        <p class="fs-credit">Data: JPL NAIF SPICE (DE440) · NASA LRO LOLA (PDS Geosciences) · NASA GSFC PGDA
+          · NASA SVS CGI Moon Kit. Photo: NASA, Apollo 11.</p>
+      </div>
     </div>
   </footer>
 </div>

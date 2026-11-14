@@ -57,15 +57,15 @@ try{
   };
  });
  await sky.clock.runFor(100);
- let diag=await sky.evaluate(()=>testSky.getDiagnostics());const now=await sky.evaluate(()=>performance.now());assert.ok(diag.nextShootingAt-now>=19000&&diag.nextShootingAt-now<=40000);
+ let diag=await sky.evaluate(()=>testSky.getDiagnostics());const now=await sky.evaluate(()=>performance.now());assert.ok(diag.nextShootingAt-now>=5000&&diag.nextShootingAt-now<=14000);
  await sky.clock.fastForward(Math.ceil(diag.nextShootingAt-now)+100);await sky.clock.runFor(400);
- diag=await sky.evaluate(()=>testSky.getDiagnostics());assert.equal(diag.shooting,true);assert.ok(diag.trail>=12&&diag.trail<=24);
+ diag=await sky.evaluate(()=>testSky.getDiagnostics());assert.equal(diag.shooting,true);assert.ok(diag.trail>=70&&diag.trail<=150);
  assert.equal(await sky.evaluate(()=>window.strokeDelta),0,'shooting star must never paint over text');
  await sky.evaluate(()=>document.querySelector('#screen-landing p').remove());await sky.clock.runFor(100);
  assert.ok(await sky.evaluate(()=>window.strokeDelta)>0,'trail should draw in empty background');
  await sky.evaluate(()=>{document.body.dataset.screen='app';testSky.setDensity('beginner');});await sky.clock.fastForward(50000);assert.equal(await sky.evaluate(()=>testSky.getDiagnostics().shooting),false);
  await sky.emulateMedia({reducedMotion:'reduce'});await sky.waitForTimeout(100);await sky.clock.runFor(100);await sky.evaluate(()=>{document.body.dataset.screen='landing';testSky.setDensity('landing');});
  const still=await sky.evaluate(()=>skyPixels());await sky.clock.fastForward(60000);assert.ok(await sky.evaluate(()=>skyPixels())===still);assert.equal(await sky.evaluate(()=>testSky.getDiagnostics().running),false);
- report.shootingStars={intervalMs:[20000,40000],trailPx:[12,24],protectedText:true,landingOnly:true,reducedNone:true};await sky.close();
+ report.shootingStars={intervalMs:[6000,14000],trailPx:[70,150],protectedText:true,landingOnly:true,reducedNone:true};await sky.close();
  await writeFile(out+'/landing-polish.json',JSON.stringify(report,null,2));console.log('PASS landing polish',JSON.stringify(report));
 }finally{await browser.close();}
