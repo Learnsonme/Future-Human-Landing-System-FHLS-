@@ -2,8 +2,9 @@
 // panorama (and the terrain lighting follows). Never starts by itself; under reduced motion it still
 // plays only when asked, and scrubbing the timeline always works.
 //
-//   createTimePlayer(mountElement, { getHour, setHour, lastHour })
-const SPEEDS = [["1 h/s", 1], ["1 day/s", 24], ["1 week/s", 168]];
+//   createTimePlayer(mountElement, { getHour, setHour, lastHour, loop = true, speed = 12 })
+//   loop: at the end of 2028 it starts again from 1 Jan 2027 (cycles until paused).
+const SPEEDS = [["1 h/s", 1], ["½ day/s", 12], ["1 day/s", 24], ["1 week/s", 168]];
 const STEP_MS = 66;                   // ≈ 15 updates per second keeps the panels responsive
 
 const CSS = `.time-player{display:flex;gap:10px;align-items:center}
@@ -11,7 +12,7 @@ const CSS = `.time-player{display:flex;gap:10px;align-items:center}
 .time-speed{font:400 12px var(--mono,monospace);color:var(--text,#ECE9E2);background:var(--bg,#141414);border:1px solid var(--line,#2E2E2E);padding:3px 4px}
 .time-speed:focus-visible{outline:2px solid var(--sun,#F2B33D);outline-offset:2px}`;
 
-export function createTimePlayer(mount, { getHour, setHour, lastHour }) {
+export function createTimePlayer(mount, { getHour, setHour, lastHour, loop = true, speed: startSpeed = 12 }) {
   if (!document.querySelector("style[data-time-player]")) {
     const st = document.createElement("style"); st.dataset.timePlayer = ""; st.textContent = CSS; document.head.append(st);
   }
@@ -19,7 +20,7 @@ export function createTimePlayer(mount, { getHour, setHour, lastHour }) {
   const play = document.createElement("button"); play.type = "button"; play.className = "btn btn--quiet time-play";
   const speed = document.createElement("select"); speed.className = "time-speed"; speed.setAttribute("aria-label", "Playback speed");
   for (const [label, hps] of SPEEDS) { const o = document.createElement("option"); o.textContent = label; o.value = String(hps); speed.append(o); }
-  speed.value = "24";
+  speed.value = String(startSpeed);
   wrap.append(play, speed); mount.append(wrap);
   let timer = 0, carry = 0, last = 0;
   const render = () => { play.textContent = timer ? "Pause" : "Play"; play.setAttribute("aria-pressed", String(!!timer)); };
@@ -31,12 +32,12 @@ export function createTimePlayer(mount, { getHour, setHour, lastHour }) {
     const step = Math.floor(carry); if (!step) return;
     carry -= step;
     const next = getHour() + step;
-    setHour(Math.min(lastHour, next));
-    if (next >= lastHour) stop();
+    if (next > lastHour) { if (loop) setHour(next - lastHour - 1); else { setHour(lastHour); stop(); } }
+    else setHour(next);
   }
   play.addEventListener("click", () => {
     if (timer) return stop();
-    if (getHour() >= lastHour) setHour(0);
+    if (getHour() >= lastHour && !loop) setHour(0);
     last = performance.now(); carry = 0; timer = setInterval(tick, STEP_MS); render();
   });
   render();

@@ -265,6 +265,7 @@ function mountViewer() {
   }
 
   const instance = viewer;
+  mountTimePlayer();   // S9 (T3)
   heatControl ||= mountHeatmapControl($("viewer-slot"), { dataBase: "../data", mode: state.mode });   // S10 (T3)
   heatControl.attach(instance);
   instance.onPick((lat, lon) => {
@@ -724,6 +725,13 @@ function advancedPanel(r, hour) {
 
 /* ---------- time (W4) ---------- */
 
+// S9 (T3): one Play control on the timeline; it cycles slowly through 2027–2028 until paused.
+function mountTimePlayer() {
+  const head = document.querySelector(".timebar-head");
+  if (timePlayer || !head) return;
+  timePlayer = createTimePlayer(head, { getHour: () => state.hour, setHour, lastHour: LAST_HOUR, loop: true, speed: 12 });
+}
+
 function setHour(h) {
   if (!Number.isFinite(h)) return;
   state.hour = Math.min(LAST_HOUR, Math.max(0, Math.round(h)));
@@ -867,11 +875,9 @@ function renderPanorama() {
   const r = state.result;
   if (!r) {
     section.hidden = true;
-    timePlayer?.stop();
     return;
   }
   section.hidden = false;
-  timePlayer ||= createTimePlayer(section.querySelector(".panorama-head"), { getHour: () => state.hour, setHour, lastHour: LAST_HOUR });
 
   const i = state.hour - r.start_index;
   const inRange = i >= 0 && i < r.sun_el.length;
@@ -898,7 +904,7 @@ function renderPanorama() {
 
   const p = precisionOf(r);
   $("panorama-sub").textContent = !ok ? "" : beginner
-    ? "The skyline all around this spot, with the Sun and Earth at the selected hour. Press Play to watch them move."
+    ? "The skyline all around this spot, with the Sun and Earth at the selected hour. Press Play on the timeline to watch them move."
     : `${p.short} · skyline from ${r.horizon.values.length} directions · fading trail = last 2 days · ` +
       `grey = ${Math.round(MONTH_HOURS / 24)} days either side · dimmed + dashed = behind terrain`;
   $("panorama-sub").classList.toggle("is-low", p.low);

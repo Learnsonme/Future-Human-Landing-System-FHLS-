@@ -78,7 +78,7 @@ runs immediately and nothing is drawn. Needs the `.startx` rules in
 `web/app.css`.
 
 ## time-player.js (S9, T3)
-`createTimePlayer(mountEl, { getHour, setHour, lastHour })` adds Play/Pause and a speed choice (1 h/s, 1 day/s, 1 week/s). It moves the app's hour about 15 times a second, never starts by itself, and stops when its panel is hidden or the end of 2028 is reached.
+`createTimePlayer(mountEl, { getHour, setHour, lastHour, loop = true, speed = 12 })` adds Play/Pause and a speed choice (1 h/s, ½ day/s, 1 day/s, 1 week/s). It is mounted once, on the timeline. It moves the app's hour about 15 times a second, so the timeline marker, the 3D lighting, the Sun, Earth and the panorama all move together. It **cycles**: after the end of 2028 it carries on from 1 Jan 2027. It never starts by itself, and it stops when its panel is hidden.
 
 ## horizon-panorama.js additions (S9, T3)
 These options are optional and backward compatible:

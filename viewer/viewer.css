@@ -32,3 +32,5 @@
 .fhls-sky-look button:hover{color:#ECE9E2}
 .fhls-sky-look button:focus-visible{outline:2px solid #F2B33D;outline-offset:2px}
 @media (max-width:600px){.fhls-sky-look{top:auto;bottom:40px;right:8px}.fhls-sky-look button{min-height:36px}}
+.fhls-sky-note{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);max-width:min(90%,460px);margin:0;padding:8px 12px;background:#1E1E1E;border:1px solid #2E2E2E;border-left:2px solid #4C9BE8;color:#ECE9E2;font:13px/1.4 'IBM Plex Sans',sans-serif;pointer-events:none;z-index:6}
+.fhls-sky-note[hidden]{display:none}

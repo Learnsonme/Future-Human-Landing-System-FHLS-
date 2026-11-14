@@ -23,6 +23,7 @@ export function createViewer(container, options = {}) {
   startButton.disabled = true; root.append(css, message, startButton); container.append(root);
   let renderer, camera, controls, scene, light, globe, terrain, terrainGroup, terrainMaterial, detailMaterial, finestMaterial, stars, core;
   let sky = null, siteHorizon = null;   // real Sun and Earth in the 3D sky (explorer only)
+  let lookingAt = null, skyNoteTimer = 0; // body the camera is facing (Look at …), if any
   let terrainReady = Promise.resolve(null), extrasReady = null, fade = null, firstFrame = false;
   const presentation = options.presentation !== false;
   // P9: one shared overlay (heat map) draped over the south polar terrain by the terrain shaders.
@@ -139,7 +140,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     renderer.shadowMap.needsUpdate = true;
     notify({ time: utc, lighting: core ? (core.synthetic ? 'synthetic' : 'ephemeris') : 'fixed-development' });
   }
-  function setTime(value) { checkAlive(); utc = parseTime(value); notify({time:utc}); updateLight(); return utc; }
+  function setTime(value) { checkAlive(); utc = parseTime(value); notify({time:utc}); updateLight(); checkLookingAt(); return utc; }
 
   // ── The real Sun and Earth in the sky (explorer only) ───────────────────────────────────────
   // Drawn "at infinity" (just inside the far plane) along their true directions from the camera,
@@ -155,7 +156,8 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     const look = (text, body) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text;
       b.addEventListener('click', () => lookAt(body)); bar.append(b); return b; };
     look('Look at Sun', 'sun'); look('Look at Earth', 'earth'); root.append(bar);
-    return { sun, earth, labels: { sun: label('Sun'), earth: label('Earth') }, bar };
+    const note = document.createElement('p'); note.className = 'fhls-sky-note'; note.setAttribute('role', 'status'); note.hidden = true; root.append(note);
+    return { sun, earth, labels: { sun: label('Sun'), earth: label('Earth') }, bar, note };
   }
   function bodyRender(name) {
     const p = core?.bodyPositions?.(utc); if (!p) return null;
@@ -193,10 +195,48 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     }
     sky.bar.hidden = !selection || !core;
   }
+  /** Why a body can't be seen from the selected site right now, or null if it can. */
+  function outOfSight(name) {
+    if (!selection || !core) return null;
+    const { el } = core.at(selection.lat, selection.lon, utc)[name];
+    if (el <= 0) return 'below the horizon';
+    return horizonBlocked(name) ? 'behind the terrain' : null;
+  }
+  function showSkyNote(text) {
+    if (!sky) return;
+    sky.note.textContent = text; sky.note.hidden = false;
+    clearTimeout(skyNoteTimer); skyNoteTimer = setTimeout(() => { if (sky) sky.note.hidden = true; }, 5000);
+  }
+  /** Back to the normal view of the selected site (the fly-down pose). */
+  function returnToSite() {
+    if (!selection || disposed) return;
+    lookingAt = null; cancelFlight(); clearControlInertia(); controls.enabled = false;
+    const near = Math.abs(selection.lat) >= 84 || terrain?.regionAt(selection.lat, selection.lon) ? true : terrain?.records.length ? 'mid' : false;
+    return new Promise(resolve => {
+      flight = { ...makeFlight(camera, controls, selection.lat, selection.lon, heightAt(selection.lat, selection.lon), near,
+        reduced.matches ? 0.001 : 900, performance.now()), resolve };
+      if (reduced.matches) { updateFlight(flight, camera, controls, flight.start + 1); finishFlight(); }
+    });
+  }
+  /** While facing a body, time moved on and it left the sky: say so and go back to the normal view. */
+  function checkLookingAt() {
+    if (!lookingAt) return;
+    const why = outOfSight(lookingAt);
+    if (why) {
+      showSkyNote(`${lookingAt === 'sun' ? 'The Sun' : 'Earth'} has gone ${why === 'below the horizon' ? 'below the horizon' : 'behind the terrain'} here. Back to the normal view.`);
+      returnToSite();
+    }
+  }
   /** Swing the camera to face the Sun or Earth over the selected site's skyline. */
   function lookAt(name) {
     if (!selection || !core || disposed) return;
+    const why = outOfSight(name);
+    if (why) {
+      showSkyNote(`${name === 'sun' ? 'The Sun is' : 'Earth is'} not in sight from this area right now: it is ${why}.`);
+      return returnToSite();
+    }
     const P = bodyRender(name); if (!P) return;
+    lookingAt = name;
     cancelFlight(); clearControlInertia();
     const site = new T.Vector3(...locationToRender(selection.lat, selection.lon, heightAt(selection.lat, selection.lon)));
     const up = site.clone().normalize(), v = P.clone().sub(site).normalize();
@@ -259,7 +299,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     light?.shadow.dispose(); renderer?.dispose(); renderer?.forceContextLoss();
   }
   function dispose() {
-    if (disposed) return; cancelFlight(); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
+    if (disposed) return; cancelFlight(); clearTimeout(skyNoteTimer); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
     for (const remove of listeners) remove(); releaseGraphics();
     markers.dispose(); root.remove(); picks.clear(); statuses.clear();
   }
@@ -268,7 +308,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     const token = generation;
     try{await ready;}catch(error){if(disposed)return {cancelled:true};throw error;}
     if (disposed || token !== generation) return { cancelled: true };
-    clearControlInertia(); selection = location; siteHorizon = null;
+    clearControlInertia(); selection = location; siteHorizon = null; lookingAt = null;
     core?.getHorizon?.(location.lat, location.lon).then(h => { if (selection === location) siteHorizon = h; }).catch(() => {});
     controls.autoRotate = false; controls.enabled = false;
     // M1: the flight starts immediately; nearby LOLA tiles load meanwhile and fade in (FADE_MS)
@@ -316,7 +356,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     return arrival;
   }
   function overview() {
-    checkAlive(); start(); cancelFlight(); selection = null; siteHorizon = null;
+    checkAlive(); start(); cancelFlight(); selection = null; siteHorizon = null; lookingAt = null;
     if (!camera) return;
     clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
@@ -336,7 +376,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       scene = new T.Scene(); camera = new T.PerspectiveCamera(42, 1, 0.1, 25000); camera.position.set(4600, 1200, 2900);
       controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.enablePan = false;
       controls.minDistance = R_KM + 18; controls.maxDistance = 11000; controls.autoRotate = !started && !reduced.matches; controls.autoRotateSpeed = 1;
-      controls.addEventListener('start', () => { cancelFlight(); start(); });
+      controls.addEventListener('start', () => { cancelFlight(); start(); lookingAt = null; });
       event(reduced, 'change', () => {
         controls.autoRotate = !started && !reduced.matches;
         if (reduced.matches) {

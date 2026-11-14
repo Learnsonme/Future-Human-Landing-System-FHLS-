@@ -247,6 +247,8 @@ real-data demo and integration runs made no external network requests.
 - "Look at Sun" and "Look at Earth" appear at the top right once a site is selected. They swing the camera in 0.9 s, or instantly under reduced motion, to face that body from 20 km behind the site and 4 km up.
 - For a low polar Sun or Earth, the site's skyline fills the lower half of the view.
 - The same action is available as `viewer.lookAt('sun' | 'earth')`.
+- **If the body can't be seen** from the selected site at that hour (below the horizon, or behind the terrain according to the site's skyline), the camera does not point into the ground. A note says, for example, "Earth is not in sight from this area right now: it is below the horizon", and the camera flies back to the normal view of the site.
+- **While facing a body,** if `setTime` (the slider or Play) moves it out of sight, the same note appears and the view returns to normal. Dragging the view or picking a new site ends "looking at".
 
 ### Heat-map overlay (P9)
 
