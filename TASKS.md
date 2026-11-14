@@ -31,7 +31,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)
 - [x] W5 · T2 · Horizon panorama chart (Intermediate): standalone component in web/components/
 - [x] W6 · T2 · Advanced: hour table + CSV export
-- [~] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1) (claimed by T2, 09:08)
+- [x] W7 · T2 · Deployed — live on Netlify: https://futurehumanlandingsystem.netlify.app/web/
 - [x] W8 · T2 · "Lower precision" label outside the south polar region
 
 ### Design & pitch (T3 + Claude)

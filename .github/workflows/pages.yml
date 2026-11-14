@@ -1,10 +1,12 @@
 # W7 · Deploy the whole repository to GitHub Pages.
 # The whole repo, not just web/, because web/ loads ../core/fhls-core.js and ../data/.
+#
+# The live site is on Netlify (https://futurehumanlandingsystem.netlify.app/web/),
+# so this no longer runs on push: Pages is not enabled on this repo and every push
+# produced a failed run. Kept, and runnable by hand, in case Pages is ever turned on.
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
