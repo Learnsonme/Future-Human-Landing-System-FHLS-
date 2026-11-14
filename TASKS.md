@@ -25,7 +25,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [~] V6 · T1 · Clean API for web: `viewer.flyTo(lat, lon)`, `viewer.setTime(t)`, `onPick(cb)`; document in `viewer/README.md` (claimed by T1, 09:05; local only, user authorized no push)
 
 ### Web (T2 + Codex)
-- [~] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced) (claimed by T2, 22:46)
+- [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
 - [ ] W2 · T2 · Embed viewer; on click call core and show results panel
 - [ ] W3 · T2 · Results panel per mode (use synthetic data until real data lands)
 - [ ] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)

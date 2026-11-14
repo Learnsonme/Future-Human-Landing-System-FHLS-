@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FHLS · Future Human Landing System</title>
+<meta name="description" content="Compare lunar landing sites and dates: Sun and Earth angles above the local horizon, power and direct-to-Earth communication windows, 2027–2028.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-screen="landing">
+
+<!-- ============ 1 · LANDING ============ -->
+<section class="screen" id="screen-landing">
+  <div class="wrap landing-main">
+    <div>
+      <p class="eyebrow">NASA Space Apps Challenge 2026</p>
+      <h1 class="title"><span>Future Human</span><span>Landing System</span></h1>
+      <p class="subtitle">
+        Click anywhere on the Moon and get the numbers a mission planner needs: how high the Sun
+        and Earth sit above that spot's own horizon, hour by hour, through 2027 and 2028.
+      </p>
+      <div class="landing-actions">
+        <button class="btn btn--primary" id="start">Start</button>
+        <button class="btn btn--quiet" id="skip-to-modes">Choose a mode</button>
+      </div>
+    </div>
+
+    <div class="globe" aria-hidden="true">
+      <svg viewBox="0 0 400 400" role="presentation">
+        <circle class="disc" cx="200" cy="200" r="150"></circle>
+        <g class="spin">
+          <ellipse class="mer" cx="200" cy="200" rx="40"  ry="150"></ellipse>
+          <ellipse class="mer" cx="200" cy="200" rx="95"  ry="150"></ellipse>
+          <ellipse class="mer" cx="200" cy="200" rx="135" ry="150"></ellipse>
+        </g>
+        <line class="mer" x1="50" y1="200" x2="350" y2="200"></line>
+        <!-- 84°S → pole: the full-precision band -->
+        <path class="pole" d="M 97 316 A 150 150 0 0 0 303 316"></path>
+      </svg>
+      <p class="globe-note">south polar band (84°S → pole) · full terrain precision</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <dl class="strip">
+      <div>
+        <dt>Ephemeris</dt>
+        <dd>17,544 hourly steps
+          <small>2027-01-01 → 2028-12-31 UTC · JPL SPICE DE440</small>
+        </dd>
+      </div>
+      <div>
+        <dt>Terrain</dt>
+        <dd>LOLA 40 m DEM
+          <small>South polar horizon grid, 181 × 181 points × 180 azimuths</small>
+        </dd>
+      </div>
+      <div>
+        <dt>Live check · Shackleton 89.90°S</dt>
+        <dd id="live-readout">loading…
+          <small id="live-note">computed in your browser from the real ephemeris</small>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ 2 · MODE PICKER ============ -->
+<section class="screen" id="screen-modes">
+  <div class="wrap modes">
+    <p class="eyebrow">Step 1 of 2</p>
+    <h2>How much detail?</h2>
+    <p class="lead">
+      This changes how the results are written, not where you can go. You can explore the whole
+      Moon in every mode, and you can switch mode at any time.
+    </p>
+
+    <div class="mode-list" role="group" aria-label="Detail level">
+      <button class="mode" data-mode="beginner">
+        <span class="mode-bar"></span>
+        <span class="mode-name">Beginner</span>
+        <span class="mode-what">A plain yes or no on sunlight and Earth contact, with <b>one sentence</b> saying why.</span>
+      </button>
+      <button class="mode" data-mode="intermediate">
+        <span class="mode-bar"></span>
+        <span class="mode-name">Intermediate</span>
+        <span class="mode-what">Sun and Earth <b>angles</b>, percentages of time, a window timeline and the horizon panorama.</span>
+      </button>
+      <button class="mode" data-mode="advanced">
+        <span class="mode-bar"></span>
+        <span class="mode-name">Advanced</span>
+        <span class="mode-what">Exact numbers, an <b>hour-by-hour table</b> and a CSV download.</span>
+      </button>
+    </div>
+
+    <div class="landing-actions">
+      <button class="btn btn--quiet" id="back-to-landing">Back</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 · APP ============ -->
+<section class="screen" id="screen-app">
+  <div class="wrap">
+    <header class="appbar">
+      <span class="brand">FHLS</span>
+      <span class="mode-chip" id="mode-chip">Beginner</span>
+      <button class="btn btn--quiet" id="change-mode">Change</button>
+      <span class="spacer"></span>
+      <label for="date">Date</label>
+      <input type="date" id="date" min="2027-01-01" max="2028-12-31" value="2027-01-15">
+    </header>
+
+    <p class="notice" id="data-notice" hidden></p>
+
+    <div class="app-grid">
+      <div class="stage" id="viewer-slot">
+        <div class="stage-placeholder">
+          <p class="eyebrow">Viewer slot</p>
+          <p>
+            The 3D Moon mounts here (V1–V6, T1). Until it lands, pick a site from the list in the
+            panel — the maths and the results panel do not depend on the viewer.
+          </p>
+        </div>
+      </div>
+
+      <aside class="panel" id="results">
+        <h3>Site</h3>
+        <dl>
+          <dt>Latitude, longitude</dt><dd id="r-latlon">—</dd>
+          <dt>Sun elevation</dt><dd id="r-sun" class="val-sun">—</dd>
+          <dt>Earth elevation</dt><dd id="r-earth" class="val-earth">—</dd>
+        </dl>
+        <p class="pending">
+          Full results — blocked by terrain, % sunlit, % Earth contact, longest dark period,
+          window timeline — arrive with W2–W4. Angles above are real, from core.
+        </p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
