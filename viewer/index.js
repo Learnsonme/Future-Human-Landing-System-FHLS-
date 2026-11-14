@@ -5,6 +5,7 @@ import { R_KM, moonToRender, locationToRender, renderToLocation, validateLocatio
 import { createGlobe, createStars, decodeMoonTIFF } from './globe.js';
 import { Terrain, fetchOK } from './terrain.js';
 import { makeFlight, updateFlight, sunlitCameraPosition } from './navigation.js';
+import { Markers } from './markers.js';
 
 const HERE = new URL('./', import.meta.url);
 const asset = name => new URL(`assets/${name}`, HERE);
@@ -27,6 +28,7 @@ export function createViewer(container, options = {}) {
   const picks = new Set(), statuses = new Set(), listeners = [], abort = new AbortController();
   const looseTextures = new Set();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const markers = new Markers(root, (lat, lon) => heightAt(lat, lon));
   const raycaster = new T.Raycaster(), pointer = new T.Vector2();
   const event = (node, type, fn, opts) => { node.addEventListener(type, fn, opts); listeners.push(() => node.removeEventListener(type, fn, opts)); };
   function notify(patch) {
@@ -98,7 +100,7 @@ export function createViewer(container, options = {}) {
         finishFlight();
       }
     } else controls.update(dt);
-    safety(); renderer.render(scene, camera);
+    safety(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
   }
   function releaseGraphics() {
     controls?.dispose(); terrain?.dispose();
@@ -114,7 +116,7 @@ export function createViewer(container, options = {}) {
   function dispose() {
     if (disposed) return; cancelFlight(); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
     for (const remove of listeners) remove(); releaseGraphics();
-    root.remove(); picks.clear(); statuses.clear();
+    markers.dispose(); root.remove(); picks.clear(); statuses.clear();
   }
   async function flyTo(lat, lon) {
     checkAlive(); const location = validateLocation(lat, lon); start(); cancelFlight();
@@ -252,6 +254,9 @@ export function createViewer(container, options = {}) {
   ready.catch(() => {});
   event(startButton, 'click', start);
   return { ready, start, flyTo, setTime, overview, dispose,
+    addMarker(id, lat, lon, label) { checkAlive(); markers.add(id, lat, lon, label); },
+    removeMarker(id) { checkAlive(); return markers.remove(id); },
+    setActiveMarker(id) { checkAlive(); markers.setActive(id); },
     onPick(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onPick needs a function.'); picks.add(callback); return () => picks.delete(callback); },
     onStatus(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onStatus needs a function.'); statuses.add(callback); callback({ ...status }); return () => statuses.delete(callback); },
     getStatus() { return { ...status }; },
@@ -261,7 +266,7 @@ export function createViewer(container, options = {}) {
       shadows: light ? { enabled: light.castShadow, mapSize: light.shadow.mapSize.toArray(),
         extentKm: light.shadow.camera.right, nearKm: light.shadow.camera.near, farKm: light.shadow.camera.far } : null,
       flying: !!flight, flightDurationMs: flight?.duration || 0, renderFrames: renderer?.info.render.frame || 0,
-      disposed, terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
+      disposed, markers: markers.diagnostics(), terrainMeshes: terrainGroup?.children.length || 0, memory: renderer ? { ...renderer.info.memory } : null }; },
     setVerticalExaggeration(value) {
       checkAlive(); if (![1, 1.25, 1.5].includes(value)) throw new RangeError('Use exaggeration 1, 1.25, or 1.5.');
       if (terrain) {

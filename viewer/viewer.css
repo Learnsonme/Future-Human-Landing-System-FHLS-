@@ -9,4 +9,7 @@
 .fhls-viewer-start:focus-visible{outline:2px solid #F2B33D;outline-offset:4px}
 .fhls-viewer-start:disabled{opacity:.5;cursor:wait}
 .fhls-viewer-start[hidden]{display:none}
+.fhls-marker{position:absolute;box-sizing:border-box;width:12px;height:12px;border:1.5px solid var(--text,#ECE9E2);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;color:var(--text,#ECE9E2);font:11px 'IBM Plex Mono',monospace;line-height:10px;text-indent:15px;white-space:nowrap}
+.fhls-marker[hidden]{display:none}
+.fhls-marker.is-active{color:var(--sun,#F2B33D);border-color:var(--sun,#F2B33D)}
 .fhls-viewer[data-phase='error'] .fhls-viewer-status{top:40%;bottom:auto;text-align:center;color:#ECE9E2;pointer-events:auto}

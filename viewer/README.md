@@ -196,3 +196,20 @@ Chrome viewer suite, lighting/fallback tests, lifecycle/error tests and the
 committed T2 app integration check passed on 14 November 2026. Desktop,
 390 px mobile viewport, touch input and reduced-motion paths were exercised;
 real-data demo and integration runs made no external network requests.
+
+### Comparison markers (M4)
+
+`viewer.addMarker(id, lat, lon, label)` adds or replaces a pin, where `id` is a
+nonempty string and `label` is 1, 2, or 3 (number or string). At most three IDs
+may exist. Coordinates use the same planetocentric, east-positive degrees as
+`flyTo`. Calls are allowed before `ready`; pins appear when the scene renders.
+`viewer.removeMarker(id)` removes it and returns whether it existed.
+`viewer.setActiveMarker(id)` optionally highlights that pin in `--sun`; pass
+`null` to clear. Other pins use `--text`. Re-add an ID to renumber it.
+
+Pins are 12 px rings with 1.5 px strokes and 11 px IBM Plex Mono numbers, at a
+constant screen size on the globe and terrain. Labels behind the Moon, offscreen,
+or occluded by sampled local relief are hidden. Occlusion is illustrative,
+not a scientific visibility result. They create no additional canvas.
+Disposal removes pins. The web owner retains pin state and re-adds pins after
+Home or a mode change creates a new viewer; the viewer does not store app state.
