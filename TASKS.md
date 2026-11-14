@@ -31,7 +31,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [ ] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)
 - [ ] W5 · T2 · Horizon panorama chart (Intermediate) (open to T1): standalone component, input = horizon array + Sun/Earth tracks
 - [ ] W6 · T2 · Advanced: hour table + CSV export (open to T1)
-- [ ] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1)
+- [~] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1) (claimed by T2, 09:08)
 - [ ] W8 · T2 · "Lower precision" label outside the south polar region
 
 ### Design & pitch (T3 + Claude)
