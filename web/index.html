@@ -116,6 +116,28 @@
 
     <p class="notice" id="data-notice" hidden></p>
 
+    <section class="timebar" aria-label="Date and window timeline">
+      <div class="timebar-head">
+        <span class="eyebrow">2027 – 2028</span>
+        <output class="time-readout num" id="time-readout">—</output>
+      </div>
+      <input type="range" id="time-slider" min="0" max="17543" step="1" value="348"
+             aria-label="Hour within 2027–2028">
+      <figure class="timeline" id="timeline">
+        <div class="timeline-keys" aria-hidden="true">
+          <span class="tl-key val-sun">Sunlight</span>
+          <span class="tl-key val-earth">Earth</span>
+          <span class="tl-key val-both">Both</span>
+        </div>
+        <div class="timeline-plot">
+          <canvas id="timeline-canvas" role="img"
+                  aria-label="Colour bands showing when sunlight, Earth contact and both are available"></canvas>
+          <span class="time-marker" id="time-marker" aria-hidden="true"></span>
+        </div>
+        <figcaption id="timeline-caption">Pick a site to see its windows.</figcaption>
+      </figure>
+    </section>
+
     <div class="app-grid">
       <div class="stage" id="viewer-slot">
         <div class="stage-placeholder" id="stage-placeholder">

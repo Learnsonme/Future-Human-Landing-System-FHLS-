@@ -250,6 +250,9 @@ body[data-screen="app"]     #screen-app     { display: block; }
   .app-grid { grid-template-columns: 1fr; }
   /* the app bar clips the date field at phone width unless it may wrap */
   .appbar { flex-wrap: wrap; gap: 12px 16px; }
+  /* "2027 - 2028" and the readout fight for one line at phone width */
+  .timebar-head { display: block; }
+  .time-readout { display: block; margin-top: 4px; }
   .appbar .spacer { display: none; }
   .mode { grid-template-columns: 2px minmax(0, 1fr); }
   .mode-what { grid-column: 2; margin-top: 6px; }
@@ -346,3 +349,75 @@ body[data-screen="app"]     #screen-app     { display: block; }
 
 .r-sentence { margin: 20px 0 0; font-size: 13px; line-height: 1.6; }
 .val-terrain { color: var(--terrain); }
+
+/* ---------- date slider + timeline strip (W4) ---------- */
+.timebar { margin: var(--gap) 0 0; }
+.timebar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.time-readout { font-size: 13px; color: var(--text); }
+
+#time-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--line);
+  cursor: pointer;
+}
+#time-slider:focus-visible { outline: 2px solid var(--sun); outline-offset: 6px; }
+#time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2px;
+  height: 18px;
+  background: var(--text);
+  border: 0;
+  border-radius: 0;
+  cursor: ew-resize;
+}
+#time-slider::-moz-range-thumb {
+  width: 2px;
+  height: 18px;
+  background: var(--text);
+  border: 0;
+  border-radius: 0;
+  cursor: ew-resize;
+}
+
+.timeline { margin: 14px 0 0; }
+.timeline-keys {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 8px;
+  font: 400 12px/1 var(--mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.tl-key::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  margin-right: 7px;
+  vertical-align: middle;
+  background: currentColor;
+}
+.timeline-plot { position: relative; }
+#timeline-canvas { display: block; width: 100%; cursor: ew-resize; touch-action: none; }
+.time-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--text);
+  pointer-events: none;
+}
+#timeline-caption {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}

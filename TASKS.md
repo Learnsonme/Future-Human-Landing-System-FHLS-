@@ -28,7 +28,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] W1 · T2 · App shell, Start → mode picker (Beginner / Intermediate / Advanced)
 - [x] W2 · T2 · Embed viewer; on click call core and show results panel
 - [x] W3 · T2 · Results panel per mode (real data — synthetic never needed)
-- [~] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands) (claimed by T2, 10:25)
+- [x] W4 · T2 · Date slider (2027–2028) + timeline strip (power/comms colour bands)
 - [ ] W5 · T2 · Horizon panorama chart (Intermediate) (open to T1): standalone component, input = horizon array + Sun/Earth tracks
 - [ ] W6 · T2 · Advanced: hour table + CSV export (open to T1)
 - [~] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1) (claimed by T2, 09:08)
@@ -38,8 +38,8 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] D0 · T3 · `design/style.md`
 - [x] D1 · T3 · Beginner-mode wording and icons
 - [ ] D2 · T3 · Logo assets (transparent PNG, square icon)
-- [ ] D3 · T3 · Demo story + video (by Sun 12:30)
-- [ ] D4 · T3 · Project page text + AI-use disclosure
+- [~] D3 · T3 · Demo story + video (by Sun 12:30) (claimed by T3, 12:10)
+- [~] D4 · T3 · Project page text + AI-use disclosure (claimed by T3, 12:10)
 
 ## Rule for "(open to T1)" tasks
 T1 may claim these **only after V1–V6 are done**, and only if they can finish them **before leaving on Saturday**. Unfinished at departure → set back to `[ ]` with a LOG.md note so T2 can take over. Build them as standalone components in `web/components/` with a short usage note.
