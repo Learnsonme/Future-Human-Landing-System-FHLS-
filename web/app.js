@@ -28,6 +28,7 @@ let core = null;
 let coreError = null;
 let sites = [];
 let viewer = null;
+let horizonGrids = new Map();   // grid id → its entry in data/horizon/index.json
 
 const $ = (id) => document.getElementById(id);
 
@@ -117,6 +118,15 @@ async function init() {
     sites = await res.json();
   } catch (err) {
     console.warn("sites.json unavailable", err);
+  }
+
+  try {
+    const res = await fetch("../data/horizon/index.json");
+    if (!res.ok) throw new Error(`horizon index: ${res.status}`);
+    const index = await res.json();
+    horizonGrids = new Map((index.grids || []).map((g) => [g.id, g]));
+  } catch (err) {
+    console.warn("horizon index unavailable", err);
   }
 
   renderSiteList();
@@ -247,15 +257,40 @@ function renderResults() {
   renderHourTable();
 }
 
+/* ---------- precision wording (W8) ---------- */
+// One source for every place the label appears, quoting the real grid.
+
+function precisionOf(r) {
+  const low = r.precision !== "high";
+  const grid = horizonGrids.get(r.horizon?.grid_id);
+
+  let sampling = "";
+  if (grid) {
+    if (grid.spacing_km != null) {
+      sampling = grid.spacing_km < 1
+        ? `${Math.round(grid.spacing_km * 1000)} m grid`
+        : `${grid.spacing_km} km grid`;
+    } else if (grid.step_deg != null) {
+      sampling = `${grid.step_deg}° grid, roughly ${Math.round(grid.step_deg * 30)} km`;
+    }
+    if (grid.n_az) sampling += `, ${grid.n_az} directions`;
+  }
+
+  return {
+    low,
+    short: low ? "Lower precision" : "Full terrain precision",
+    sentence: low
+      ? `Lower precision: outside the south polar region the terrain comes from a ${sampling || "coarse grid"}. ` +
+        "Sun and Earth positions are exact everywhere."
+      : `Full terrain precision: horizon from a ${sampling || "south polar grid"}.`,
+  };
+}
+
 /* ---------- panel pieces ---------- */
 
 function precisionBadge(r) {
-  const low = r.precision !== "high";
-  const node = el("p",
-    low ? "Lower precision · coarse terrain outside the south polar region"
-        : "Full terrain precision",
-    low ? "badge badge--low" : "badge");
-  return node;
+  const p = precisionOf(r);
+  return el("p", p.sentence, p.low ? "badge badge--low" : "badge");
 }
 
 function gridNote(r, site) {
@@ -491,7 +526,8 @@ function drawTimeline() {
 
   $("timeline-caption").textContent = r
     ? `${r.windows.power.length} sunlight windows · ${r.windows.comms.length} contact windows · ` +
-      `${r.windows.both.length} with both. Click or drag to move the date. Left half 2027, right half 2028.`
+      `${r.windows.both.length} with both · ${precisionOf(r).short}. ` +
+      "Click or drag to move the date. Left half 2027, right half 2028."
     : "Pick a site to see its windows.";
 }
 
@@ -548,10 +584,12 @@ function renderPanorama() {
     height: 240,
   });
 
+  const p = precisionOf(r);
   $("panorama-sub").textContent = ok
-    ? `Skyline from ${r.horizon.values.length} directions · Sun and Earth tracks span ` +
+    ? `${p.short} · skyline from ${r.horizon.values.length} directions · Sun and Earth tracks span ` +
       `${Math.round(MONTH_HOURS / 24)} days either side of the selected hour`
     : "";
+  $("panorama-sub").classList.toggle("is-low", p.low);
 }
 
 /* ---------- hour-by-hour table + CSV (W6, Advanced) ---------- */
@@ -618,9 +656,12 @@ function renderHourTable() {
 
   const day = new Date(core.timeOf(state.hour)).toISOString().slice(0, 10);
   $("hourtable-day").textContent = `${day} · ${rows.length} hours · click a row to jump`;
+  const p = precisionOf(r);
+  $("hourtable-precision").textContent = p.sentence;
+  $("hourtable-precision").classList.toggle("is-low", p.low);
   $("csv-note").textContent =
     `CSV columns: ${CSV_COLUMNS.join(", ")}. Angles in degrees, power and comms are 1 or 0. ` +
-    "Lines starting with # record the site and the grid the terrain came from.";
+    "Lines starting with # record the site, the grid the terrain came from and its precision.";
 }
 
 function buildCsv(r, from, to) {
@@ -631,6 +672,7 @@ function buildCsv(r, from, to) {
     `# click: ${site.lat.toFixed(5)}, ${site.lon.toFixed(5)}`,
     gp ? `# terrain grid point: ${gp.lat.toFixed(5)}, ${gp.lon.toFixed(5)} (${distanceKm(site, gp).toFixed(3)} km away)` : "# terrain grid point: none",
     `# grid: ${r.horizon?.grid_id || "none"} · precision: ${r.precision}`,
+    `# ${precisionOf(r).sentence}`,
     "# power = more than half the Sun's disc above the terrain; comms = centre of Earth above the terrain",
     "# neither guarantees usable power or a radio link",
     `# ephemeris: JPL SPICE DE440 via core/fhls-core.js · generated ${new Date().toISOString().slice(0, 19)}Z`,

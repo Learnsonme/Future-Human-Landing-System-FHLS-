@@ -494,3 +494,11 @@ body[data-screen="app"]     #screen-app     { display: block; }
 .panorama-sub { margin: 8px 0 0; font: 400 12px/1.4 var(--mono); color: var(--muted); }
 .panorama-keys { display: flex; gap: 18px; font: 400 12px/1 var(--mono); text-transform: uppercase; letter-spacing: .06em; }
 #panorama-canvas { display: block; width: 100%; margin-top: 12px; }
+
+/* ---------- precision wording (W8) ---------- */
+.precision-line {
+  margin: 12px 0 0;
+  font: 400 12px/1.5 var(--mono);
+  color: var(--muted);
+}
+.precision-line.is-low, .panorama-sub.is-low { color: var(--sun); }

@@ -32,7 +32,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 - [x] W5 · T2 · Horizon panorama chart (Intermediate): standalone component in web/components/
 - [x] W6 · T2 · Advanced: hour table + CSV export
 - [~] W7 · T2 · Deploy to GitHub Pages (placeholder live in hour 1) (claimed by T2, 09:08)
-- [~] W8 · T2 · "Lower precision" label outside the south polar region (claimed by T2, 11:45)
+- [x] W8 · T2 · "Lower precision" label outside the south polar region
 
 ### Design & pitch (T3 + Claude)
 - [x] D0 · T3 · `design/style.md`
