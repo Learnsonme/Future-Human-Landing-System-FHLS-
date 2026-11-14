@@ -1,0 +1,11 @@
+{
+  "start_utc": "2027-01-01T00:00:00Z",
+  "step_hours": 1,
+  "count": 17544,
+  "frame": "MOON_ME",
+  "units": "km",
+  "abcorr": "LT+S",
+  "layout": "float32 little-endian, per step: sun_x, sun_y, sun_z, earth_x, earth_y, earth_z",
+  "synthetic": false,
+  "source": "JPL NAIF SPICE: de440s.bsp, moon_pa_de440_200625.bpc, moon_de440_250416.tf"
+}

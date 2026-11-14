@@ -5,7 +5,7 @@ Cycle: pull → claim → push → work → tick → log → push.
 ## Must work (core product)
 ### Engine + core (T3 + Claude)
 - [x] E0 · T3 · SPICE installed and tested (test_spice.py)
-- [~] E1 · T3 · Ephemeris table 2027–2028 hourly → `data/ephemeris.*` (push a synthetic version in hour 1) (claimed by T3, 08:44)
+- [x] E1 · T3 · Ephemeris table 2027–2028 hourly → `data/ephemeris.*` (push a synthetic version in hour 1)
 - [ ] E2 · T3 · Download LOLA south polar DEMs; reproject/check
 - [ ] E3 · T3 · Horizon algorithm (near = fine DEM, far = coarse DEM, curvature correction); test on Shackleton
 - [ ] E4 · T3 · **Start long run Saturday morning:** `south_2km` grid → `data/horizon/` (all CPU cores)
