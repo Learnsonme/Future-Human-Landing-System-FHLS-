@@ -16,9 +16,11 @@ const state = {
   screen: "landing",
   mode: restoreMode() || "beginner",
   site: null,          // { lat, lon, name } once something is picked
-  date: "2027-01-15",
+  hour: 348,           // hour index into 2027–2028 (348 = 2027-01-15 12:00 UTC)
   result: null,        // the last core.analyze() result
 };
+
+const LAST_HOUR = 17543;
 
 let core = null;
 let coreError = null;
@@ -72,6 +74,7 @@ function show(screen) {
   document.body.dataset.screen = screen;
   window.scrollTo(0, 0);
   if (screen === "landing") $("start").focus({ preventScroll: true });
+  if (screen === "app") drawTimeline();   // zero width while hidden
 }
 
 /* ---------- mode ---------- */
@@ -114,6 +117,7 @@ async function init() {
   }
 
   renderSiteList();
+  syncTimeControls();
   renderLanding();
   mountViewer();
 }
@@ -184,6 +188,7 @@ async function selectSite(site) {
     return;
   }
   renderResults();
+  drawTimeline();
 }
 
 function renderResults() {
@@ -195,7 +200,7 @@ function renderResults() {
   const body = $("r-body");
   body.hidden = false;
 
-  const i = core.indexOf(`${state.date}T12:00:00Z`) - r.start_index;
+  const i = state.hour - r.start_index;
   const hour = (i >= 0 && i < r.sun_el.length) ? i : null;
 
   const parts = state.mode === "beginner"
@@ -354,6 +359,119 @@ function advancedPanel(r, hour) {
   return out;
 }
 
+/* ---------- time (W4) ---------- */
+
+function setHour(h) {
+  if (!Number.isFinite(h)) return;
+  state.hour = Math.min(LAST_HOUR, Math.max(0, Math.round(h)));
+  syncTimeControls();
+  renderLanding();
+  renderResults();   // reuses the cached analysis; no recompute
+  drawMarker();
+}
+
+function hourToDate(h) {
+  return new Date(core ? core.timeOf(h) : Date.UTC(2027, 0, 1) + h * 3600_000);
+}
+
+function syncTimeControls() {
+  const d = hourToDate(state.hour);
+  const iso = d.toISOString();
+  $("time-slider").value = String(state.hour);
+  $("date").value = iso.slice(0, 10);
+  $("time-readout").textContent =
+    `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC · hour ${state.hour.toLocaleString("en-GB")}`;
+}
+
+/* ---------- timeline strip ---------- */
+// Three bands: sunlight, Earth contact, both. One canvas column per pixel,
+// coloured when most of the hours in that column qualify.
+
+const BAND_H = 16;
+const BAND_GAP = 2;
+
+function sizeCanvas() {
+  const canvas = $("timeline-canvas");
+  const width = canvas.parentElement.clientWidth;
+  if (!width) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const height = BAND_H * 3 + BAND_GAP * 2;
+  canvas.style.width = "100%";
+  canvas.style.height = `${height}px`;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, width, height };
+}
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function drawTimeline() {
+  const sized = sizeCanvas();
+  if (!sized) return;
+  const { ctx, width, height } = sized;
+  const r = state.result;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const none = cssVar("--none");
+  const bands = [
+    { flags: r?.power, colour: cssVar("--sun") },
+    { flags: r?.comms, colour: cssVar("--earth") },
+    { flags: r?.both,  colour: cssVar("--both") },
+  ];
+
+  bands.forEach((band, row) => {
+    const y = row * (BAND_H + BAND_GAP);
+    ctx.fillStyle = none;
+    ctx.fillRect(0, y, width, BAND_H);
+    if (!band.flags) return;
+
+    const perPx = (LAST_HOUR + 1) / width;
+    ctx.fillStyle = band.colour;
+    for (let x = 0; x < width; x++) {
+      const from = Math.floor(x * perPx);
+      const to = Math.min(band.flags.length, Math.floor((x + 1) * perPx));
+      let on = 0;
+      for (let i = from; i < to; i++) if (band.flags[i]) on++;
+      // part-filled columns get a shorter bar, so brief windows stay visible
+      const share = to > from ? on / (to - from) : 0;
+      if (share > 0) {
+        const h = Math.max(3, Math.round(BAND_H * share));
+        ctx.fillRect(x, y + BAND_H - h, 1, h);
+      }
+    }
+  });
+
+  // year divider
+  const yearX = Math.round((8760 / (LAST_HOUR + 1)) * width);
+  ctx.fillStyle = cssVar("--line");
+  ctx.fillRect(yearX, 0, 1, height);
+
+  drawMarker();
+
+  $("timeline-caption").textContent = r
+    ? `${r.windows.power.length} sunlight windows · ${r.windows.comms.length} contact windows · ` +
+      `${r.windows.both.length} with both. Click or drag to move the date. Left half 2027, right half 2028.`
+    : "Pick a site to see its windows.";
+}
+
+// The marker lives on its own element so moving the date never redraws the bands.
+function drawMarker() {
+  const el = $("time-marker");
+  if (!el) return;
+  el.style.left = `${(state.hour / LAST_HOUR) * 100}%`;
+}
+
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(drawTimeline, 150);
+});
+
 /* ---------- landing strip ---------- */
 
 function renderLanding() {
@@ -364,7 +482,7 @@ function renderLanding() {
     );
     return;
   }
-  const now = core.at(REFERENCE.lat, REFERENCE.lon, `${state.date}T12:00:00Z`);
+  const now = core.at(REFERENCE.lat, REFERENCE.lon, state.hour);
   const stamp = `${new Date(now.time).toISOString().slice(0, 16).replace("T", " ")} UTC · computed in your browser`;
   $("live-readout").replaceChildren(
     el("span", `Sun ${formatAngle(now.sun.el)}`, "val-sun"),
@@ -390,14 +508,23 @@ for (const btn of document.querySelectorAll(".mode")) {
 }
 
 $("date").addEventListener("change", (e) => {
-  if (!e.target.value) return;
-  state.date = e.target.value;
-  renderLanding();
-  renderResults();   // reuses the cached analysis; no recompute
+  if (!e.target.value || !core) return;
+  setHour(core.indexOf(`${e.target.value}T12:00:00Z`));
 });
 
+$("time-slider").addEventListener("input", (e) => setHour(Number(e.target.value)));
+
+// Clicking or dragging on the strip jumps to that hour.
+for (const type of ["pointerdown", "pointermove"]) {
+  $("timeline-canvas").addEventListener(type, (e) => {
+    if (type === "pointermove" && e.buttons !== 1) return;
+    const box = e.currentTarget.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+    setHour(Math.round(frac * LAST_HOUR));
+  });
+}
+
 setMode(state.mode);
-$("date").value = state.date;
 init();
 
 // Hook for the viewer (T1) and later web tasks.
