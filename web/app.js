@@ -293,7 +293,10 @@ function mountViewer() {
     if (viewer !== instance || state.screen !== "app") return;
     $("stage-placeholder").hidden = true;
     pushTimeToViewer();
-    if (state.site) instance.flyTo(state.site.lat, state.site.lon).catch(() => {});
+    if (state.site) {
+      instance.flyTo(state.site.lat, state.site.lon).catch(() => {});
+      instance.showLander?.(state.site.lat, state.site.lon, state.site.name);   // S16 (T3)
+    }
   }).catch((err) => {
     if (viewer !== instance) return;
     console.error("viewer failed to start", err);
@@ -339,10 +342,13 @@ async function selectSite(site, { fly = true } = {}) {
   if (!core) return;
   if (fly && viewer) viewer.flyTo(site.lat, site.lon).catch(() => {});
   state.site = { lat: site.lat, lon: site.lon, name: site.name || "Picked point" };
+  try { viewer?.showLander?.(state.site.lat, state.site.lon, state.site.name); } catch { /* viewer gone */ }   // S16 (T3)
   panoHour = state.hour;   // S11 (T3): the panorama starts at the timeline's hour for a new site
 
   for (const b of document.querySelectorAll(".site")) {
-    b.classList.toggle("is-on", b.firstChild?.textContent === state.site.name);
+    const on = b.firstChild?.textContent === state.site.name;
+    b.classList.toggle("is-on", on);
+    if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");   // S16 (T3)
   }
 
   $("r-title").textContent = state.site.name;

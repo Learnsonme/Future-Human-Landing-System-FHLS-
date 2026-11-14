@@ -6,6 +6,7 @@ import { createGlobe, createStars, decodeMoonTIFF } from './globe.js';
 import { Terrain, fetchOK } from './terrain.js';
 import { makeFlight, updateFlight, sunlitCameraPosition } from './navigation.js';
 import { Markers } from './markers.js';
+import { Lander } from './lander.js';
 
 const HERE = new URL('./', import.meta.url);
 const asset = name => new URL(`assets/${name}`, HERE);
@@ -71,6 +72,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   const looseTextures = new Set();
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const markers = new Markers(root, (lat, lon) => heightAt(lat, lon));
+  const lander = new Lander(root, (lat, lon) => heightAt(lat, lon));   // S16: the current selection
   const raycaster = new T.Raycaster(), pointer = new T.Vector2();
   const event = (node, type, fn, opts) => { node.addEventListener(type, fn, opts); listeners.push(() => node.removeEventListener(type, fn, opts)); };
   function notify(patch) {
@@ -296,7 +298,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     // An idle scene (including a reduced-motion Moon) needs no GPU redraws.
     if (!needsRender && firstFrame) return;
     needsRender = false;
-    safety(); updateSky(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight);
+    safety(); updateSky(); renderer.render(scene, camera); markers.update(camera, root.clientWidth, root.clientHeight); lander.update(camera, root.clientWidth, root.clientHeight);
     if (!firstFrame) {
       firstFrame = true; root.classList.add('is-live');
       if (poster) posterTimer = setTimeout(() => { poster?.remove(); poster = null; }, reduced.matches ? 0 : 300);
@@ -332,7 +334,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
   function dispose() {
     if (disposed) return; cancelFlight(); clearTimeout(skyNoteTimer); clearTimeout(posterTimer); disposed = true; abort.abort(); cancelAnimationFrame(raf); observer.disconnect();
     for (const remove of listeners) remove(); releaseGraphics();
-    markers.dispose(); root.remove(); picks.clear(); statuses.clear();
+    markers.dispose(); lander.dispose(); root.remove(); picks.clear(); statuses.clear();
   }
   async function flyTo(lat, lon) {
     checkAlive(); const location = validateLocation(lat, lon); start(); cancelFlight();
@@ -395,7 +397,7 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
     return arrival;
   }
   function overview() {
-    checkAlive(); start(); cancelFlight(); selection = null; siteHorizon = null; lookingAt = null;
+    checkAlive(); start(); cancelFlight(); selection = null; siteHorizon = null; lookingAt = null; lander.clear(); needsRender = true;
     if (!camera) return;
     clearControlInertia();
     camera.up.set(0, 1, 0); camera.position.set(4600, 1200, 2900); controls.target.set(0, 0, 0);
@@ -547,12 +549,15 @@ varying vec3 vOverlayPos;`).replace('#include <opaque_fragment>', `if (uOverlayO
       needsRender = true;
     },
     removeMarker(id) { checkAlive(); return markers.remove(id); },
+    /** S16 · show the lander glyph on the selected spot (one at a time; a new spot moves it). */
+    showLander(lat, lon, label = '') { checkAlive(); lander.show(lat, lon, label); needsRender = true; },
+    clearLander() { checkAlive(); lander.clear(); needsRender = true; },
     setActiveMarker(id) { checkAlive(); markers.setActive(id); needsRender = true; },
     onPick(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onPick needs a function.'); picks.add(callback); return () => picks.delete(callback); },
     onStatus(callback) { checkAlive(); if (typeof callback !== 'function') throw new TypeError('onStatus needs a function.'); statuses.add(callback); callback({ ...status }); return () => statuses.delete(callback); },
     getStatus() { return { ...status }; },
     getDiagnostics() { return { camera: camera?.position.toArray(), target: controls?.target.toArray(),
-      sunDirection: core ? moonToRender(core.sunDirection(utc)) : null, selected: selection ? { ...selection } : null,
+      sunDirection: core ? moonToRender(core.sunDirection(utc)) : null, selected: selection ? { ...selection } : null, lander: lander.diagnostics(),
       lightDirection: light?.position.clone().sub(light.target.position).normalize().toArray(),
       shadows: light ? { enabled: light.castShadow, mapSize: light.shadow.mapSize.toArray(),
         extentKm: light.shadow.camera.right, nearKm: light.shadow.camera.near, farKm: light.shadow.camera.far } : null,

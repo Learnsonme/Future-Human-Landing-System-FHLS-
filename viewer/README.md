@@ -275,6 +275,15 @@ not a scientific visibility result. They create no additional canvas.
 Disposal removes pins. The web owner retains pin state and re-adds pins after
 Home or a mode change creates a new viewer; the viewer does not store app state.
 
+### Selected-spot lander (S16)
+`viewer.showLander(lat, lon, label?)` puts a small lunar-lander glyph (our own 24 px SVG: `--text`
+outline, `--sun` descent stage and window) with its feet on that spot, with an optional label below
+it (site name or "Picked point"). There is one lander: a new call moves it and replays a single
+≤ 400 ms touchdown (drop of 8 px + fade; none under reduced motion). `viewer.clearLander()` removes it,
+and so does `overview()` and disposal. It keeps a constant screen size, sits above the numbered pins,
+and is hidden only when the spot is round the far side of the Moon or off screen, never by terrain.
+`getDiagnostics().lander` reports `{ lat, lon, label, visible }` or `null`.
+
 ### T1 polish: camera, terrain loading and rendering
 
 Fly-to retains the 1.8 s design easing and has no fixed-altitude jump when
