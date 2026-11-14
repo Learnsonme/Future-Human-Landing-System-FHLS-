@@ -18,7 +18,7 @@ Goal: look like a **mission tool built by people who care**, not a generic AI te
 Only use these colours. The Sun/Earth/both/none colours mean the same thing on every screen.
 
 ## Type
-- Titles: the same bold condensed font as the logo (T3 to confirm the font name), UPPERCASE, used sparingly.
+- Logo font: **Sugo Display**, used in the Canva logo. Don't embed it as a web font, because its web licence is unconfirmed and the app must stay offline with self-hosted fonts. Where the wordmark is needed, use the logo image `design/logo/fhls-logo-transparent.png`. Other titles use IBM Plex Sans SemiBold, UPPERCASE, used sparingly.
 - Body: **IBM Plex Sans**. Numbers and data: **IBM Plex Mono** (gives a real mission-control feel).
 - Sizes: 14px body, 12px labels, 32–48px page titles. No more than 3 sizes per screen.
 
