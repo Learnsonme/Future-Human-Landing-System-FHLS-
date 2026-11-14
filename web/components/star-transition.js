@@ -141,8 +141,8 @@ export function createStarTransition(root) {
 
     if (coreAlpha > 0.01) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, coreR));
-      g.addColorStop(0, rgba(tint.text, coreAlpha));
-      g.addColorStop(0.35, rgba(tint.sun, coreAlpha * 0.55));
+      g.addColorStop(0, rgba(tint.text, coreAlpha * 0.9));
+      g.addColorStop(0.35, rgba(tint.sun, coreAlpha * 0.4));
       g.addColorStop(1, rgba(tint.sun, 0));
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -153,12 +153,12 @@ export function createStarTransition(root) {
     // full-screen wash, brightest right as the screens swap
     const fp = (p - BLAST) / 0.14;
     const flash = p < BLAST ? 0
-      : fp < 1 ? easeOut(fp) * 0.46
-      : Math.max(0, 0.46 * (1 - (p - BLAST - 0.14) / 0.42));
+      : fp < 1 ? easeOut(fp) * 0.26
+      : Math.max(0, 0.26 * (1 - (p - BLAST - 0.14) / 0.42));
     if (flash > 0.004) {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
       g.addColorStop(0, rgba(tint.text, flash));
-      g.addColorStop(0.45, rgba(tint.sun, flash * 0.3));
+      g.addColorStop(0.35, rgba(tint.sun, flash * 0.22));
       g.addColorStop(1, rgba(tint.sun, 0));
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
@@ -167,7 +167,7 @@ export function createStarTransition(root) {
     // ── 2 · light spikes ────────────────────────────────────────────────
     if (p > BLAST && p < 0.82) {
       const sp = (p - BLAST) / 0.52;
-      const alpha = Math.sin(Math.PI * sp) * 0.5;
+      const alpha = Math.sin(Math.PI * sp) * 0.34;
       for (const s of spikes) {
         const len = easeOut(sp) * maxR * s.len;
         const x = cx + Math.cos(s.angle) * len;
@@ -189,7 +189,7 @@ export function createStarTransition(root) {
       if (p <= delay) continue;
       const rp = Math.min(1, (p - delay) / 0.62);
       const r = easeOut(rp) * maxR * 1.25;
-      const alpha = (1 - rp) * 0.55;
+      const alpha = (1 - rp) * 0.42;
       if (alpha <= 0.01 || r <= 0) continue;
       ctx.strokeStyle = rgba(colour, alpha);
       ctx.lineWidth = weight * (1 - rp * 0.6);
@@ -206,7 +206,7 @@ export function createStarTransition(root) {
         const r = easeOut(ep) * maxR * e.speed * 1.2;
         const x = cx + Math.cos(e.angle) * r;
         const y = cy + Math.sin(e.angle) * r;
-        const alpha = (1 - ep) * 0.85;
+        const alpha = (1 - ep) * 0.7;
         const colour = e.warm ? tint.sun : tint.text;
 
         const tx = cx + Math.cos(e.angle) * Math.max(0, r - e.trail);
