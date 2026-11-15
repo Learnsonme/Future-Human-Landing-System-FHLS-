@@ -7,7 +7,7 @@
 // S12/S22: set VIDEO (Beginner walkthrough) and VIDEO_PITCH (intro under About) to their URLs: an .mp4/.webm file (plays muted
 // with captions if CAPTIONS is set) or a YouTube link (embedded player, lazy-loaded). Empty = placeholder.
 const VIDEO = "https://youtu.be/xXaZwpt-LBo";   // Beginner walkthrough (D3)
-const VIDEO_PITCH = "";         // S22: intro video "Why we built FHLS, in a minute" (under About); empty = poster
+const VIDEO_PITCH = "https://youtu.be/YnK3Nt-mhmM";   // S22: intro video "Why we built FHLS in under 30 seconds" (under About)
 const CAPTIONS = "";            // optional .vtt file for an .mp4/.webm video
 
 const here = new URL("./", import.meta.url);
@@ -23,7 +23,7 @@ async function mount() {
   const hero = wrapHero(landing);
   landing.append(tpl.content);
   setupVideo(landing.querySelector('[data-video-slot="beginner"]'), VIDEO, "How to use FHLS · Beginner mode");
-  setupVideo(landing.querySelector('[data-video-slot="pitch"]'), VIDEO_PITCH, "Why we built FHLS, in a minute");
+  setupVideo(landing.querySelector('[data-video-slot="pitch"]'), VIDEO_PITCH, "Why we built FHLS in under 30 seconds");
   fillTeamNames(landing);
   scrollCue(hero, landing.querySelector("#demo"));
   reveal(landing.querySelectorAll(".fs-reveal"));
