@@ -3,7 +3,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261114-time-row";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261115-leaderboard";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -11,6 +11,7 @@ import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 
 import { createTimePlayer } from "./components/time-player.js";            // S9 (T3)
 import { createPanoramaSlider } from "./components/panorama-slider.js";    // S11 (T3)
 import { mountCameraToolbar } from "./components/camera-toolbar.js";        // P12 (T3)
+import { createLeaderboard } from "./components/leaderboard.js";            // S23 (T2)
 
 import { createThemeToggle } from "./components/theme.js";
 
@@ -48,6 +49,18 @@ let coreError = null;
 let sites = [];
 let viewer = null;
 let camBar = null, selectSeq = 0;   // P12 (T3): camera toolbar; guards a slow analyze() after Clear selection
+let leaderboard = null;   // S23 (T2)
+
+// S23 (T2): the top 5 candidate sites, ranked on real engine output. Built on first use,
+// because it needs `core` and `sites`, and the ranking itself is cached inside the component.
+function openLeaderboard(button) {
+  if (!core || !sites.length) return;
+  leaderboard ||= createLeaderboard({
+    core, sites,
+    onPick: site => selectSite(site, { fly: true }),
+  });
+  leaderboard.toggle(button);
+}
 let heatControl = null;   // S10 (T3): south-pole heat-map "Map" control over the 3D view
 let timePlayer = null;    // S9 (T3): Play / Pause on the timeline
 let panoSlider = null;    // S11 (T3): the panorama's own time slider
@@ -160,7 +173,8 @@ function show(screen) {
   if (state.screen === "app" && screen !== "app") {
     // Dispose immediately, before a screen animation: this cancels both active
     // flights and terrain requests. Exploration state lives separately above.
-    const previous = viewer; viewer = null; heatControl?.attach(null); camBar?.attach(null); previous?.dispose();
+    const previous = viewer; viewer = null; leaderboard?.close();   // S23 (T2)
+    heatControl?.attach(null); camBar?.attach(null); previous?.dispose();
   }
   if (transition?.busy) {
     transition.destroy();
@@ -295,7 +309,10 @@ function mountViewer() {
   syncPinMarkers();
   mountTimePlayer();   // S9 (T3)
   heatControl ||= mountHeatmapControl($("viewer-slot"), { dataBase: "../data", mode: state.mode });   // S10 (T3)
-  camBar ||= mountCameraToolbar($("viewer-slot").parentElement, $("viewer-slot"), { onClear: clearSelection, onStart: goHome });   // P12 (T3)
+  camBar ||= mountCameraToolbar($("viewer-slot").parentElement, $("viewer-slot"), {
+    onClear: clearSelection, onStart: goHome,
+    onLeaderboard: btn => openLeaderboard(btn),   // S23 (T2)
+  });   // P12 (T3)
   camBar.attach(instance);
   heatControl.attach(instance);
   instance.onPick((lat, lon) => {

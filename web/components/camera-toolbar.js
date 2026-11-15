@@ -10,6 +10,8 @@ const ICONS = {
   clear: '<path d="m5 5 8 8M13 5l-8 8"/>',
   start: '<path d="M3 8.5 9 3.5l6 5M4.8 7.2V14.5h8.4V7.2"/>',
   full: '<path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4"/>',
+  // S23 (T2): ranked list — three bars, tallest first.
+  rank: '<path d="M3 4.5h9M3 9h6M3 13.5h3"/><path d="M15.2 11.5v4"/><circle cx="15.2" cy="8.4" r="1.5"/>',
 };
 const CSS = `.cam-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
 .cam-btn{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:6px 10px;font:500 12px/1 var(--sans,sans-serif);
@@ -24,7 +26,7 @@ const CSS = `.cam-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;mar
 @media (max-width:768px){.cam-bar{gap:4px;padding:0 8px}.cam-btn{min-width:44px;min-height:44px;justify-content:center;padding:6px}
   .cam-btn .cam-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}`;
 
-export function mountCameraToolbar(parent, before, { onClear, onStart } = {}) {
+export function mountCameraToolbar(parent, before, { onClear, onStart, onLeaderboard } = {}) {
   if (!document.querySelector("style[data-cam-bar]")) {
     const st = document.createElement("style"); st.dataset.camBar = ""; st.textContent = CSS; document.head.append(st);
   }
@@ -43,6 +45,14 @@ export function mountCameraToolbar(parent, before, { onClear, onStart } = {}) {
   const startBtn = make("start", "Start", "Back to the start screen");
   const fullBtn = make("full", "Full screen", "Show the 3D view full screen");
   bar.append(backBtn, overBtn, clearBtn, fullBtn, spacer, startBtn);
+  // S23 (T2): the leaderboard sits next to Full screen, only when a handler is given.
+  let rankBtn = null;
+  if (onLeaderboard) {
+    rankBtn = make("rank", "Best sites", "See the top 5 landing sites");
+    rankBtn.setAttribute("aria-expanded", "false");
+    fullBtn.after(rankBtn);
+    rankBtn.addEventListener("click", () => onLeaderboard(rankBtn));
+  }
   parent.insertBefore(bar, before);
 
   // P13 · full screen for the 3D view: Fullscreen API, else a fixed full-viewport layer. ✕ or Esc exits.
