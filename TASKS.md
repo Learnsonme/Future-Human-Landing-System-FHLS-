@@ -159,7 +159,7 @@ Below the landing screen, the page scrolls into these sections. Built by T3 in `
   - Everything stays in sync: slider, timeline marker, results "At the selected hour", horizon panorama (S9/S11), 3D Sun lighting (`viewer.setTime`). Reuse the existing time-setting function in `web/app.js`; no new time logic.
   - Optional if quick: the chosen hour in the URL (`?t=2027-03-14T06:00Z`) so a link reopens the same moment.
   - All modes (Beginner can show just the date field + buttons). style.md tokens, light/dark mode, works at 375 px, zero console errors. **Merged by Sunday 10:00 or reverted.**
-- [ ] S22 · T1 · **Second video on the landing scroll: the 30-second pitch video** (user request).
+- [ ] S22 · T2 (reassigned from T1 at the user's request) · **Second video on the landing scroll: the 30-second pitch video** (user request).
   - Add a new section in `web/sections/sections.html` **directly below the "Why we built FHLS" section (the paragraph + Apollo photo)** and above "How it's built / Limits / Team". Eyebrow "Video · NASA Space Apps 2026", title "FHLS in thirty seconds", same `fs-section fs-reveal` style and 16:9 `fs-video` frame as the Beginner video, with the Moon poster + "Video coming soon" until the link exists.
   - In `web/sections/sections.js`: add `const VIDEO_PITCH = "";` next to `VIDEO`, and make `setupVideo` work for both slots (e.g. `setupVideo(slot, url, title)`; give the slots distinct selectors such as `data-video-slot="beginner"` / `data-video-slot="pitch"`). The Beginner video must keep working exactly as now (`https://youtu.be/xXaZwpt-LBo`).
   - Rename the first section's title from "See it in thirty seconds" to "How to use FHLS" (it is the Beginner walkthrough).
