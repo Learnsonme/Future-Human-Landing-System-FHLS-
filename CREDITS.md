@@ -31,5 +31,9 @@ NASA data and imagery are public domain; their use does not imply NASA endorseme
 
 The NASA insignia ("meatball") and logotype ("worm") are not used.
 
+## Demo video
+- **Music:** "Interstellar" by QuentinGaming, [Pixabay](https://pixabay.com/music/), used under the [Pixabay Content License](https://pixabay.com/service/license-summary/) (free to use, no attribution required).
+- **Validation animation and end card:** made by Team FHLS from our own data (`engine/validation_results.csv`) and NASA LRO LOLA terrain.
+
 ## AI assistance
 The code and much of the documentation were written with AI coding agents (Claude via Claude Code, and OpenAI Codex), directed, reviewed and tested by Team FHLS. See README.md, "Use of AI".
