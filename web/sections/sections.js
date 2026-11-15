@@ -4,9 +4,10 @@
 // sections.html after it inside #screen-landing, so the sections scroll below the hero and disappear with
 // the landing screen.
 //
-// S12: when the Beginner walkthrough video is ready, set VIDEO to its URL: an .mp4/.webm file (plays muted
+// S12/S22: set VIDEO (Beginner walkthrough) and VIDEO_PITCH (one-minute pitch) to their URLs: an .mp4/.webm file (plays muted
 // with captions if CAPTIONS is set) or a YouTube link (embedded player, lazy-loaded). Empty = placeholder.
 const VIDEO = "https://youtu.be/xXaZwpt-LBo";   // Beginner walkthrough (D3)
+const VIDEO_PITCH = "";         // S22: the one-minute pitch video; empty = Moon poster + "Video coming soon"
 const CAPTIONS = "";            // optional .vtt file for an .mp4/.webm video
 
 const here = new URL("./", import.meta.url);
@@ -21,7 +22,8 @@ async function mount() {
   // relative URLs in the partial are written from web/, which is where index.html lives
   const hero = wrapHero(landing);
   landing.append(tpl.content);
-  setupVideo(landing.querySelector("[data-video-slot]"));
+  setupVideo(landing.querySelector('[data-video-slot="beginner"]'), VIDEO, "How to use FHLS · Beginner mode");
+  setupVideo(landing.querySelector('[data-video-slot="pitch"]'), VIDEO_PITCH, "FHLS in a minute · NASA Space Apps 2026");
   fillTeamNames(landing);
   scrollCue(hero, landing.querySelector("#demo"));
   reveal(landing.querySelectorAll(".fs-reveal"));
@@ -72,33 +74,27 @@ function reveal(nodes) {
 }
 
 // S2/S12: placeholder now; the Beginner walkthrough later, muted with captions, no sound until the viewer asks.
-function setupVideo(slot) {
-  if (!slot || !VIDEO) return;
-  const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec(VIDEO);
+function setupVideo(slot, url, title) {
+  if (!slot || !url) return;
+  const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec(url);
   slot.querySelector(".fs-video-note")?.remove();
   if (yt) {
     // The YouTube player sits in the frame with its own poster and play button; lazy so it never slows the landing.
     const f = document.createElement("iframe");
     f.src = `https://www.youtube-nocookie.com/embed/${yt[1]}?cc_load_policy=1&rel=0`;
-    f.title = "FHLS demo video · Beginner mode"; f.loading = "lazy";
+    f.title = title; f.loading = "lazy";
     f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true;
     slot.replaceChildren(f);
     return;
   }
-  const play = document.createElement("button"); play.type = "button"; play.className = "fs-play"; play.textContent = "Play demo";
+  // .mp4/.webm: muted, captions if set, no sound until the viewer asks.
+  const play = document.createElement("button"); play.type = "button"; play.className = "fs-play"; play.textContent = "Play video";
   slot.append(play);
   play.addEventListener("click", () => {
-    slot.replaceChildren();
-    if (yt) {
-      const f = document.createElement("iframe");
-      f.src = `https://www.youtube-nocookie.com/embed/${yt[1]}?autoplay=1&mute=1&cc_load_policy=1&rel=0`;
-      f.title = "FHLS demo video"; f.allow = "autoplay; encrypted-media; picture-in-picture"; f.allowFullscreen = true;
-      slot.append(f);
-    } else {
-      const v = document.createElement("video"); v.src = VIDEO; v.muted = true; v.controls = true; v.playsInline = true; v.autoplay = true;
-      if (CAPTIONS) { const t = document.createElement("track"); t.kind = "captions"; t.srclang = "en"; t.label = "English"; t.src = CAPTIONS; t.default = true; v.append(t); }
-      slot.append(v);
-    }
+    const v = document.createElement("video"); v.src = url; v.muted = true; v.controls = true; v.playsInline = true; v.autoplay = true;
+    v.title = title;
+    if (CAPTIONS && url === VIDEO) { const t = document.createElement("track"); t.kind = "captions"; t.srclang = "en"; t.label = "English"; t.src = CAPTIONS; t.default = true; v.append(t); }
+    slot.replaceChildren(v);
   }, { once: true });
 }
 
