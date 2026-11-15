@@ -11,7 +11,7 @@ Click any spot on the Moon. See when it gets sunlight and when it can see Earth,
 
 **Try it live:** https://learnsonme.github.io/Future-Human-Landing-System-FHLS-/
 
-**Demo video:** coming soon
+**Demo video (Beginner mode):** https://youtu.be/xXaZwpt-LBo
 
 **NASA Space Apps 2026:** [our team page](https://www.spaceappschallenge.org/2026/find-a-team/future-human-landing-system-fhls/)
 

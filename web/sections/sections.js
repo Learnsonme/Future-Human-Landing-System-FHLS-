@@ -6,7 +6,7 @@
 //
 // S12: when the Beginner walkthrough video is ready, set VIDEO to its URL: an .mp4/.webm file (plays muted
 // with captions if CAPTIONS is set) or a YouTube link (loads only after a click). Empty = placeholder.
-const VIDEO = "";
+const VIDEO = "https://youtu.be/xXaZwpt-LBo";   // Beginner walkthrough (D3)
 const CAPTIONS = "";            // optional .vtt file for an .mp4/.webm video
 
 const here = new URL("./", import.meta.url);
