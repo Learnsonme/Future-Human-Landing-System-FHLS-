@@ -106,7 +106,7 @@ You need Python 3 with numpy, spiceypy and Pillow, plus the SPICE kernels and LO
 - **Hariyank Suvarna:** data engine, browser maths, design and pitch
 
 ### How we used AI
-We used AI coding agents throughout: **Claude** (Claude Code) and **OpenAI Codex**. They wrote most of the code and much of the documentation text, and helped plan and split the tasks. The idea, the design and the scientific decisions were ours. We directed every task, reviewed the results and tested the site, and we checked the science against NASA's published illumination map rather than trusting the output. How the agents were briefed is in `AGENTS.md`, `roles/` and `LOG.md`.
+We used AI coding agents throughout: **Claude** (Claude Code) and **OpenAI Codex**. They helped write the code and the documentation text, and helped plan and split the tasks. The idea, the design and the scientific decisions were ours. We directed every task, reviewed the results and tested the site, and we checked the science against NASA's published illumination map rather than trusting the output. How the agents were briefed is in `AGENTS.md`, `roles/` and `LOG.md`.
 
 ### Credits and licences
 - **Code:** MIT, see [LICENSE](LICENSE).
