@@ -5,7 +5,7 @@
 // the landing screen.
 //
 // S12: when the Beginner walkthrough video is ready, set VIDEO to its URL: an .mp4/.webm file (plays muted
-// with captions if CAPTIONS is set) or a YouTube link (loads only after a click). Empty = placeholder.
+// with captions if CAPTIONS is set) or a YouTube link (embedded player, lazy-loaded). Empty = placeholder.
 const VIDEO = "https://youtu.be/xXaZwpt-LBo";   // Beginner walkthrough (D3)
 const CAPTIONS = "";            // optional .vtt file for an .mp4/.webm video
 
@@ -14,9 +14,9 @@ const here = new URL("./", import.meta.url);
 async function mount() {
   const landing = document.getElementById("screen-landing");
   if (!landing || landing.querySelector(".fhls-sections")) return;
-  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = new URL("sections.css", here).href;
+  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = new URL("sections.css" + new URL(import.meta.url).search, here).href;
   document.head.append(css);
-  const html = await (await fetch(new URL("sections.html", here))).text();
+  const html = await (await fetch(new URL("sections.html" + new URL(import.meta.url).search, here))).text();
   const tpl = document.createElement("template"); tpl.innerHTML = html;
   // relative URLs in the partial are written from web/, which is where index.html lives
   const hero = wrapHero(landing);
@@ -76,6 +76,15 @@ function setupVideo(slot) {
   if (!slot || !VIDEO) return;
   const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.exec(VIDEO);
   slot.querySelector(".fs-video-note")?.remove();
+  if (yt) {
+    // The YouTube player sits in the frame with its own poster and play button; lazy so it never slows the landing.
+    const f = document.createElement("iframe");
+    f.src = `https://www.youtube-nocookie.com/embed/${yt[1]}?cc_load_policy=1&rel=0`;
+    f.title = "FHLS demo video · Beginner mode"; f.loading = "lazy";
+    f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true;
+    slot.replaceChildren(f);
+    return;
+  }
   const play = document.createElement("button"); play.type = "button"; play.className = "fs-play"; play.textContent = "Play demo";
   slot.append(play);
   play.addEventListener("click", () => {
