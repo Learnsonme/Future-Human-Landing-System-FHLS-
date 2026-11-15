@@ -26,8 +26,21 @@ At the lunar south pole, where Artemis crews will land, the Sun never climbs mor
 - **Three modes:** Beginner (a plain yes/no and one sentence), Intermediate (angles, percentages, windows), Advanced (exact numbers, an hour-by-hour table, CSV export).
 - **Heat maps over the whole Moon:** sunlight, Earth contact, both, longest blackout, per month. Higher detail (250 m) at the south pole.
 - **Horizon panorama:** the site's real skyline with the Sun and Earth moving across it, with its own time slider and a Play button.
-- **Compare up to 3 sites** side by side, with numbered markers on the Moon.
+- **Best landing dates:** for any spot, the three longest stretches with both sunlight and Earth in view, plus the longest blackout. Click one to jump straight to it. Far-side and never-sunlit spots get their own answer.
+- **Pick an exact moment:** type a date and hour (UTC), step by an hour or a day, or use the arrow keys on the slider.
+- **Compare up to 3 sites** side by side, including their best landing window, with numbered markers on the Moon.
 - **Light and dark mode,** keyboard controls, phone layout and full screen.
+
+### What it shows: two Artemis sites, very different years
+Two Artemis candidate sites near the south pole look similar on a map. FHLS shows they are not:
+
+| Site (2027–2028) | Best landing window | Longest blackout |
+| --- | --- | --- |
+| Connecting Ridge | 2–14 Dec 2027, 11.6 days | 20.8 days |
+| de Gerlache Rim 2 | 24 Oct–2 Nov 2028, 9.0 days | 115.2 days (10 Feb–4 Jun 2028) |
+| Faustini Rim A | 5–8 Oct 2028, 3.7 days | 146.5 days |
+
+A lander at Connecting Ridge waits at most three weeks for sunlight; at de Gerlache Rim 2 it would sit in the dark for almost four months. That's the kind of difference FHLS is built to reveal in one click.
 
 ### How it works
 ```
