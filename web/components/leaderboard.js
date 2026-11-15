@@ -11,11 +11,11 @@
 // and the test point, not as places anyone is choosing between.
 //
 // Ranking rule, stated in the panel so nobody has to guess it:
-//   1. longest unbroken run with BOTH sunlight and Earth in view, across 2027–2028
-//   2. ties broken on the share of the two years with both
-// Both numbers come straight from core.analyze(); nothing is modelled here. Because the longest
-// window and the best overall conditions can disagree, the panel also names the site with the
-// greatest share of the two years with both whenever that is not the one ranked first.
+//   1. share of 2027–2028 with BOTH sunlight and Earth in view — conditions over the whole period
+//   2. ties broken on the longest unbroken run with both
+// Both numbers come straight from core.analyze(); nothing is modelled here. Because the best
+// conditions and the single longest window can disagree, the panel also names the site with the
+// longest unbroken run whenever that is not the one ranked first.
 //
 // The ranking is computed once on first open (7 sites x ~10 ms) and cached for the session.
 import { bestWindows } from "./best-dates.js";
@@ -60,8 +60,8 @@ export function createLeaderboard({ core, sites, onPick }) {
   panel.innerHTML =
     `<div class="lb-head"><h3>Best landing sites</h3>` +
     `<button type="button" class="lb-close">Close</button></div>` +
-    `<p class="lb-rule">The Artemis candidate regions, ranked on the longest unbroken run with both ` +
-    `sunlight and Earth in view across 2027–2028. Ties go to the greater share of the two years with both. ` +
+    `<p class="lb-rule">The Artemis candidate regions, ranked on conditions over the whole period: the share of ` +
+    `2027–2028 with both sunlight and Earth in view. Ties go to the longer unbroken run. ` +
     `Apollo sites and craters are left out: near the equator Earth never sets, so they would take every place.</p>` +
     `<p class="lb-status">Working through the candidate sites…</p>`;
 
@@ -94,7 +94,7 @@ export function createLeaderboard({ core, sites, onPick }) {
       });
       await new Promise(r => setTimeout(r, 0));
     }
-    rows.sort((a, b) => b.hours - a.hours || b.pctBoth - a.pctBoth);
+    rows.sort((a, b) => b.pctBoth - a.pctBoth || b.hours - a.hours);
     return rows.slice(0, 5);
   }
 
@@ -111,28 +111,27 @@ export function createLeaderboard({ core, sites, onPick }) {
       b.type = "button"; b.className = "lb-row";
       const why = row.neverSunlit ? "never sunlit here"
         : row.noEarth ? "no Earth contact; sunlight only"
-        : `${days(row.hours)} days unbroken`;
+        : `longest unbroken run ${days(row.hours)} days`;
       b.innerHTML =
         `<span class="lb-rank">${i + 1}</span>` +
         `<span class="lb-name"></span>` +
-        `<span class="lb-days">${row.hours ? days(row.hours) + " d" : "—"}</span>` +
-        `<span class="lb-meta">${why} · ${row.pctBoth.toFixed(1)}% of 2027–2028 with both · ` +
-        `${row.pctSunlit.toFixed(1)}% sunlit · longest blackout ${days(row.darkHours)} days</span>`;
+        `<span class="lb-days">${row.pctBoth.toFixed(1)}%</span>` +
+        `<span class="lb-meta">of 2027–2028 with both · ${row.pctSunlit.toFixed(1)}% sunlit · ` +
+        `${why} · longest blackout ${days(row.darkHours)} days</span>`;
       b.querySelector(".lb-name").textContent = row.site.name;
       b.addEventListener("click", () => { close({ keepFocus: true }); onPick?.(row.site); });
       li.append(b); list.append(li);
     });
     panel.append(list);
 
-    // The longest single window and the best conditions overall need not be the same site.
+    // The best conditions overall and the single longest window need not be the same site.
     // Say so plainly rather than letting rank 1 speak for both.
-    const byConditions = [...rows].sort((a, b) => b.pctBoth - a.pctBoth)[0];
-    if (byConditions && rows[0] && byConditions.site !== rows[0].site) {
+    const byWindow = [...rows].sort((a, b) => b.hours - a.hours)[0];
+    if (byWindow && rows[0] && byWindow.site !== rows[0].site) {
       const alt = document.createElement("p");
       alt.className = "lb-note";
-      alt.textContent = `Longest single window is ${rows[0].site.name}, but ${byConditions.site.name} has the best ` +
-        `conditions overall: ${byConditions.pctBoth.toFixed(1)}% of the two years with both, against ` +
-        `${rows[0].pctBoth.toFixed(1)}%.`;
+      alt.textContent = `Best conditions overall are at ${rows[0].site.name}, but the single longest window is ` +
+        `${byWindow.site.name}'s: ${days(byWindow.hours)} days unbroken, against ${days(rows[0].hours)}.`;
       panel.append(alt);
     }
 

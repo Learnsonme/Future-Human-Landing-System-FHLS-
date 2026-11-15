@@ -3,7 +3,7 @@
 // All astronomy comes from core/fhls-core.js — never recomputed here.
 import { loadCore, horizonAt, R_KM } from "../core/fhls-core.js";
 import { beginnerSummary, beginnerNow, ICONS } from "../design/beginner.js";
-import { createViewer } from "../viewer/index.js?v=20261115-leaderboard";   // version tag: bump with web/index.html
+import { createViewer } from "../viewer/index.js?v=20261115-best";   // version tag: bump with web/index.html
 import { drawHorizonPanorama } from "./components/horizon-panorama.js";
 import { createStarfield } from "./components/starfield.js";
 import { createStarTransition } from "./components/star-transition.js";
@@ -11,7 +11,7 @@ import { mountHeatmapControl } from "./components/heatmap-control.js";   // S10 
 import { createTimePlayer } from "./components/time-player.js";            // S9 (T3)
 import { createPanoramaSlider } from "./components/panorama-slider.js";    // S11 (T3)
 import { mountCameraToolbar } from "./components/camera-toolbar.js";        // P12 (T3)
-import { createLeaderboard } from "./components/leaderboard.js";            // S23 (T2)
+import { createLeaderboard } from "./components/leaderboard.js?v=20261115-best";            // S23 (T2)
 
 import { createThemeToggle } from "./components/theme.js";
 
