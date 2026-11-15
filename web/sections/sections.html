@@ -1,5 +1,5 @@
 <!-- S12 · Scroll-down sections below the landing screen (T3). Loaded by sections.js.
-     Order: Beginner video → why we built it + photo → pitch video → how it's built / limits / team → footer. -->
+     Order: Beginner video → why we built it + photo + intro video → how it's built / limits / team → footer. -->
 <div class="fhls-sections">
 
   <!-- 1 · Video. VIDEO in sections.js replaces this poster with the Beginner walkthrough. -->
@@ -38,19 +38,16 @@
           (AS11-40-5903, public domain).</figcaption>
       </figure>
     </div>
-  </section>
-
-  <!-- 2b · S22: the one-minute pitch video. VIDEO_PITCH in sections.js replaces this poster. -->
-  <section class="fs-section fs-reveal" id="pitch" aria-labelledby="pitch-title">
-    <div class="wrap">
-      <p class="eyebrow">Video · NASA Space Apps 2026</p>
-      <h2 class="fs-title" id="pitch-title">FHLS in a minute</h2>
-      <div class="fs-video" data-video-slot="pitch">
+    <!-- S22 · intro video: why we built FHLS, in a minute. VIDEO_PITCH in sections.js replaces this poster. -->
+    <div class="wrap fs-about-video">
+      <h3 class="fs-subtitle" id="pitch-title">Why we built FHLS, in a minute</h3>
+      <div class="fs-video" data-video-slot="pitch" aria-labelledby="pitch-title">
         <img src="../viewer/assets/moon-poster.webp" alt="" loading="lazy" decoding="async">
         <p class="fs-video-note">Video coming soon</p>
       </div>
     </div>
   </section>
+
 
   <!-- 3 · Compact facts: validation, limits, team -->
   <section class="fs-section fs-reveal fs-facts" aria-label="How it's built, limits and team">

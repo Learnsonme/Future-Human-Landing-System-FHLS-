@@ -19,6 +19,10 @@
 .fs-body p:not(.eyebrow) { margin: 0 0 16px; color: var(--text); }
 .fs-body p:last-child { margin-bottom: 0; }
 
+/* S22: the intro video sits under the About text + photo, inside the same section */
+.fs-about-video { margin-top: 48px; }
+.fs-about-video .fs-video { margin-top: 0; }
+
 /* 1 · video */
 .fs-video { position: relative; margin-top: 24px; aspect-ratio: 16 / 9; width: 100%;
   background: var(--surface); border: 1px solid var(--line); overflow: hidden; display: grid; place-items: center; }
